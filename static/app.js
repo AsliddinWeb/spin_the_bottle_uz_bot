@@ -1,0 +1,1103 @@
+"use strict";
+// Layout units are set from JS so the page also works in old phone WebViews (no cqw / dvh / container queries).
+function setUnits() {
+  const r = document.documentElement.style, w = Math.min(document.documentElement.clientWidth || innerWidth, 480);
+  r.setProperty("--u", w / 100 + "px"); r.setProperty("--vh", innerHeight / 100 + "px");
+}
+setUnits(); addEventListener("resize", setUnits); addEventListener("orientationchange", setUnits);
+const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData !== undefined ? Telegram.WebApp : null;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+// seat centres in % of the felt (x, y) — 12 seats around the table
+// Geometry measured from the original game (% of the felt). Centre of play is right of the HUD column.
+// Phone (Telegram iOS/Android): HUD row on top of an almost square felt. Desktop: HUD column on the left.
+// Force with ?layout=top or ?layout=side when testing in a normal browser.
+const forced = new URLSearchParams(location.search).get("layout");
+const MOBILE = forced ? forced === "top" : !!((tg && ["ios", "android", "android_x"].includes(tg.platform)) || (!tg && matchMedia("(pointer:coarse)").matches));
+if (MOBILE) document.documentElement.classList.add("top");
+const CENTER = MOBILE ? [50.1, 56.4] : [56, 49.5];
+const SEATS_RAW = MOBILE
+  ? [[17.6, 26.3], [39.4, 21.8], [60.9, 21.8], [83.1, 26.7], [86.5, 46.2], [86.5, 65.4], [83.1, 85.3], [61.2, 89.5], [38.8, 89.5], [17.5, 85.3], [13.3, 65.4], [13.3, 46.2]]
+  : [[27, 18], [46.5, 12.6], [65.5, 12.6], [85, 18], [89, 39.7], [88, 61], [85, 83], [65.5, 88], [46.5, 88], [27, 83], [23.5, 61], [23.5, 39.7]];
+// seat element = avatar + name, centred as one box: shift down so the AVATAR centre sits on the measured point
+const SEATS = SEATS_RAW.map(([x, y]) => [x, y + (MOBILE ? 1.8 : 1.4)]);
+const PAIR = [[CENTER[0] - 13, CENTER[1] + 3], [CENTER[0] + 13, CENTER[1] + 3]];
+
+let CFG, ME, ws, T = null, lang = "uz", initData = "", skew = 0, target = 0;
+let lastSpinId = 0, lastKiss = 0, rot = 0, seatSig = [], joinedOnce = false, reconnectDelay = 800;
+
+const svgI = (b, c = "#fff") => `<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${b}</svg>`;
+const ICON = {
+  gift: svgI('<rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M12 9v11.5M3.5 13h17M12 9C9 3.5 5.5 5.5 8 8M12 9c3-5.5 6.5-3.5 4-1"/>'),
+  badge: svgI('<path d="M12 2.5l2.2 1.6 2.7-.2 1 2.5 2.3 1.5-.7 2.6.7 2.6-2.3 1.5-1 2.5-2.7-.2L12 21.5l-2.2-1.6-2.7.2-1-2.5L3.8 16l.7-2.6-.7-2.6 2.3-1.5 1-2.5 2.7.2z"/><path d="M8.6 12l2.5 2.5 4.4-4.8"/>'),
+  mail: svgI('<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>'),
+  flag: svgI('<path d="M5 21V4M5 4.5h12l-2.5 4 2.5 4H5"/>'),
+  music: svgI('<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'),
+  user: svgI('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.6-4 3.6-6 7.5-6s6.9 2 7.5 6"/>'),
+};
+
+// ------------------------------------------------------------ helpers
+const t = (k, v = {}) => {
+  let s = (I18N[lang] && I18N[lang][k]) ?? I18N.en[k] ?? k;
+  for (const [a, b] of Object.entries(v)) s = s.replaceAll(`{${a}}`, b);
+  return s;
+};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ls = {
+  get: (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+};
+const initials = n => (String(n || "?").trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2) || "?").toUpperCase();
+const avInner = (photo, name) => photo
+  ? `<img src="${esc(photo)}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=ini>${esc(initials(name))}</div>'">`
+  : `<div class="ini">${esc(initials(name))}</div>`;
+const miniAv = (photo, name) => photo
+  ? `<div class="av-mini"><img src="${esc(photo)}" referrerpolicy="no-referrer" onerror="this.outerHTML='${esc(initials(name))}'"></div>`
+  : `<div class="av-mini">${esc(initials(name))}</div>`;
+
+async function api(path, method = "GET", body) {
+  const r = await fetch(path, {
+    method, headers: { "Content-Type": "application/json", "X-Init-Data": initData },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!r.ok) {
+    let d = ""; try { d = (await r.json()).detail; } catch {}
+    if (d && typeof d === "object" && d.code === "banned") { showBanned(d); const e = new Error("banned"); e.code = "banned"; throw e; }
+    const e = new Error(d || r.status); e.code = d; throw e;
+  }
+  return r.json();
+}
+function toast(msg, ms = 2600) {
+  const d = document.createElement("div"); d.className = "toast"; d.textContent = msg;
+  $("#toasts").appendChild(d); setTimeout(() => d.remove(), ms);
+}
+function openModal(html, { cls = "", closable = true, onclose } = {}) {
+  const ov = document.createElement("div"); ov.className = "ov";
+  ov.innerHTML = `<div class="modal ${cls}">${closable ? '<button class="x">✕</button>' : ""}<div class="mb"></div></div>`;
+  $("#modal-root").appendChild(ov);
+  const m = { el: $(".mb", ov), root: ov };
+  m.close = () => { ov.remove(); onclose && onclose(); };
+  m.set = h => { m.el.innerHTML = h; };
+  m.set(html);
+  if (closable) { $(".x", ov).onclick = m.close; ov.addEventListener("click", e => { if (e.target === ov) m.close(); }); }
+  return m;
+}
+const closeAllModals = () => $("#modal-root").innerHTML = "";
+const openLink = u => (tg && tg.openLink ? tg.openLink(u) : window.open(u, "_blank"));
+const openTg = u => (tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, "_blank"));
+
+// ------------------------------------------------------------ sound
+let actx;
+function tone(f, d = .12, type = "sine", vol = 1, at = 0) {
+  const v = parseFloat(ls.get("sfx", "0.7")) * vol; if (!v) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), s = actx.currentTime + at;
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v * .25, s); g.gain.exponentialRampToValueAtTime(.001, s + d);
+    o.connect(g).connect(actx.destination); o.start(s); o.stop(s + d);
+  } catch {}
+}
+const sfx = {
+  click: () => tone(520, .06, "triangle"),
+  spin: () => { for (let i = 0; i < 14; i++) tone(300 + (i % 2) * 80, .04, "square", .35, i * i * .02 + i * .06); },
+  kiss: () => [660, 830, 990, 1320].forEach((f, i) => tone(f, .18, "sine", 1, i * .09)),
+  gift: () => { tone(740, .08, "triangle"); tone(1110, .14, "triangle", 1, .08); },
+  win: () => [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, .2, "triangle", 1, i * .1)),
+  no: () => { tone(260, .15, "sawtooth", .5); tone(190, .22, "sawtooth", .5, .12); },
+};
+document.addEventListener("click", e => { if (e.target.closest("button")) sfx.click(); }, true);
+
+
+// ------------------------------------------------------------ bottle art
+const BOTTLES = {
+  bottle_green: { c0: "#23461a", c1: "#4d8a2b", c2: "#93d150", c3: "#eaffb8", label: "#f6e9c8", ink: "#b0482e" },
+  bottle_red: { c0: "#3f0808", c1: "#a31d1d", c2: "#f0604d", c3: "#ffe0d8", label: "#fff2e0", ink: "#7a1a1a" },
+  bottle_blue: { c0: "#08204b", c1: "#1b56b4", c2: "#5fa9ff", c3: "#e0f0ff", label: "#f3f7ff", ink: "#1b56b4" },
+  bottle_gold: { c0: "#573a04", c1: "#b5811b", c2: "#ffd75e", c3: "#fff8d2", label: "#fffaf0", ink: "#9a6a10" },
+  bottle_brown: { c0: "#2a1608", c1: "#6b3a14", c2: "#b3743a", c3: "#f1d2a8", label: "#f6e9c8", ink: "#6b3a14" },
+  bottle_amber: { c0: "#4a2204", c1: "#b5651d", c2: "#f0a54a", c3: "#ffe2b0", label: "#fff2dc", ink: "#8a4a10" },
+  bottle_clear: { c0: "#5a6b73", c1: "#a9c0c9", c2: "#e8f3f6", c3: "#ffffff", label: "#ffffff", ink: "#5a6b73" },
+  bottle_milk: { c0: "#b4b4ab", c1: "#e6e6de", c2: "#ffffff", c3: "#ffffff", label: "#ffffff", ink: "#9a9a90" },
+  bottle_wine: { c0: "#1c0a16", c1: "#4a1236", c2: "#8c2a63", c3: "#e9b3d3", label: "#f5e6ef", ink: "#4a1236" },
+  bottle_champagne: { c0: "#0b2a14", c1: "#1c5a2c", c2: "#3f9a58", c3: "#c8f2d2", label: "#f3e7c0", ink: "#1c5a2c" },
+  bottle_cola: { c0: "#3a0f08", c1: "#7a2412", c2: "#c4553a", c3: "#ffd3c6", label: "#fff", ink: "#7a2412" },
+  bottle_rainbow: { c0: "#3b1670", c1: "#7b3fe4", c2: "#ff8ad6", c3: "#fff0fb", label: "#fffafd", ink: "#c0369b" },
+};
+let bsvg = 0;
+function bottleSvg(id) {
+  const b = BOTTLES[id] || BOTTLES.bottle_green, k = "bt" + (++bsvg);
+  const body = "M26 11H36C36.4 34 37 58 38.5 74C41 88 60 94 60 114V176C60 184 54 189 46 189H16C8 189 2 184 2 176V114C2 94 21 88 23.5 74C25 58 25.6 34 26 11Z";
+  return `<svg viewBox="0 0 62 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="${k}g" x1="0" x2="1"><stop offset="0" stop-color="${b.c0}"/><stop offset=".14" stop-color="${b.c1}"/><stop offset=".34" stop-color="${b.c2}"/><stop offset=".58" stop-color="${b.c1}"/><stop offset=".9" stop-color="${b.c0}"/><stop offset="1" stop-color="${b.c0}"/></linearGradient>
+    <linearGradient id="${k}d" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="${b.c0}" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <clipPath id="${k}c"><path d="${body}"/></clipPath>
+  </defs>
+  <path d="${body}" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.5"/>
+  <g clip-path="url(#${k}c)">
+    <path d="M15 96C18 110 18 168 15 184L47 184C44 168 44 110 47 96Z" fill="url(#${k}d)" opacity=".75"/>
+    <ellipse cx="31" cy="182" rx="20" ry="4.5" fill="#000" opacity=".28"/>
+    <path d="M10 118V168" stroke="#fff" stroke-opacity=".55" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M14 100C17 92 23 86 28 80" stroke="#fff" stroke-opacity=".5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M52 122V166" stroke="#fff" stroke-opacity=".22" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M29.5 17V66" stroke="#fff" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <rect x="24.3" y="2" width="15.4" height="10" rx="3.6" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.4"/>
+  <ellipse cx="32" cy="3.6" rx="6.2" ry="2" fill="${b.c0}" opacity=".85"/>
+  <rect x="26" y="6.4" width="11" height="1.8" rx=".9" fill="#fff" opacity=".45"/>
+</svg>`;
+}
+const chatHue = n => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+
+// ------------------------------------------------------------ ban screen (full block, nothing else is usable)
+function showBanned(info) {
+  closeAllModals(); $("#boot").classList.remove("off");
+  $("#boot").innerHTML = `<div class="banbox"><div style="font-size:64px">🚫</div><h2>${esc(t("banned_title"))}</h2>
+    <p><b>${esc(t("banned_reason"))}:</b> ${esc(info.reason || "—")}</p>
+    <p><b>${esc(t("banned_until"))}:</b> ${info.until ? new Date(info.until * 1000).toLocaleString() : "∞"}</p><small>${esc(t("banned_hint"))}</small></div>`;
+  try { if (ws) ws.close(4004); } catch {}
+}
+
+// ------------------------------------------------------------ report dialog
+function openReport(uid) {
+  const m = openModal(`<h2>${t("report_title")}</h2>${["abuse", "spam", "nsfw", "fraud", "age"].map(k => `<button class="menu-i rp-i" data-r="${k}" style="font-size:18px">${esc(t("rs_" + k))}</button>`).join("")}`);
+  $$("[data-r]", m.el).forEach(b => b.onclick = async () => {
+    try { await api("/api/report", "POST", { to: uid, reason: b.dataset.r }); toast(t("report_sent2")); m.close(); }
+    catch (e) { toast(e.code === "dup" ? t("report_dup") : t("err")); m.close(); }
+  });
+}
+
+// ------------------------------------------------------------ boot
+(function bootTitle() {
+  const T = { ru: ["Целуй", "и", "Знакомься"], uz: ["O'p", "va", "Tanishing"], en: ["Kiss", "&", "Meet"] };
+  const l = (window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code || "").slice(0, 2);
+  const x = T[l] || T.ru, b = document.querySelector("#boot");
+  b.querySelector(".b1").textContent = x[0]; b.querySelector(".b2").textContent = x[1]; b.querySelector(".b3").textContent = x[2];
+})();
+async function boot() {
+  if (tg) { tg.ready(); tg.expand(); if (tg.onEvent) tg.onEvent("viewportChanged", setUnits); try { tg.setHeaderColor("#000000"); if (tg.setBackgroundColor) tg.setBackgroundColor("#f4f4f5"); if (tg.setBottomBarColor) tg.setBottomBarColor("#ffffff"); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch {} }
+  const q = new URLSearchParams(location.search);
+  initData = (tg && tg.initData) || "";
+  CFG = await fetch("/api/config").then(r => r.json());
+  if (!initData) {
+    if (!CFG.dev) { $("#boot-msg").textContent = "Open this game from Telegram"; return; }
+    let id = q.get("dev") || ls.get("devid", ""); if (!id) { id = String(100000 + Math.floor(Math.random() * 899999)); }
+    ls.set("devid", id); initData = "dev:" + id;
+  }
+  try { ME = await api("/api/me"); } catch { const bm = $("#boot-msg"); if (bm) bm.textContent = "Auth failed"; return; }
+  lang = ME.lang; applyStatic(); renderMe();
+  bindUi(); setBottle(ME.bottle);
+  $("#boot").classList.add("felt"); setTimeout(() => $("#boot").classList.add("off"), 350);
+  if (!ME.age) await profileModal(true);
+  connect();
+  loadCompliments();
+  if (ME.daily.available) setTimeout(openDaily, 900);
+}
+
+function tableLabel() { $("#table-no").innerHTML = `${esc(t("table"))}<br>${T.id}`; }
+
+function applyStatic() {
+  document.documentElement.lang = lang;
+  $("#chat-input").placeholder = t("type_msg");
+  $("#gp-label").textContent = t("send_gift");
+  if (T) tableLabel();
+}
+
+function renderMe() {
+  $("#hearts").textContent = ME.hearts;
+  $("#btn-daily").classList.toggle("hidden", !ME.daily.available);
+}
+
+function bindUi() {
+  $("#btn-hearts").onclick = openShop;
+  $("#btn-wheel").onclick = openWheel;
+  $("#btn-rating").onclick = openRatings;
+  $("#btn-menu").onclick = openMenu;
+  $("#btn-settings").onclick = openSettings;
+  $("#btn-table").onclick = openTables;
+  $("#btn-daily").onclick = openDaily;
+  $("#gp-plus").onclick = openShop;
+  $("#gp-close").onclick = closeGifts;
+  $("#chat-form").onsubmit = e => {
+    e.preventDefault();
+    const v = $("#chat-input").value.trim(); if (!v) return;
+    send({ t: "chat", text: v }); $("#chat-input").value = "";
+  };
+  const EMOJIS = "😀😂🤣😍🥰😘😎🤩😉😏🙈😜🤗🥳😢😡👍👏🙏🔥💖💋🍾🌹🎉🤝👀💃🕺✨".match(/\p{Extended_Pictographic}\uFE0F?/gu);
+  const row = $("#emoji-row");
+  row.innerHTML = EMOJIS.map(e => `<button type="button">${e}</button>`).join("");
+  row.onclick = e => { const b = e.target.closest("button"); if (b) { const i = $("#chat-input"); i.value += b.textContent; i.focus(); } };
+  $("#emoji-btn").onclick = () => row.classList.toggle("hidden");
+  const seats = $("#seats");
+  SEATS.forEach(([x, y], i) => {
+    const d = document.createElement("div"); d.className = "seat empty"; d.id = "seat" + i;
+    d.style.left = x + "%"; d.style.top = y + "%";
+    d.innerHTML = `<div class="av"></div>`;
+    d.onclick = e => {
+      const p = T && T.seats.find(s => s.seat === i); if (!p) return;
+      if (p.uid === ME.id) return openGestures();
+      if (e.target.closest(".pbtn") || target === p.uid) return openProfile(p.uid);  // selected: the 👤 opens the profile
+      openGifts(p.uid);
+    };
+    seats.appendChild(d);
+  });
+  $("#bottle").onclick = () => { if (T && T.phase === "spin_wait" && T.turn === ME.id) { $("#bottle").classList.remove("tap"); send({ t: "spin" }); } };
+  $("#dj-fab").onclick = e => { const b = e.target.closest("[data-k]"); if (b) openMusicPicker(b.dataset.k); };
+  const range = $("#pl-range"); range.value = ls.get("musicVol", "0");
+  range.oninput = () => { ls.set("musicVol", range.value); applyVolume(); };
+  $("#pl-icon").onclick = () => { range.value = parseInt(range.value) ? 0 : 60; ls.set("musicVol", range.value); applyVolume(); };
+  setInterval(tick, 250);
+}
+
+// ------------------------------------------------------------ websocket
+function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+
+// leave the table right away when the page is closed so no ghost avatar stays seated
+window.addEventListener("pagehide", () => { try { if (ws) ws.close(1000); } catch {} });
+
+function connect() {
+  ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?init=${encodeURIComponent(initData)}`);
+  ws.onopen = () => { reconnectDelay = 800; };
+  ws.onmessage = ev => handle(JSON.parse(ev.data));
+  ws.onclose = e => {
+    $("#boot").classList.remove("off"); $("#boot-msg").textContent = e.code === 4001 ? "Opened in another window" : t("reconnecting");
+    if (e.code === 4001 || e.code === 4003 || e.code === 4004) return;
+    setTimeout(connect, reconnectDelay); reconnectDelay = Math.min(reconnectDelay * 1.6, 8000);
+  };
+  setInterval(() => send({ t: "ping" }), 25000);
+}
+
+function handle(m) {
+  switch (m.t) {
+    case "hello":
+      ME = m.me; renderMe(); $("#boot").classList.add("off");
+      send({ t: "join", table: parseInt(sessionStorage.getItem("tbl")) || "random" });
+      break;
+    case "me": ME = m.me; renderMe(); if (!$("#gest-panel").classList.contains("hidden")) renderGestures(); break;
+    case "joined":
+      sessionStorage.setItem("tbl", m.table); $("#chat").innerHTML = ""; lastSpinId = 0; seatSig = [];
+      T = { id: m.table, seats: [], phase: "waiting" }; tableLabel();
+      m.history.forEach(addChat); { const c = $("#chat"); c.style.scrollBehavior = "auto"; c.scrollTop = c.scrollHeight; setTimeout(() => { c.style.scrollBehavior = ""; }, 50); } joinedOnce = true; break;
+    case "state": onState(m); break;
+    case "chat": addChat(m); break;
+    case "toast": toast(t(m.key)); if (m.key === "no_hearts") openShop(); break;
+    case "banned": showBanned(m); break;
+    case "court": openCourtPop(m); break;
+    case "compliment": showCompliment(m); sfx.gift(); break;
+    case "ach": { const a = CFG.achievements.find(x => x.id === m.id); toast(t("toast_ach", { name: a ? t("achs_" + a.stat, { n: a.need }) : "" }), 3500); }; sfx.win(); break;
+    case "left":
+      T = null; closeGifts();
+      if (m.reason === "afk") toast(t("left_afk"), 4000);
+      if (m.reason === "kicked") toast(t("kicked"), 4000);
+      sessionStorage.removeItem("tbl"); openTables(); break;
+  }
+}
+
+// ------------------------------------------------------------ table rendering
+function serverNow() { return Date.now() + skew; }
+
+function onState(s) {
+  T = s; skew = s.now - Date.now();
+  renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic();
+  if (target && !s.seats.find(p => p.uid === target)) closeGifts();
+  if (!$("#gift-panel").classList.contains("hidden")) updateGiftHead();
+}
+
+function seatOf(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.seat : -1; }
+const inPair = () => T && (["ask_spinner", "ask_target"].includes(T.phase) || (T.phase === "result" && T.result === "kiss"));
+
+function renderSeats() {
+  const pair = inPair();
+  SEATS.forEach(([x, y], i) => {
+    const el = $("#seat" + i), p = T.seats.find(s => s.seat === i);
+    let sig = p ? JSON.stringify(p) : "";
+    if (sig !== seatSig[i]) {
+      seatSig[i] = sig;
+      if (!p) { el.className = "seat empty"; el.innerHTML = `<div class="av"></div>`; }
+      else {
+        const fr = p.frame ? "fr-" + p.frame.replace("frame_", "") : "";
+        el.innerHTML = `<div class="frame ${fr}"><div class="av">${avInner(p.photo, p.name)}</div></div>${p.gesture ? `<span class="gestE">${p.gesture}</span>` : ""}` +
+          (p.kisses ? `<span class="kb"><i>💋</i><b>${p.kisses}</b></span>` : "") +
+          (p.gifts && p.gifts.hand ? `<span class="gf">${p.gifts.hand}</span>` : "") +
+          (p.gifts && p.gifts.head ? `<span class="gh">${p.gifts.head}</span>` : "") +
+          (p.vip ? `<span class="vipmark">👑</span>` : "") +
+          (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
+          `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
+      }
+    }
+    if (!p) { el.className = "seat empty"; el.style.left = x + "%"; el.style.top = y + "%"; return; }
+    const isTurn = p.uid === T.turn, isTarget = p.uid === T.target && T.target;
+    const inP = pair && (isTurn || isTarget);
+    el.className = "seat" + (p.uid === ME.id ? " me" : "") + (isTurn && T.phase !== "waiting" ? " turn" : "") +
+      (isTarget ? " target" : "") + (inP ? " pair" : "") + (target === p.uid ? " sel" : "");
+    const pos = inP ? PAIR[isTurn ? 0 : 1] : [x, y];
+    el.style.left = pos[0] + "%"; el.style.top = pos[1] + "%";
+  });
+}
+
+function nameOf(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.name : "?"; }
+
+function renderHint() {
+  const h = $("#hint"), mine = T.phase === "spin_wait" && T.turn === ME.id;
+  $("#bottle").classList.toggle("tap", mine);
+  h.classList.toggle("mine", mine);
+  if (mine) {  // "Крути бутылочку!" with a hand-drawn arrow pointing at the bottle
+    h.style.left = CENTER[0] + 16 + "%"; h.style.top = CENTER[1] - 9 + "%";
+    h.innerHTML = `<span>${esc(t("spin_hint"))}</span><svg viewBox="0 0 64 34" width="56"><path d="M60 5C42 2 24 8 9 26" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M8 27l11-1.5M8 27l1.5-11" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+    return h.classList.remove("hidden");
+  }
+  const i = T.phase === "spin_wait" ? seatOf(T.turn) : -1;
+  if (i < 0) return h.classList.add("hidden");
+  const [sx, sy] = SEATS[i], hx = sx + (CENTER[0] - sx) * .5, hy = sy + (CENTER[1] - sy) * .5;
+  const felt = $("#felt").getBoundingClientRect();
+  const deg = Math.atan2((sy - hy) * felt.height, (sx - hx) * felt.width) * 180 / Math.PI;
+  h.style.left = hx + "%"; h.style.top = hy + "%";
+  h.innerHTML = `<span>${esc(t("turn_short"))}</span><span class="ha" style="transform:rotate(${deg}deg)">➜</span>`;
+  h.classList.remove("hidden");
+}
+
+function renderCenter() {
+  renderHint();
+  const kissed = T.phase === "result" && T.result === "kiss";
+  $("#arc-top").classList.toggle("hidden", !(T.phase === "ask_target" || kissed));  // spinner said yes
+  $("#arc-bot").classList.toggle("hidden", !kissed);                                // target said yes too
+  const box = $("#center-msg"); let msg = "";
+  switch (T.phase) {
+    case "waiting": msg = t("waiting"); break;
+    case "spin_wait": msg = ""; break;
+    case "ask_spinner": msg = T.turn === ME.id ? t("your_choice") : t("ask_kiss"); break;
+    case "ask_target": msg = T.target === ME.id ? t("your_choice") : t("ask_back"); break;
+    case "result": msg = T.result === "kiss" ? t("kissed", { a: nameOf(T.turn), b: nameOf(T.target) }) : t("nokiss"); break;
+  }
+  box.textContent = msg;
+  box.style.top = (T.phase === "waiting" ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
+  if (T.phase === "result" && T.result === "kiss" && lastKiss !== T.spin.id) {
+    lastKiss = T.spin.id; kissFx();
+  } else if (T.phase === "result" && T.result !== "kiss" && lastKiss !== -T.spin.id) {
+    lastKiss = -T.spin.id; sfx.no();
+  }
+}
+
+function kissFx() {
+  const f = $("#kiss-fx"); f.classList.remove("hidden"); f.style.animation = "none"; void f.offsetWidth; f.style.animation = "";
+  sfx.kiss();
+  for (let i = 0; i < 8; i++) {
+    const h = document.createElement("div"); h.textContent = ["❤️", "💖", "💋", "💕"][i % 4];
+    h.style.cssText = `position:absolute;left:${40 + Math.random() * 25}%;top:55%;font-size:${18 + Math.random() * 18}px;z-index:11;pointer-events:none;transition:all 1.6s ease-out;opacity:1`;
+    $("#felt").appendChild(h);
+    requestAnimationFrame(() => { h.style.transform = `translate(${(Math.random() - .5) * 120}px,${-80 - Math.random() * 120}px)`; h.style.opacity = 0; });
+    setTimeout(() => h.remove(), 1700);
+  }
+}
+
+function renderActions() {
+  const a = $("#actions"); a.innerHTML = "";
+  const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "cta " + cls; b.textContent = txt; b.onclick = () => { a.innerHTML = ""; fn(); }; a.appendChild(b); };
+  if (T.phase === "ask_spinner" && T.turn === ME.id) { btn(t("kiss_btn"), "", () => send({ t: "decide", v: true })); btn(t("skip_btn"), "alt", () => send({ t: "decide", v: false })); }
+  else if (T.phase === "ask_target" && T.target === ME.id) { btn(t("yes_btn"), "", () => send({ t: "decide", v: true })); btn(t("no_btn"), "alt", () => send({ t: "decide", v: false })); }
+}
+
+function tick() {
+  const sec = T && T.deadline ? Math.ceil((T.deadline - serverNow()) / 1000) : 0, cnt = sec > 0 && T && ["spin_wait", "ask_spinner", "ask_target"].includes(T.phase);
+  $("#tbl-n").classList.toggle("hidden", !cnt); $("#btn-table").classList.toggle("cnt", !!cnt); if (cnt) $("#tbl-n").textContent = sec;
+  if (!T || !T.deadline) { $("#timer").textContent = ""; return; }
+  const left = Math.ceil((T.deadline - serverNow()) / 1000);
+  $("#timer").textContent = ["ask_spinner", "ask_target"].includes(T.phase) && left > 0 ? left : "";
+}
+
+// ------------------------------------------------------------ bottle
+function angleToSeat(i) {
+  const felt = $("#felt").getBoundingClientRect();
+  const dx = (SEATS[i][0] - CENTER[0]) * felt.width / 100, dy = (SEATS[i][1] - CENTER[1]) * felt.height / 100;
+  return Math.atan2(dx, -dy) * 180 / Math.PI;
+}
+let curBottle = "";
+function setBottle(id) {
+  if (id === curBottle) return;
+  curBottle = id; const b = $("#bottle");
+  b.innerHTML = bottleSvg(id); b.className = id === "bottle_rainbow" ? "rainbow" : "";
+}
+function handleSpin() {
+  const b = $("#bottle"), s = T.spin;
+  if (s.id === lastSpinId) return;
+  lastSpinId = s.id;
+  if (!s.id) return;
+  setBottle(s.bottle);
+  const ti = seatOf(T.target); if (ti < 0) return;
+  const want = angleToSeat(ti);
+  if (T.phase === "spinning") {
+    const delta = (((want - rot) % 360) + 360) % 360;
+    rot += 360 * 5 + delta;
+    b.style.transition = `transform ${s.dur}s cubic-bezier(.15,.55,.1,1)`;
+    b.style.transform = `rotate(${rot}deg)`; sfx.spin();
+  } else {
+    rot = Math.round(want / 360) * 360 + want; b.style.transition = "none"; b.style.transform = `rotate(${rot}deg)`;
+  }
+}
+
+// ------------------------------------------------------------ chat
+function addPm(m) {
+  const box = $("#chat"), d = document.createElement("div"); d.className = "msg";
+  d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble pm"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">🔒 ${esc(m.name)}:</span> ${esc(m.text)}</div>`;
+  $(".bubble", d).onclick = () => openPm({ id: m.uid, name: m.name });
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+function seatPhoto(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.photo : ""; }
+function addChat(m) {
+  const box = $("#chat"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const d = document.createElement("div");
+  if (m.k === "msg") {
+    d.className = "msg";
+    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
+    const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
+    $(".who", d).onclick = reply; $(".av-mini", d).onclick = reply;
+    const tr = $(".tr", d);
+    if (tr) tr.onclick = () => openLink(`https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(m.text)}&op=translate`);
+  } else if (m.k === "gift") {
+    // consecutive identical gifts from one sender collapse into one row: same receiver -> "x2", other receivers -> more avatars
+    const key = `${m.uid}|${m.gift}`, last = box.lastElementChild;
+    if (last && last.dataset.gk === key && !m.blocked) {
+      const tos = (last.dataset.to || "").split(",");
+      if (tos.includes(String(m.to_uid))) {
+        const n = (parseInt(last.dataset.n) || 1) + 1; last.dataset.n = n;
+        let x = $(".xn", last); if (!x) { x = document.createElement("span"); x.className = "xn"; $(".g", last).after(x); }
+        x.textContent = "x" + n;
+      } else {
+        last.dataset.to = [...tos, m.to_uid].join(",");
+        $(".giftline", last).insertAdjacentHTML("beforeend", miniAv(seatPhoto(m.to_uid), m.to_name));
+      }
+      sfx.gift(); if (near) box.scrollTop = box.scrollHeight; return;
+    }
+    d.className = "msg"; d.dataset.gk = key; d.dataset.to = String(m.to_uid);
+    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${m.gift}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
+    sfx.gift();
+  } else if (m.k === "kiss") {
+    d.className = "msg ev"; d.innerHTML = `<span class="ico">💋</span><div>${esc(t("ev_kiss", { a: m.name, b: m.to_name }))}</div>`;
+  } else if (m.k === "court") {
+    d.className = "msg ev";
+    d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;
+  } else if (m.k === "dj") {
+    d.className = "msg ev";
+    d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">🏅</span><div><b style="color:#f0a24a">DJ</b> ${esc(t("dj_level", { n: m.level }))}</div>`;
+    sfx.win();
+  } else if (m.k === "music") {
+    d.className = "msg ev"; d.innerHTML = `<span class="ico">♪</span><div>${esc(m.title)}<small style="display:block;color:#888">${esc(m.name)}</small></div>`;
+  } else return;
+  box.appendChild(d);
+  while (box.children.length > 80) box.firstChild.remove();
+  if (near || m.uid === ME.id) box.scrollTop = box.scrollHeight;
+}
+
+// ------------------------------------------------------------ music (YouTube)
+let yt, ytReady = false, curTid = "";
+function applyVolume() {
+  const v = parseInt($("#pl-range").value);
+  $("#pl-icon").textContent = v ? "🔊" : "🔇";
+  if (!yt || !ytReady) return;
+  if (v) { yt.unMute(); yt.setVolume(v); yt.playVideo(); } else yt.mute();
+}
+function loadYT(cb) {
+  if (window.YT && YT.Player) return cb();
+  window.onYouTubeIframeAPIReady = cb;
+  const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+}
+function handleMusic() {
+  const m = T.music, box = $("#player");
+  $("#dj-fab").classList.toggle("off", !!m);
+  if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } curTid = ""; return; }
+  box.classList.remove("hidden");
+  $("#pl-title").textContent = m.title; $("#pl-by").textContent = m.by + (T.queue ? ` · +${T.queue}` : "");
+  const who = T.seats.find(p => p.name === m.by);
+  $("#pl-cover").innerHTML = who && who.photo ? `<img src="${esc(who.photo)}">` : esc(initials(m.by));
+  if (m.tid === curTid) return;
+  curTid = m.tid;
+  loadYT(() => {
+    if (yt) { yt.loadVideoById(m.vid); applyVolume(); return; }
+    yt = new YT.Player("yt", {
+      width: 200, height: 200, videoId: m.vid, playerVars: { autoplay: 1, controls: 0, playsinline: 1 },
+      events: {
+        onReady: () => { ytReady = true; yt.mute(); yt.playVideo(); applyVolume(); },
+        onStateChange: e => { if (e.data === 0) send({ t: "music_ended", tid: curTid }); },
+      },
+    });
+  });
+}
+
+// ------------------------------------------------------------ gifts panel
+function openGifts(uid) {
+  if (!T || !T.seats.find(p => p.uid === uid)) return toast(t("not_here"));
+  target = uid; updateGiftHead(); renderSeats();
+  $("#gift-panel").classList.remove("hidden");
+  const g = $("#gift-grid"); g.innerHTML = "";
+  CFG.gifts.forEach(x => {
+    const locked = x.vip && !ME.vip;
+    const b = document.createElement("button"); b.className = "gi" + (locked ? " lock" : "");
+    b.innerHTML = `<span class="e">${x.emoji}</span><span class="p">${locked ? "🔒" : "❤️" + x.price}</span>`;
+    b.onclick = () => giveGift(x);
+    g.appendChild(b);
+  });
+}
+function updateGiftHead() {
+  const p = T && T.seats.find(s => s.uid === target);
+  $("#gp-name").textContent = p ? p.name : t("pick_player");
+  $("#gp-av").innerHTML = p ? (p.photo ? `<img src="${esc(p.photo)}">` : esc(initials(p.name))) : "";
+}
+function closeGifts() { target = 0; $("#gift-panel").classList.add("hidden"); if (T && T.seats) renderSeats(); }
+
+function giveGift(g) {
+  if (!target && !g.kind.startsWith("music")) return toast(t("pick_player"));
+  if (g.vip && !ME.vip) { toast(t("need_vip")); return openVip(); }
+  if (ME.hearts < g.price) { toast(t("no_hearts")); return openShop(); }
+  if (g.kind.startsWith("music")) return openMusicPicker(g.id);
+  send({ t: "gift", to: target, gift: g.id });
+}
+
+// ------------------------------------------------------------ gestures (own avatar tap)
+function openGestures() {
+  closeGifts(); $("#bottle-panel").classList.add("hidden");
+  $("#gs-label").textContent = t("gesture_title"); $("#gest-panel").classList.remove("hidden"); renderGestures();
+}
+function renderGestures() {
+  $("#gs-n").textContent = ME.smiles;
+  const g = $("#gest-grid"); g.innerHTML = "";
+  CFG.gestures.forEach(x => {
+    const locked = (x.vip && !ME.vip) || (x.stat && (ME[x.stat] || 0) < x.need);
+    const b = document.createElement("button"); b.className = "gs" + (locked ? " lock" : "") + (x.vip ? " vip" : "");
+    b.innerHTML = `<span class="e">${x.emoji}</span>${locked ? '<span style="font-size:20px;opacity:.6">🔒</span>' : `<b>😊 ${x.price}</b>`}`;
+    b.onclick = () => {
+      if (locked) return toast(t(x.vip && !ME.vip ? "need_vip" : "gesture_locked"));
+      if (ME.smiles < x.price) return toast(t("no_smiles"));
+      send({ t: "gesture", id: x.id }); $("#gest-panel").classList.add("hidden");
+    };
+    g.appendChild(b);
+  });
+}
+$("#gs-close").onclick = () => $("#gest-panel").classList.add("hidden");
+$("#gs-smiles").onclick = () => openVip();
+
+// ------------------------------------------------------------ music picker
+const favTracks = () => { try { return JSON.parse(ls.get("favTracks", "[]")); } catch { return []; } };
+function openMusicPicker(kind) {
+  const g = CFG.gifts.find(x => x.id === kind); if (!g) return;
+  if (ME.hearts < g.price) { toast(t("no_hearts")); return openShop(); }
+  const m = openModal(""); let tab = "pop", list = [], findQ = "";
+  const thumb = v => `https://i.ytimg.com/vi/${v}/mqdefault.jpg`;
+  const pick = vid => { send({ t: "gift", to: 0, gift: kind, url: "https://youtu.be/" + vid }); m.close(); };
+  const load = async () => {
+    list = tab === "fav" ? favTracks() : tab === "link" || tab === "find" ? [] : await api(tab === "hist" ? "/api/music/history" : "/api/music/popular").catch(() => []);
+    render();
+  };
+  const render = () => {
+    const favs = new Set(favTracks().map(x => x.vid));
+    const titles = { pop: t("music_popular"), fav: t("music_saved"), hist: t("music_history"), find: t("music_find"), link: t("music_link") };
+    m.set(`<div class="mp-tabs">${[["pop", "🔥"], ["fav", "⭐"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]].map(([k, i]) => `<button data-tab="${k}" class="${k === tab ? "on" : ""}">${i}</button>`).join("")}</div>
+      <p class="mp-title">${titles[tab]} · ❤${g.price}</p>
+      ${tab === "find" ? `<form class="mp-find" id="mp-form"><input id="mp-q" placeholder="${esc(t("music_find"))}" value="${esc(findQ)}" autocomplete="off"><button class="btn">🔍</button></form>` : ""}
+      ${tab === "link" ? `<label class="field"><input id="mp-url" placeholder="https://youtu.be/…" inputmode="url"></label><button class="btn wide" id="mp-go">OK</button>`
+        : list.length ? `<div class="mp-grid">${list.map(x => `<div class="mp-card" data-v="${x.vid}"><div class="mp-th"><img loading="lazy" src="${thumb(x.vid)}"><button class="mp-star ${favs.has(x.vid) ? "on" : ""}" data-star="${x.vid}">★</button></div><div class="mp-tt">${esc(x.title)}</div></div>`).join("")}</div>` : `<p class="sub">${t("no_tracks")}</p>`}`);
+    $$("[data-tab]", m.el).forEach(b => b.onclick = () => { tab = b.dataset.tab; load(); });
+    $$("[data-star]", m.el).forEach(b => b.onclick = e => {
+      e.stopPropagation(); const v = b.dataset.star, cur = favTracks();
+      const item = list.find(x => x.vid === v);
+      ls.set("favTracks", JSON.stringify(cur.some(x => x.vid === v) ? cur.filter(x => x.vid !== v) : [...cur, { vid: v, title: item ? item.title : v }]));
+      if (tab === "fav") list = favTracks(); render();
+    });
+    $$("[data-v]", m.el).forEach(c => c.onclick = () => pick(c.dataset.v));
+    const fm = $("#mp-form", m.el);
+    if (fm) fm.onsubmit = async e => {
+      e.preventDefault(); findQ = $("#mp-q", m.el).value.trim(); if (findQ.length < 2) return;
+      list = await api("/api/music/search?q=" + encodeURIComponent(findQ)).catch(() => []); render(); $("#mp-q", m.el).focus();
+    };
+    const go = $("#mp-go", m.el);
+    if (go) go.onclick = () => { const mt = ($("#mp-url", m.el).value.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) || [])[1]; mt ? pick(mt) : toast(t("bad_url")); };
+  };
+  load();
+}
+
+// ------------------------------------------------------------ modals
+async function openProfile(uid) {
+  let c; try { c = await api("/api/user/" + uid); } catch { return toast(t("err")); }
+  const me = uid === ME.id, m = openModal("", { cls: "prof" });
+  let more = false;
+  const render = () => {
+    const fr = c.frame ? "fr-" + c.frame.replace("frame_", "") : "";
+    const sp = c.suitor;
+    m.set(`<div class="ph ${fr}">${c.vip ? `<span class="vrib">VIP</span>` : ""}${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span class="big">${esc(initials(c.name))}</span>
+        <div class="pn">${esc(c.name)}${c.age ? ", " + c.age : ""}${c.vip ? " 👑" : ""}</div>${me ? "" : `<button class="rep" id="pf-rep">!</button>`}</div>
+      <div class="pb">
+        <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>
+        <div class="stat m"><i>🎵</i>${c.tracks.toLocaleString("ru")}${c.dj ? ` <small class="djb">DJ ${c.dj}</small>` : ""}</div>
+        <div class="stat s"><i>😊</i>${c.gifts_received.toLocaleString("ru")}</div>
+        ${c.gifts.length ? `<div class="gbox">${c.gifts.slice(0, more ? 40 : 8).map(g => `<span class="gchip">${g.emoji}<b>${g.n}</b></span>`).join("")}</div>` : ""}
+        ${more ? `<div class="stat g"><i>🏅</i>${c.ach.length}</div><div class="stat s"><i>🎁</i>${c.gifts_sent.toLocaleString("ru")}</div>
+          ${c.recent.length ? `<div class="rcv">${c.recent.map(r => `<span title="${esc(r.name)}">${r.emoji}<small>${esc(r.name.slice(0, 9))}</small></span>`).join("")}</div>` : ""}` : ""}
+        <div class="chev"><button id="pf-more">${more ? "︿" : "﹀"}</button></div>
+        <div class="suit">
+          <div class="sa">${sp ? (sp.photo ? `<img src="${esc(sp.photo)}" referrerpolicy="no-referrer">` : esc(initials(sp.name))) : "♡"}</div>
+          <div class="si">${sp ? `<div class="l">${esc(t("courting"))} <b>${esc(sp.name)}</b></div><div class="h">❤ ${sp.price}</div>` : `<div class="l">${t("court_none")}</div>`}
+            ${me ? "" : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
+        </div>
+        <div class="acts">
+          ${me ? `<button class="a4" id="pf-edit" style="width:100%;border-radius:36px">${t("profile_settings")}</button>` :
+            `<button class="a1" id="pf-pc">${ICON.flag}</button><button class="a2" id="pf-gift">${ICON.music}</button><button class="a3" id="pf-ach">${ICON.badge}</button><button class="a4" id="pf-mail">${ICON.mail}</button>`}
+        </div></div>`);
+    const on = (id, fn) => { const e = $(id, m.el); if (e) e.onclick = fn; };
+    on("#pf-more", () => { more = !more; render(); });
+    on("#pf-rep", () => openReport(uid));
+    on("#pf-pc", () => openReport(uid));
+    on("#pf-gift", () => { m.close(); openGifts(uid); });
+    on("#pf-ach", () => showAchievementsOf(c));
+    on("#pf-mail", () => { m.close(); openPm(c); });
+    on("#pf-edit", () => { m.close(); profileModal(false); });
+    on("#pf-court", async () => {
+      try { const r = await api("/api/court", "POST", { to: uid }); ME = r.me; renderMe(); c = await api("/api/user/" + uid); sfx.gift(); render(); }
+      catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else if (e.code === "already") toast(t("courting") + " ✓"); else toast(t("err")); }
+    });
+  };
+  render();
+}
+
+function showAchievementsOf(c) {
+  const rows = CFG.achievements.map(a => `<div class="card2"><span style="font-size:26px">${c.ach.includes(a.id) ? "✅" : "🔒"}</span><b>${t("achs_" + a.stat, { n: a.need })}</b></div>`).join("");
+  openModal(`<h2>${esc(c.name)}</h2>${rows}`);
+}
+
+function openPm(c) {
+  const m = openModal(`<h2>💌 ${t("compl_title")} · ${esc(c.name)}</h2><textarea class="pmtxt" id="pm-text" maxlength="200"></textarea><p class="sub">${t("compl_hint")}</p><button class="btn wide" id="pm-go">${t("compl_send")}</button>`);
+  $("#pm-go", m.el).onclick = async () => {
+    const v = $("#pm-text", m.el).value.trim(); if (!v) return;
+    try { const r = await api("/api/compliment", "POST", { to: c.id, text: v }); ME = r.me; renderMe(); toast(t("compl_sent")); m.close(); }
+    catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(e.code === "too_fast" ? t("too_fast") : e.code === "limit" ? t("limit_c") : e.code === "muted" ? t("muted") : String(e.code).startsWith("filtered_") ? t(e.code) : t("err")); }
+  };
+  setTimeout(() => $("#pm-text", m.el).focus(), 50);
+}
+
+let complQueue = [], complOpen = false;
+function showCompliment(c) { complQueue.push(c); nextCompliment(); }
+function nextCompliment() {
+  if (complOpen || !complQueue.length) return;
+  const c = complQueue.shift(); complOpen = true;
+  const m = openModal(`<div class="center" style="font-size:54px">💌</div><h2 style="color:#e8873a">${esc(t("compl_from", { name: c.name }))}</h2>
+    <div class="card2" style="align-items:flex-start">${miniAv(c.photo, c.name)}<b style="font-weight:600;font-size:17px;line-height:1.3">${esc(c.text)}</b></div>
+    <button class="btn wide" id="cm-ok">${t("compl_claim")}</button>`, { onclose: () => { complOpen = false; setTimeout(nextCompliment, 250); } });
+  $("#cm-ok", m.el).onclick = async () => {
+    try { ME = await api(`/api/compliments/${c.id}/read`, "POST"); renderMe(); sfx.win(); } catch {}
+    m.close();
+  };
+}
+async function loadCompliments() {
+  try { (await api("/api/compliments/unread")).forEach(c => complQueue.push(c)); nextCompliment(); } catch {}
+}
+
+function openCourtPop(m) {
+  const pop = openModal(`<h2>${t("court_title")}</h2><div class="court-pop"><div class="ca"><div class="bx">${miniAv(m.photo, m.name)}<div style="margin-top:4px">${esc(m.name)}</div></div>
+    <p>${esc(t("court_notice", { name: m.name, n: m.price }))}</p></div><button class="btn" id="cp-ok">${t("got_it")}</button></div>`);
+  $("#cp-ok", pop.el).onclick = pop.close; sfx.gift();
+}
+
+function profileModal(first = false) {
+  return new Promise(res => {
+    let gender = ME.gender || "", photo = ME.photo || "";
+    const tgName = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "";
+    const initial = { name: ME.name || tgName, birth: ME.birth || "", gender };
+    const maxBirth = new Date(Date.now() - 14 * 365.25 * 864e5).toISOString().slice(0, 10);
+    const m = openModal(`<h2>${t("profile_settings")}</h2><div class="pfx">
+      <div class="pfx-l"><div class="pfx-ph" id="pf-ph"></div><button class="pfx-plus" id="pf-pick">+</button><div class="pfx-cap">${t("choose_photo")}</div>
+        <input type="file" id="pf-file" accept="image/*" hidden></div>
+      <div class="pfx-r">
+        <label class="field"><span>${t("name")}:</span><input id="pf-name" maxlength="24" value="${esc(initial.name)}"></label>
+        <label class="field"><span>${t("birth")}:</span><input id="pf-birth" type="date" min="1940-01-01" max="${maxBirth}" value="${esc(initial.birth)}"></label>
+        <div class="field"><span>${t("gender")}:</span><div class="gtile"><button data-g="m" aria-label="m">👦</button><button data-g="f" aria-label="f">👧</button></div></div>
+      </div></div>
+      <div class="pfx-btns">${first ? "" : `<button class="btn ghost" id="pf-cancel">${t("cancel_btn")}</button>`}<button class="btn" id="pf-save">${t("save")}</button></div>`, { closable: !first, onclose: () => res() });
+    const paintPh = () => { $("#pf-ph", m.el).innerHTML = photo ? `<img src="${esc(photo)}" referrerpolicy="no-referrer">` : `<div class="ini">${esc(initials($("#pf-name", m.el).value || ME.name))}</div>`; };
+    const dirty = () => first || $("#pf-name", m.el).value.trim() !== initial.name || $("#pf-birth", m.el).value !== initial.birth || gender !== initial.gender;
+    const refresh = () => {
+      $$("[data-g]", m.el).forEach(b => b.classList.toggle("on", b.dataset.g === gender));
+      $("#pf-save", m.el).disabled = !dirty();
+    };
+    paintPh(); refresh();
+    $$("[data-g]", m.el).forEach(b => b.onclick = () => { gender = b.dataset.g; refresh(); });
+    $("#pf-name", m.el).oninput = () => { refresh(); if (!photo) paintPh(); };
+    $("#pf-birth", m.el).oninput = refresh;
+    const cancel = $("#pf-cancel", m.el); if (cancel) cancel.onclick = m.close;
+    $("#pf-pick", m.el).onclick = () => $("#pf-file", m.el).click();
+    $("#pf-file", m.el).onchange = async e => {   // square-crop + shrink in the browser, the server re-encodes again
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const bmp = await createImageBitmap(f), side = Math.min(bmp.width, bmp.height), c = document.createElement("canvas");
+        c.width = c.height = Math.min(640, side); c.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, c.width, c.height);
+        const blob = await new Promise(r => c.toBlob(r, "image/jpeg", .86));
+        const r = await fetch("/api/photo", { method: "POST", headers: { "Content-Type": "image/jpeg", "X-Init-Data": initData }, body: blob });
+        if (!r.ok) throw new Error(r.status);
+        ME = await r.json(); photo = ME.photo; paintPh(); renderMe(); toast("✓");
+      } catch { toast(t("err")); }
+    };
+    $("#pf-save", m.el).onclick = async () => {
+      const birth = $("#pf-birth", m.el).value, name = $("#pf-name", m.el).value.trim();
+      if (!birth) return toast(t("age_err"));
+      if (!name || !gender) return toast(t("err"));
+      try {
+        ME = await api("/api/profile", "POST", { name, birth, gender, lang });
+        applyStatic(); renderMe(); m.close();
+      } catch (e) { toast(e.code === "invalid" ? t("age_err") : e.code === "bad_name" ? t("bad_name") : t("err")); }
+    };
+  });
+}
+
+const heartNum = n => `<span class="hb"><svg viewBox="0 0 40 36"><path d="M20 35C6 25 1 16 1 10 1 4 6 1 11 1c4 0 7 2 9 6 2-4 5-6 9-6 5 0 10 3 10 9 0 6-5 15-19 25z" fill="url(#hg)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><b>${n}</b></span>`;
+function openDaily() {
+  if (!ME.daily.available) return;
+  const day = ME.daily.day, mult = ME.vip ? 2 : 1;
+  const rows = CFG.daily.map((h, i) => `<div class="drow ${i <= day ? "now" : ""}"><span class="dot">${i < day ? "✔" : ""}</span><span class="dl">${t("day", { n: i + 1 })}</span>${heartNum(h * mult)}</div>`).join("");
+  // like the original: no close button, the dialog goes away only after claiming
+  const m = openModal(`<h2>${t("daily_title")}</h2><p class="dtxt pre">${t("daily_desc")}</p>${rows}
+    <div class="center" style="margin-top:14px"><button class="btn dbtn" id="dl-ok">${t("claim")}</button></div>`, { cls: "green daily", closable: false });
+  $("#dl-ok", m.el).onclick = async () => {
+    try { const r = await api("/api/daily/claim", "POST"); ME = r.me; renderMe(); toast(t("daily_ok", { n: r.reward })); sfx.win(); m.close(); }
+    catch { m.close(); }
+  };
+}
+
+function openShop() {
+  const packs = [...CFG.packs].sort((a, b) => b.stars - a.stars);
+  const em = { p5000: "🧰", p2500: "🛢️", p1000: "🏺", p500: "👜", p250: "📦", p50: "💕" };
+  const m = openModal(`<h2>${t("buy_hearts")}</h2>
+    <div class="grid3" style="margin-bottom:10px">
+      <div class="pack"><div class="txt" style="color:#e8873a;font-weight:800">${t("vip_status")}</div><div class="em">👑</div><button class="btn blue" data-go="vip">${t("learn")}</button>${ME.vip ? "" : `<span class="vbadge">!</span>`}</div>
+      <div class="pack"><div class="txt">${t("get_friend", { n: 20 })}</div><div class="em">🧑‍🤝‍🧑</div><button class="btn blue" data-go="promo">${t("learn")}</button></div>
+      <div class="pack"><div class="txt">${t("get_comp", { n: 10 })}</div><div class="em">💌</div><button class="btn blue" data-go="compl">${t("learn")}</button></div>
+    </div>
+    <div class="grid3">${packs.map(p => `<div class="pack">
+      ${p.stars === 5000 ? `<span class="tag">${t("best")}</span>` : p.stars === 1000 ? `<span class="tag hit">${t("hit")}</span>` : ""}
+      <div class="big">❤️${p.hearts}</div><div class="bn">${p.bonus ? t("bonus_pct", { n: p.bonus }) : ""}</div>
+      <div class="em">${em[p.id]}</div><button class="btn" data-pack="${p.id}">${buyLabel(p.price, "★" + p.stars)}</button></div>`).join("")}</div>
+    ${CFG.payments === "manual" ? `<div class="center" style="margin-top:12px"><button class="btn blue" id="my-orders">🧾 ${t("my_orders")}</button></div>` : ""}`, { cls: "pink" });
+  const mo = $("#my-orders", m.el); if (mo) mo.onclick = () => { m.close(); openMyOrders(); };
+  $$("[data-go]", m.el).forEach(b => b.onclick = () => { m.close(); ({ vip: openVip, free: openFree, promo: openPromo, compl: openComplTask })[b.dataset.go](); });
+  $$("[data-pack]", m.el).forEach(b => b.onclick = () => buy("pack", b.dataset.pack, m));
+}
+
+// manual payments: the button shows the price when one is configured, otherwise just "Order"
+const buyLabel = (price, stars) => CFG.payments === "manual" ? (price || t("order_btn")) : stars;
+
+const orderWhat = o => o.kind === "vip" ? t("order_vip", { d: CFG.vip.days }) : `❤️${o.hearts}`;
+
+async function placeOrder(kind, id) {
+  try {
+    const r = await api("/api/orders", "POST", { kind, id }), o = r.order;
+    const m = openModal(`<h2>${t("order_title", { n: o.id })}</h2>
+      <div class="center" style="font-size:26px;font-weight:800;margin:4px 0">${esc(orderWhat(o))}</div>
+      <p class="center" style="font-weight:700;margin:4px 0 12px">${esc(o.price ? t("order_price", { p: o.price }) : t("order_ask_price"))}</p>
+      <div class="ord-steps"><p>${t("order_s1")}</p><p>${t("order_s2")}${r.pay_info ? `<br><b>${esc(r.pay_info)}</b>` : ""}</p><p>${t("order_s3")}</p></div>
+      <div class="ord-btns">${r.support ? `<button class="btn" id="ord-chat">${t("order_contact")}</button>` : ""}<button class="btn ghost" id="ord-cancel">${t("order_cancel")}</button></div>`);
+    const chat = $("#ord-chat", m.el);
+    if (chat) chat.onclick = () => openTg(`https://t.me/${r.support.replace("@", "")}?text=${encodeURIComponent(`#${o.id} · ${orderWhat(o)} · ID ${ME.id}`)}`);
+    $("#ord-cancel", m.el).onclick = async () => { try { await api(`/api/orders/${o.id}/cancel`, "POST"); toast(t("order_cancelled")); } catch {} m.close(); };
+  } catch (e) { toast(e.code === "already" ? t("order_dup") : e.code === "too_many" ? t("order_many") : t("err")); }
+}
+
+async function openMyOrders() {
+  let list = []; try { list = await api("/api/orders"); } catch {}
+  openModal(`<h2>${t("my_orders")}</h2>${list.length ? list.map(o => `<div class="card2"><b>#${o.id} · ${esc(orderWhat(o))}${o.price ? " · " + esc(o.price) : ""}</b><span class="ord-st ${o.status}">${t("order_st_" + o.status)}</span></div>`).join("") : `<p class="sub">${t("order_none")}</p>`}`);
+}
+
+async function buy(kind, id, modal) {
+  if (CFG.payments === "manual" && !CFG.dev) return placeOrder(kind, id);
+  try {
+    const r = await api("/api/shop/invoice", "POST", { kind, id });
+    if (r.dev) { ME = r.me; renderMe(); toast(t("paid_ok")); sfx.win(); return; }
+    if (!tg || !tg.openInvoice) return toast(t("err"));
+    tg.openInvoice(r.link, async status => {
+      if (status !== "paid") return;
+      toast(t("paid_ok")); sfx.win();
+      for (let i = 0; i < 4; i++) { await new Promise(r => setTimeout(r, 1200)); ME = await api("/api/me"); renderMe(); }
+    });
+  } catch { toast(t("err")); }
+}
+
+function openVip() {
+  const until = ME.vip ? new Date(ME.vip_until * 1000).toLocaleDateString() : "";
+  const slides = [["🎁🍸🏆", "vip_slide1"], ["🪪", "vip_slide6"], ["📆", "vip_slide2"], ["💋➕", "vip_slide3"], ["👑", "vip_slide4"], ["🎡", "vip_slide5"]];
+  const m = openModal(`<h2 class="vipt">${t("vip_title")}</h2><p class="center" style="font-weight:600;margin:0 6px 6px">${esc(t("vip_desc").split("\n")[0].replace("• ", ""))}</p>
+    <div class="vcar" id="vcar">${slides.map(([e, k]) => `<div class="vs"><div class="vse">${e}</div><b>${esc(t(k))}</b></div>`).join("")}</div>
+    <div class="vdots" id="vdots">${slides.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>
+    ${ME.vip ? `<p class="sub">${t("vip_until", { date: until })}</p>` : ""}
+    ${ME.vip ? `<div class="vcol"><span>😊 <b>${CFG.vip_smiles}</b> ${esc(t("vip_collect"))}</span><button class="btn" id="vip-collect">${t("collect")}</button></div>` : ""}
+    ${ME.vip ? "" : `<button class="btn wide" id="vip-buy">${CFG.payments === "manual" ? (CFG.vip.price ? CFG.vip.price + " · " : "") + t("order_btn") : t("vip_buy", { n: CFG.vip.stars })} · ${t("days", { n: CFG.vip.days })}</button>`}`, { cls: "green" });
+  const car = $("#vcar", m.el), dots = $$("#vdots i", m.el);
+  car.onscroll = () => { const i = Math.round(car.scrollLeft / car.clientWidth); dots.forEach((d, k) => d.classList.toggle("on", k === i)); };
+  const vb = $("#vip-buy", m.el); if (vb) vb.onclick = () => buy("vip", "", m);
+  const col = $("#vip-collect", m.el);
+  if (col) col.onclick = async () => { try { ME = await api("/api/vip/collect", "POST"); renderMe(); sfx.win(); col.disabled = true; } catch { toast(t("not_yet")); } };
+}
+
+async function openFree() {
+  let tk; try { tk = await api("/api/tasks"); } catch { return toast(t("err")); }
+  const m = openModal("");
+  const st = { invite: tk.invited > 0, sub: tk.subscribe_done };
+  const render = () => {
+    const ready = st.invite && st.sub && !tk.subscribe_done;
+    m.set(`<h2>${t("free_title")}</h2>
+      <div class="card2"><b>${t("invite_friends")}</b>${st.invite ? "✅" : `<button class="btn" data-a="invite">${t("go")}</button>`}</div>
+      <div class="card2"><b>${t("subscribe")}</b>${st.sub ? "✅" : `<button class="btn" data-a="sub">${t("go")}</button>`}</div>
+      <div class="center" style="margin-top:14px"><button class="btn" id="fr-claim" style="min-width:60%;font-size:18px" ${ready ? "" : "disabled"}>${tk.subscribe_done ? "✅" : t("free_get")}</button></div>`);
+    $$("[data-a]", m.el).forEach(b => b.onclick = () => {
+      if (b.dataset.a === "invite") openTg(`https://t.me/share/url?url=${encodeURIComponent(tk.link || location.origin)}&text=${encodeURIComponent("🍾 Spin the Bottle")}`), st.invite = true;
+      else { if (CFG.channel) openTg("https://t.me/" + CFG.channel.replace("@", "")); st.sub = true; }
+      render();
+    });
+    $("#fr-claim", m.el).onclick = async () => {
+      try { ME = await api("/api/tasks/claim", "POST", { id: "subscribe" }); renderMe(); sfx.win(); tk.subscribe_done = true; render(); }
+      catch (e) { toast(e.code === "not_subscribed" ? t("not_subscribed") : t("not_yet")); st.sub = false; render(); }
+    };
+  };
+  render();
+}
+
+// "Акция!": invite-a-friend promo (opened from the shop's friend card)
+function openPromo() {
+  const m = openModal(`<h2>${t("promo_title")}</h2>
+    <div class="promo-av"><div><span class="pa a1">🧑</span><b>+❤20</b></div><div><span class="pa a2">👩<i>★</i></span><b>+❤50</b></div></div>
+    <p class="center" style="font-size:17px;line-height:1.3;margin:10px 4px">${esc(t("promo_text"))}</p>
+    <div class="center" style="margin-top:14px"><button class="btn" id="pr-inv">${t("promo_invite")}</button></div>`, { cls: "promo" });
+  $("#pr-inv", m.el).onclick = async () => {
+    let tk = {}; try { tk = await api("/api/tasks"); } catch {}
+    openTg(`https://t.me/share/url?url=${encodeURIComponent(tk.link || location.origin)}&text=${encodeURIComponent("🍾 Spin the Bottle")}`);
+  };
+}
+
+// "Комплименты": rate players with a tag, 10 ratings pay hearts
+async function openComplTask() {
+  let task; try { task = await api("/api/tagtask"); } catch { return toast(t("err")); }
+  const m = openModal("", { cls: "ctask" });
+  const colors = { argues: "#f4a3a3", hair: "#9fdcc0", flatterer: "#a9c6f5", fun: "#c9b6f2", drinks: "#f7dc8c", greedy: "#f4a3a3" };
+  const render = () => {
+    const p = task.next, left = Math.max(0, task.need - task.done);
+    m.set(`<h2>${t("ctask_title")}</h2>
+      <div class="ct-banner">${task.paid ? esc(t("ctask_done", { r: task.reward })) : esc(t("ctask_left", { n: left, r: task.reward }))}</div>
+      ${p && !task.paid ? `<div class="ct-card"><div class="ct-ph">${p.photo ? `<img src="${esc(p.photo)}" referrerpolicy="no-referrer">` : `<div class="ini">${esc(initials(p.name))}</div>`}<small>${esc(p.name)}</small></div><div class="ct-q">${esc(t("ctask_q"))}</div></div>
+        <div class="ct-tags">${CFG.tags.map(k => `<button data-tag="${k}" style="background:${colors[k]}">${esc(t("tag_" + k))}</button>`).join("")}</div>`
+        : `<p class="sub">${esc(task.paid ? "✓" : t("ctask_none"))}</p>`}`);
+    $$("[data-tag]", m.el).forEach(b => b.onclick = async () => {
+      try {
+        const r = await api("/api/tagtask/vote", "POST", { to: p.id, tag: b.dataset.tag });
+        task = r.task; ME = r.me; renderMe(); sfx.gift();
+        if (r.result === "reward") { toast(t("ctask_done", { r: task.reward }), 3500); sfx.win(); }
+        render();
+      } catch { toast(t("err")); }
+    });
+  };
+  render();
+}
+
+function openMenu() {
+  const r = $("#btn-menu").getBoundingClientRect(), ov = document.createElement("div"); ov.className = "pop-ov";
+  const rows = [["ach", "🏅", "achievements"], ["rate", "📊", "ratings"], ["bot", "🍾", "bottle"], ["dec", "🖼️", "decorations"], ["boo", "⚡", "boosters"]];
+  ov.innerHTML = `<div class="pop">${rows.map(([k, i, n]) => `<button data-m="${k}"><span class="ic">${i}</span>${t(n)}</button>`).join("")}</div>`;
+  $("#modal-root").appendChild(ov);
+  const pop = $(".pop", ov);
+  pop.style.left = Math.min(r.right + 10, innerWidth - pop.offsetWidth - 8) + "px";
+  pop.style.top = Math.max(8, Math.min(r.top - 70, innerHeight - pop.offsetHeight - 8)) + "px";
+  const map = { ach: openAchievements, rate: openRatings, bot: () => openStore("bottle"), dec: () => openStore("frame"), boo: () => openStore("booster") };
+  ov.addEventListener("click", e => { const b = e.target.closest("[data-m]"); ov.remove(); if (b) map[b.dataset.m](); });
+}
+
+function bottlePreview(id) { return `<div class="pv-b">${bottleSvg(id)}</div>`; }
+
+// ---- "Сменить бутылочку": panel at the bottom, like the gift panel
+function openBottlePanel() {
+  $("#bp-label").textContent = t("change_bottle");
+  $("#bottle-panel").classList.remove("hidden");
+  const render = () => {
+    const g = $("#bottle-grid"); g.innerHTML = "";
+    CFG.items.filter(i => i.kind === "bottle").forEach(it => {
+      const have = ME.inv[it.id] && ME.inv[it.id].qty > 0, eq = ME.bottle === it.id;
+      const b = document.createElement("button"); b.className = "bi" + (eq ? " eq" : "");
+      b.innerHTML = `<span class="bv">${bottleSvg(it.id)}</span><span class="bp">${eq ? "✓" : have ? "" : "❤️" + it.price}</span>`;
+      b.onclick = async () => {
+        try {
+          if (!have) ME = await api("/api/store/buy", "POST", { item: it.id });
+          ME = await api("/api/store/equip", "POST", { item: it.id });
+          renderMe(); setBottle(ME.bottle); sfx.gift(); render();
+        } catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); openShop(); } else toast(t("err")); }
+      };
+      g.appendChild(b);
+    });
+  };
+  render();
+}
+$("#bp-close").onclick = () => $("#bottle-panel").classList.add("hidden");
+
+// ---- decorations: preview + apply
+function openStore(kind) {
+  if (kind === "bottle") return openBottlePanel();
+  if (kind === "booster") return openBoosters();
+  const m = openModal("", { cls: "decor" }); let sel = ME.frame;
+  const render = () => {
+    const frames = CFG.items.filter(i => i.kind === "frame");
+    const cur = frames.find(f => f.id === sel), have = !sel || (ME.inv[sel] && ME.inv[sel].qty > 0), eq = sel === ME.frame;
+    const cls = sel ? "fr-" + sel.replace("frame_", "") : "";
+    m.set(`<h2>${sel ? t(sel) : t("no_decor")}</h2>
+      <div class="dc-top"><div class="dc-pv"><div class="frame ${cls}"><div class="av" style="--av:78px">${avInner(ME.photo, ME.name)}</div></div><small>${esc(ME.name)}${ME.age ? ", " + ME.age : ""}</small></div>
+        <div class="dc-info"><p>${sel ? esc(t(sel)) : t("keep_plain")}</p><button class="btn ${eq ? "gray" : ""}" id="dc-apply" ${eq ? "disabled" : ""}>${have ? t("apply") : "❤️ " + cur.price}</button></div></div>
+      <div class="dc-grid"><button class="dc-t ${!sel ? "on" : ""}" data-f=""><span class="dc-none">✕</span>${ME.frame === "" ? "<b>✓</b>" : ""}</button>
+        ${frames.map(f => `<button class="dc-t ${sel === f.id ? "on" : ""}" data-f="${f.id}"><div class="frame fr-${f.id.replace("frame_", "")}"><div class="av" style="--av:42px"><div class="ini" style="font-size:16px">A</div></div></div>${ME.frame === f.id ? "<b>✓</b>" : (ME.inv[f.id] && ME.inv[f.id].qty > 0) ? "" : `<b>❤️${f.price}</b>`}</button>`).join("")}</div>`);
+    $$("[data-f]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.f; render(); });
+    $("#dc-apply", m.el).onclick = async () => {
+      try {
+        if (sel && !have) ME = await api("/api/store/buy", "POST", { item: sel });
+        ME = await api("/api/store/equip", "POST", { item: sel }); renderMe(); sfx.gift(); render();
+      } catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(t("err")); }
+    };
+  };
+  render();
+}
+
+// ---- boosters: round icons with counts, tap for details
+function openBoosters() {
+  const m = openModal("", { cls: "boost" }); let sel = "";
+  const groups = [["b_choice", ["magnet", "double"]], ["b_league", ["shield"]]];
+  const render = () => {
+    const it = id => CFG.items.find(i => i.id === id), inv = id => ME.inv[id] || { qty: 0, armed: 0 };
+    m.set(`<button class="qhelp" id="bs-help">?</button><h2>${t("boosters_title")}</h2><p class="center" style="margin:2px 0 6px;font-weight:600">${t("boosters_desc")}</p>
+      ${groups.map(([title, ids]) => `<div class="bs-h"><span>${t(title)}</span></div><div class="bs-row">${ids.map(id => `<button class="bs-i ${sel === id ? "on" : ""}" data-b="${id}"><span>${it(id).emoji}</span><i>${inv(id).qty + inv(id).armed}</i></button>`).join("")}</div>`).join("")}
+      ${sel ? `<div class="bs-d"><b>${t(sel + "_n")}</b><small>${t(sel + "_d")}</small>
+        <div class="bs-a"><button class="btn" data-buy="${sel}">❤️ ${it(sel).price}</button>${inv(sel).qty ? `<button class="btn blue" data-arm="${sel}">${t("use")} (${inv(sel).qty})</button>` : ""}</div>
+        ${inv(sel).armed ? `<small style="color:#4a9">${t("armed", { n: inv(sel).armed })}</small>` : ""}</div>` : ""}`);
+    $$("[data-b]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.b; render(); });
+    $("#bs-help", m.el).onclick = () => toast(t("boosters_help"), 5000);
+    const act = async (path, body) => { try { ME = await api(path, "POST", body); renderMe(); render(); } catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(t("err")); } };
+    $$("[data-buy]", m.el).forEach(b => b.onclick = () => act("/api/store/buy", { item: b.dataset.buy }));
+    $$("[data-arm]", m.el).forEach(b => b.onclick = () => act("/api/store/arm", { item: b.dataset.arm }));
+  };
+  render();
+}
+
+const ACH_ICON = { kisses: "💋", spins: "🍾", gifts_sent: "🎁", gifts_received: "🌟", msgs: "💬", streak: "🔥", tracks: "🎵" };
+function openAchievements() {
+  const m = openModal("", { cls: "ach" }); let doneFirst = true;
+  const render = () => {
+    const tier = {}, list = CFG.achievements.map(a => { tier[a.stat] = (tier[a.stat] || 0) + 1; return { ...a, tier: tier[a.stat], max: CFG.achievements.filter(x => x.stat === a.stat).length, got: ME.ach.includes(a.id) }; });
+    list.sort((a, b) => (doneFirst ? b.got - a.got : a.got - b.got));
+    m.set(`<h2>${t("my_ach")} <span class="ach-n">★ ${ME.ach.length}/${list.length}</span></h2>
+      <div class="ach-f"><span>${t("first")}</span><div class="segp"><button data-df="1" class="${doneFirst ? "on" : ""}">${t("done_f")}</button><button data-df="0" class="${doneFirst ? "" : "on"}">${t("undone_f")}</button></div></div>
+      <div class="ach-g">${list.map(a => `<div class="ach-c ${a.got ? "got" : ""}"><div class="ach-st">${"★".repeat(Math.min(5, 1 + Math.ceil(a.tier * 5 / a.max)))}</div><div class="ach-m">${ACH_ICON[a.stat] || "🏅"}</div>
+        <small>${esc(t("achs_" + a.stat, { n: a.need }))}</small><em>${Math.min(ME[a.stat] || 0, a.need)}/${a.need}</em></div>`).join("")}</div>`);
+    $$("[data-df]", m.el).forEach(b => b.onclick = () => { doneFirst = b.dataset.df === "1"; render(); });
+  };
+  render();
+}
+
+async function openRatings() {
+  const m = openModal("", { cls: "rate" }); let kind = "kisses";
+  const tabs = [["kisses", "💋", "most_kissed"], ["tracks", "🎵", "most_music"], ["hearts", "❤️", "most_hearts"], ["court", "💞", "most_court"], ["gifts", "😊", "most_gifts"]];
+  const load = async () => {
+    let r; try { r = await api("/api/ratings/" + kind); } catch { return; }
+    const cur = tabs.find(x => x[0] === kind);
+    m.set(`<div class="rt-top"><button class="rt-q" id="rt-q">?</button><div class="rt-ic">${tabs.map(([k, i]) => `<button data-k="${k}" class="${k === kind ? "on" : ""}">${i}</button>`).join("")}</div></div>
+      <div class="rt-sub"><b>${t(cur[2])}</b><span class="rt-per">${t("all_time")} ▾</span></div>
+      <div class="rt-list">${r.rows.map((x, i) => `<div class="rt2-row"><div class="rt2-ph">${x.photo ? `<img src="${esc(x.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div><b><em>${i + 1}.</em> ${esc(x.name)}${x.vip ? " 👑" : ""}</b><span>${cur[1]} ${x.v.toLocaleString("ru")}</span></div>`).join("")}</div>
+      <div class="rt2-row me"><div class="rt2-ph">${ME.photo ? `<img src="${esc(ME.photo)}" referrerpolicy="no-referrer">` : ""}</div><b><em>${r.rank}.</em> ${esc(ME.name)}</b><span>${cur[1]} ${(r.mine || 0).toLocaleString("ru")}</span></div>`);
+    $$("[data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; load(); });
+    $("#rt-q", m.el).onclick = () => toast(t(cur[2]));
+  };
+  load();
+}
+
+function openSettings() {
+  const m = openModal(`<h2>${t("settings")}</h2>
+    <div class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🔊</span><b>${t("sounds")}</b><input id="st-sfx" type="range" min="0" max="1" step=".05" value="${ls.get("sfx", "0.7")}" style="flex:1"></div>
+    <div class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🎵</span><b>${t("music")}</b><input id="st-mus" type="range" min="0" max="100" value="${ls.get("musicVol", "0")}" style="flex:1"></div>
+    <label class="row" style="background:none;padding:6px 0;cursor:pointer"><span style="font-size:26px">🔔</span><b>${t("notify_label")}</b><input id="st-notify" type="checkbox" ${ME.notify ? "checked" : ""} style="width:22px;height:22px;accent-color:#8cbb2d"></label>
+    <label class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🌐</span><b>${t("language")}</b><select id="st-lang" style="padding:6px 8px;border-radius:10px;border:1.5px solid #ddd;font-size:15px"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select></label>
+    <button class="menu-i" data-s="inv"><span class="ic">🧑‍🤝‍🧑</span>${t("invite")}</button>
+    <button class="menu-i" data-s="prof"><span class="ic">🪪</span>${t("profile_settings")}</button>
+    <button class="menu-i" data-s="help"><span class="ic">💬</span>${t("contact")}</button>
+    <p class="sub">ID ${ME.id}</p>`);
+  $("#st-notify", m.el).onchange = async e => { try { ME = await api("/api/notify", "POST", { on: e.target.checked }); } catch {} };
+  $("#st-lang", m.el).value = lang;
+  $("#st-lang", m.el).onchange = async e => {
+    try { ME = await api("/api/profile", "POST", { name: ME.name, birth: ME.birth || "", age: ME.age, gender: ME.gender, lang: e.target.value }); lang = ME.lang; applyStatic(); m.close(); toast("✓"); } catch { toast(t("err")); }
+  };
+  $("#st-sfx", m.el).oninput = e => { ls.set("sfx", e.target.value); tone(660, .1); };
+  $("#st-mus", m.el).oninput = e => { ls.set("musicVol", e.target.value); $("#pl-range").value = e.target.value; applyVolume(); };
+  $$("[data-s]", m.el).forEach(b => b.onclick = () => {
+    m.close();
+    if (b.dataset.s === "inv") openFree();
+    else if (b.dataset.s === "prof") profileModal(false);
+    else CFG.support ? openTg("https://t.me/" + CFG.support.replace("@", "")) : toast("—");
+  });
+}
+
+async function openTables() {
+  const m = openModal(""); let d = { recent: [], popular: [] };
+  try { d = await api("/api/tables/recent"); } catch {}
+  const row = r => `<button class="tb-row" data-t="${r.id}"><span class="tb-ic">${bottleSvg("bottle_green")}</span><span class="tb-no">#${r.id}</span>
+    <span class="tb-cnt"><span><em>👦</em>${r.m}</span><span><em>👧</em>${r.f}</span></span></button>`;
+  m.set(`<h2>${t("change_table")}</h2><button class="tb-rand" id="tb-rand">${t("random_table")}</button>
+    ${d.recent.length ? `<p class="tb-sec">${t("last_tables")}</p>${d.recent.map(row).join("")}` : ""}
+    ${d.popular.length ? `<p class="tb-sec">${t("popular_tables")}</p>${d.popular.map(row).join("")}` : ""}`);
+  $("#tb-rand", m.el).onclick = () => { send({ t: "join", table: "random" }); m.close(); };
+  $$("[data-t]", m.el).forEach(b => b.onclick = () => { send({ t: "join", table: parseInt(b.dataset.t) }); m.close(); });
+}
+
+// ------------------------------------------------------------ wheel
+let wheelRot = 0;
+function wheelSvg() {
+  const n = CFG.wheel.length, step = 360 / n, R = 150, cx = 160, cy = 160;
+  const pt = (a, r) => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+  let out = `<svg id="wheel" viewBox="0 0 320 320"><circle cx="160" cy="160" r="158" fill="#f3b73b"/><circle cx="160" cy="160" r="150" fill="#e29a1a"/>`;
+  CFG.wheel.forEach((w, i) => {
+    const a0 = i * step - step / 2, a1 = i * step + step / 2, [x0, y0] = pt(a0, 142), [x1, y1] = pt(a1, 142);
+    const jack = w.amount === 1000;
+    out += `<path d="M160 160L${x0} ${y0}A142 142 0 0 1 ${x1} ${y1}Z" fill="${jack ? "#9be04a" : i % 2 ? "#3bb38a" : "#52c79e"}" stroke="#2c8f6e" stroke-width="1"/>`;
+    const [tx, ty] = pt(i * step, 105);
+    out += `<g transform="translate(${tx} ${ty}) rotate(${i * step - 90})"><text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.3)" stroke-width=".6">${w.kind === "hearts" ? "❤️" : w.kind === "smiles" ? "😊" : "🎲"}</text>
+      <text x="30" y="2" text-anchor="middle" dominant-baseline="middle" font-size="${w.amount >= 100 ? 15 : 17}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".6">${w.amount}</text></g>`;
+  });
+  return out + `<circle cx="160" cy="160" r="30" fill="#f3b73b"/><text x="160" y="160" font-size="34" text-anchor="middle" dominant-baseline="middle">🤍</text></svg>`;
+}
+
+async function openWheel() {
+  let info = { winner: null }; try { info = await api("/api/wheel"); } catch {}
+  let busy = false;
+  const m = openModal("", { cls: "dark" });
+  const render = () => {
+    m.root.style.background = "rgba(0,0,0,.38)";
+    m.set(`<div class="wh-top"><h2>${t("wheel_title")}</h2><p class="center" style="margin:4px 0 8px">${t("wheel_desc")}</p>
+      <div class="center wh-line">${t("chances")}: <span class="chance-pill">🎲 <b>${ME.chances}</b> <button class="pl" id="wh-buy">+</button></span></div></div>
+      <div class="wheel-box">${wheelSvg()}<span class="pointer">👉</span></div>
+      <div class="center" style="margin-bottom:8px">${t("price")}: 🎲 1</div>
+      <div class="center"><button class="btn" id="wh-spin" style="min-width:60%;font-size:19px;padding:12px">${t("spin_btn")}</button></div>
+      <div class="winner-bar">${info.winner
+        ? `${miniAv(info.winner.photo, info.winner.name)}<div>${t(info.winner.amount >= 100 ? "winner" : "winner_small", { name: `<b>${esc(info.winner.name)}</b>` })} <b>❤️${info.winner.amount}</b></div>`
+        : `<span style="font-size:34px">🎰</span><div>${t("winner_none")}</div>`}</div>`);
+    $("#wheel", m.el).style.transform = `rotate(${wheelRot}deg)`;
+    $("#wheel", m.el).style.transition = "none";
+    $("#wh-buy", m.el).onclick = async () => {
+      if (busy) return;
+      try { ME = await api("/api/wheel/buy", "POST"); renderMe(); render(); } catch { toast(t("no_hearts")); m.close(); openShop(); }
+    };
+    $("#wh-spin", m.el).onclick = async () => {
+      if (busy) return;
+      if (ME.chances < 1) return toast(t("no_chances"));
+      busy = true;
+      try {
+        const r = await api("/api/wheel/spin", "POST");
+        const step = 360 / CFG.wheel.length, delta = (((270 - r.index * step - wheelRot) % 360) + 360) % 360;
+        wheelRot += 360 * 5 + delta;
+        const w = $("#wheel", m.el); void w.getBoundingClientRect(); w.style.transition = ""; w.style.transform = `rotate(${wheelRot}deg)`;
+        setTimeout(() => {
+          ME = r.me; renderMe(); busy = false; sfx.win();
+          toast(t("you_won", { text: r.kind === "hearts" ? `❤️ ${r.amount}` : r.kind === "smiles" ? `😊 ${r.amount}` : `🎲 ${r.amount}` }), 3500);
+          if (document.body.contains(m.root)) { wheelRot %= 360; render(); }
+        }, 5200);
+      } catch { busy = false; toast(t("no_chances")); }
+    };
+  };
+  render();
+}
+
+boot().catch(e => { $("#boot-msg").textContent = "Error: " + e.message; console.error(e); });
