@@ -1,35 +1,30 @@
-# Ubuntu serverga o'rnatish
+# Ubuntu serverga o'rnatish (Docker)
 
-Talab: Ubuntu 24.04 (Python 3.12+ kerak), nginx, domen/subdomen.
-Bot polling rejimida ishlaydi: bitta token bilan faqat BITTA nusxa ishlashi mumkin. Serverda ishga tushirishdan oldin kompyuterdagi serverni (run.sh) to'xtating.
+Talab: Docker + docker compose, nginx, domen (spin.neonsoft.uz).
+Bot polling rejimida ishlaydi: bitta token bilan faqat BITTA nusxa ishlashi mumkin. Avval kompyuterdagi serverni to'xtating.
 
-## 1. Band portlarni tekshirish
-    ss -ltnp | grep -E ':(8010|8011|8012)\b' || echo "8010 bo'sh"
-Band bo'lsa deploy/spinbot.service dagi --port va nginx dagi proxy_pass ni bo'sh portga almashtiring.
-
-## 2. Kod va muhit
-    git clone https://github.com/<user>/<repo>.git /opt/spinbot
+## 1. Kod
+    git clone https://github.com/AsliddinWeb/spin_the_bottle_uz_bot.git /opt/spinbot
     cd /opt/spinbot
-    python3 -m venv .venv
-    .venv/bin/pip install -r requirements.txt
-    cp .env.example .env
-    nano .env      # BOT_TOKEN, WEBAPP_URL=https://spin.neonsoft.uz, ADMIN_IDS, SUPPORT, PAY_INFO, PRICES; DEV_MODE yozilmasin
-    chmod 600 /opt/spinbot/.env
+    cp .env.example .env && nano .env   # BOT_TOKEN, WEBAPP_URL=https://spin.neonsoft.uz, ADMIN_IDS, SUPPORT, PAY_INFO, PRICES; DEV_MODE yozilmasin
+    chmod 600 .env
 
-## 3. Servis
-    cp deploy/spinbot.service /etc/systemd/system/
-    systemctl daemon-reload && systemctl enable --now spinbot
-    systemctl status spinbot --no-pager ; journalctl -u spinbot -f
+## 2. Ishga tushirish
+    docker compose up -d --build
+    docker compose logs -f spinbot
+Konteyner faqat 127.0.0.1:8010 da tinglaydi (tashqaridan ochiq emas). Port band bo'lsa docker-compose.yml dagi chap raqamni o'zgartiring
+(va nginx dagi proxy_pass ni ham).
 
-## 4. nginx + HTTPS
-    cp deploy/nginx-spinbot.conf /etc/nginx/sites-available/spinbot   # server_name ni o'zgartiring
+## 3. nginx + HTTPS
+    cp deploy/nginx-spinbot.conf /etc/nginx/sites-available/spinbot
     ln -s /etc/nginx/sites-available/spinbot /etc/nginx/sites-enabled/
     nginx -t && systemctl reload nginx
     certbot --nginx -d spin.neonsoft.uz -d www.spin.neonsoft.uz
+(`map $http_upgrade $connection_upgrade` nginx.conf http{} ichida bo'lishi kerak, WebSocket uchun.)
 
-## 5. Yangilash
-    cd /opt/spinbot && git pull && .venv/bin/pip install -r requirements.txt && systemctl restart spinbot
+## 4. Yangilash
+    cd /opt/spinbot && git pull && docker compose up -d --build
 
 ## Ma'lumotlar
-Baza va rasmlar /opt/spinbot ichida (spin.db, uploads/, backups/), git'ga kirmaydi. Zaxira avtomatik (har 24 soat, oxirgi 14 ta).
-Tiklash: systemctl stop spinbot; .venv/bin/python restore_backup.py latest; systemctl start spinbot
+Hammasi /opt/spinbot ichida, git'ga kirmaydi: data/spin.db, uploads/, backups/. Zaxira avtomatik (har 24 soat, oxirgi 14 ta).
+Tiklash: docker compose stop; docker compose run --rm spinbot python restore_backup.py latest; docker compose start
