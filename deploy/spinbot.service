@@ -4,7 +4,6 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-User=spinbot
 WorkingDirectory=/opt/spinbot
 EnvironmentFile=/opt/spinbot/.env
 # one process only: the game state (tables, players) lives in memory; listens on localhost, nginx is the public side
