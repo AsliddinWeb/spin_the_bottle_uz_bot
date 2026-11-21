@@ -13,7 +13,7 @@ Band bo'lsa deploy/spinbot.service dagi --port va nginx dagi proxy_pass ni bo'sh
     python3 -m venv .venv
     .venv/bin/pip install -r requirements.txt
     cp .env.example .env
-    nano .env      # BOT_TOKEN, WEBAPP_URL=https://spin.example.com, ADMIN_IDS, SUPPORT, PAY_INFO, PRICES; DEV_MODE yozilmasin
+    nano .env      # BOT_TOKEN, WEBAPP_URL=https://spin.neonsoft.uz, ADMIN_IDS, SUPPORT, PAY_INFO, PRICES; DEV_MODE yozilmasin
     chmod 600 /opt/spinbot/.env
 
 ## 3. Servis
@@ -25,7 +25,7 @@ Band bo'lsa deploy/spinbot.service dagi --port va nginx dagi proxy_pass ni bo'sh
     cp deploy/nginx-spinbot.conf /etc/nginx/sites-available/spinbot   # server_name ni o'zgartiring
     ln -s /etc/nginx/sites-available/spinbot /etc/nginx/sites-enabled/
     nginx -t && systemctl reload nginx
-    certbot --nginx -d spin.example.com
+    certbot --nginx -d spin.neonsoft.uz -d www.spin.neonsoft.uz
 
 ## 5. Yangilash
     cd /opt/spinbot && git pull && .venv/bin/pip install -r requirements.txt && systemctl restart spinbot
