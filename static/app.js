@@ -572,14 +572,19 @@ function addPm(m) {
 }
 function seatPhoto(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.photo : ""; }
 // A sent gift flies in an arc from the sender's seat to the receiver's hand slot, then lands with a bounce.
-const DRINK = { tea: "#c8842e", cola: "#3b1d0c", milk: "#ffffff", wine: "#8a1a3a", whisky: "#d98c2b", cocktail: "#ff8a1f", martini: "#cfeff0", champagne: "#f4dc7a", smoothie: "#ff7fb2" };
-const SPLAT = { tomato: ["#e5371e", "#9a1408"], egg: ["#ffd23d", "#c8920a"] };
+const DRINK = { coffee: "#4a2a12", tea: "#c8842e", cola: "#3b1d0c", milk: "#ffffff", wine: "#8a1a3a", whisky: "#d98c2b", cocktail: "#ff8a1f", martini: "#cfeff0", champagne: "#f4dc7a", smoothie: "#ff7fb2" };
+const SPLAT = { tomato: ["#e5371e", "#9a1408"], egg: ["#ffd23d", "#c8920a"], pie: ["#fff6e0", "#d9b98a"], bucket: ["#6dbcff", "#2a73d6"], bomb: ["#2b2b2b", "#000"] };
 const splatSvg = (c, d) => `<svg viewBox="0 0 100 100"><g fill="${c}" stroke="${d}" stroke-width="1.6" stroke-linejoin="round"><path d="M50 14C60 10 70 20 74 28C84 26 92 36 86 46C94 54 90 66 80 68C82 78 72 86 62 82C56 92 42 90 38 82C28 86 16 78 20 68C10 64 8 52 16 46C10 36 18 26 28 28C32 18 42 10 50 14Z"/><circle cx="12" cy="20" r="4"/><circle cx="90" cy="14" r="3"/><circle cx="8" cy="80" r="3.5"/><circle cx="94" cy="84" r="4"/><path d="M42 80c-1 10 2 16 6 16s6-6 4-16zM64 76c0 8 2 12 5 12s4-5 3-12z"/></g><ellipse cx="38" cy="34" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-20 38 34)"/></svg>`;
 function landFx(seatEl, emoji) {   // what happens when a gift lands: drinks are poured into the glass, tomatoes and eggs burst, the frog hops
   const id = GIFT_BY_EMOJI[emoji]; if (!id) return;
   const gf = seatEl.querySelector(".gf");
   if (DRINK[id] && gf) { gf.style.setProperty("--liq", DRINK[id]); gf.classList.add("pour"); setTimeout(() => gf.classList.remove("pour"), 1700); }
   if (id === "frog" && gf) { gf.classList.add("hop"); setTimeout(() => gf.classList.remove("hop"), 1300); }
+  if (id === "bomb" || id === "slipper") {   // explosion flash / slap: the whole seat shakes
+    seatEl.classList.add("shake"); setTimeout(() => seatEl.classList.remove("shake"), 700);
+    const av0 = seatEl.querySelector(".av");
+    if (av0) { const f = document.createElement("div"); f.className = id === "bomb" ? "boomfx" : "slapfx"; av0.appendChild(f); setTimeout(() => f.remove(), 1100); }
+  }
   const sp = SPLAT[id], av = seatEl.querySelector(".av");
   if (sp && av) {
     const s = document.createElement("div"); s.className = "splat"; s.innerHTML = splatSvg(sp[0], sp[1]); av.appendChild(s); setTimeout(() => s.remove(), 7500);

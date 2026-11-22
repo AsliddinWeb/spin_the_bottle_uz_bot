@@ -111,3 +111,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (43) Fasl tadbirlari: admin paneldagi "Tadbir" bo'limidan boshlanadi/to'xtatiladi (Sevishganlar kuni/Navro'z/Yangi yil shablonlari), davomida har o'pishga +❤N, o'yinchida chip va xabar. app/events.py, /api/admin/events. Test: tests/qa_events.py (12).
 - (44) Musiqa va video alohida oynalar (fab: 📼 🎧 🎬), rejim treklarga yoziladi; musiqada "Telegram pleylist" tabi (getUserProfileAudios + bot orqali keshlangan oqim /api/tgaudio). Boot yozuvi balandroq. Test: tests/qa_media.py (8).
 - (45) O'pish effekti originalga moslandi: ikkala avatarga 8-12 lab izi (qizil/pushti) birin-ketin yopishadi, har biriga o'z ovozi (sfx.smack), 11 s turadi; chatda "💋 xN »" qatori; vazifa chiplari kichraytirildi.
+- (46) Yangi sovg'alar: kofe ☕ (quyilish effekti), pirog 🥧 (krem), bomba 💣 (portlash+kuyindi+silkinish), shippak 🩴 (shapaloq), chelak 🪣 (suv). Jami 51 sovg'a, hammasida rasm va ovoz.
