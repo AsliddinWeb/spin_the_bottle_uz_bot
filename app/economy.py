@@ -184,8 +184,11 @@ def tag_task(uid: int) -> dict:
     paid = "tagtask" in db.claimed(db.get_user(uid))
     nxt = None
     if not paid:
-        r = db.q1("""SELECT id,name,photo FROM users WHERE id!=? AND age>0 AND id NOT IN (SELECT target FROM tag_votes WHERE voter=?)
-                     ORDER BY RANDOM() LIMIT 1""", uid, uid)
+        # a random starting id + an index walk (ORDER BY RANDOM() would sort every user: ~90 ms at 1M users)
+        span = db.q1("SELECT MIN(id) lo, MAX(id) hi FROM users")
+        q = """SELECT id,name,photo FROM users WHERE id>=? AND id!=? AND age>0 AND id NOT IN (SELECT target FROM tag_votes WHERE voter=?)
+               ORDER BY id LIMIT 1"""
+        r = db.q1(q, random.randint(span["lo"], span["hi"]), uid, uid) or db.q1(q, span["lo"], uid, uid)
         nxt = dict(r) if r else None
     return {"done": done, "need": TAG_TASK_NEED, "reward": TAG_TASK_REWARD, "paid": paid, "next": nxt}
 
@@ -258,6 +261,10 @@ def age_from_birth(birth: str) -> int:
     return t.year - b.year - ((t.month, t.day) < (b.month, b.day))
 
 
+_TOP: dict[str, tuple[float, list]] = {}
+TOP_TTL = 20  # seconds the shared top-20 lists are cached
+
+
 def top(field: str, uid: int, limit: int = 20) -> dict:
     if field == "court":  # biggest courtship price received
         rows = db.q("""SELECT u.id,u.name,u.photo,u.vip_until,c.price AS v FROM courtship c JOIN users u ON u.id=c.target
@@ -267,9 +274,16 @@ def top(field: str, uid: int, limit: int = 20) -> dict:
         return {"rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
                 "rank": rank, "mine": mine["price"] if mine else 0}
     col = {"kisses": "kisses", "gifts": "gifts_received", "hearts": "hearts", "tracks": "tracks"}[field]
-    rows = db.q(f"SELECT id,name,photo,vip_until,{col} AS v FROM users ORDER BY {col} DESC, id LIMIT ?", limit)
-    rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM users WHERE {col} > (SELECT {col} FROM users WHERE id=?)", uid)["r"]
+    hit = _TOP.get(field)
+    if hit and time.time() - hit[0] < TOP_TTL:   # the top list is shared by everybody: compute it at most once per TTL
+        rows = hit[1]
+    else:
+        rows = [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip_until": r["vip_until"], "v": r["v"]} for r in
+                db.q(f"SELECT id,name,photo,vip_until,{col} AS v FROM users ORDER BY {col} DESC, id LIMIT ?", limit)]
+        _TOP[field] = (time.time(), rows)
+    mine = db.get_user(uid)[col]
+    rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM users WHERE {col} > ?", mine)["r"]
     return {
         "rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
-        "rank": rank, "mine": db.get_user(uid)[col],
+        "rank": rank, "mine": mine,
     }
