@@ -764,7 +764,7 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 .dc-pv .frame,.dc-t .frame{margin:6px}
 
 /* a little depth so the flat vector icons read as 3D stickers, closer to the original's glossy look */
-.gart{filter:drop-shadow(0 1.5px 1.2px rgba(60,25,0,.38))}
+.gart{}
 
 /* entry screen, measured from a screen recording of the original: green felt + doodles, white pill progress bar (52% wide) at 54%, then the title */
 #boot,#boot.felt{background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.55' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .17  0 0 0 0 .04  0 0 0 1.1 -.35'/></filter><rect width='800' height='800' filter='url(%23n)'/></svg>") 0 0/120px,radial-gradient(ellipse at 50% 38%,#729f46,#66903f 72%) #6b9443}

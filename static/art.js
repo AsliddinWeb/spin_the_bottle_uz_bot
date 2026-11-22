@@ -54,7 +54,7 @@ const GIFT_ART = (() => {
     trophy: `<path d="M16 8h32c0 18-4 30-16 32C20 38 16 26 16 8z" fill="url(#gGold)" ${O}/><path d="M16 14H6c0 12 4 18 12 18M48 14h10c0 12-4 18-12 18" fill="none" stroke="#e0a812" stroke-width="4" stroke-linecap="round"/><path d="M32 40v10M20 58h24l-3-8H23z" fill="url(#gGold)" ${O}/><path d="M32 14l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#fff" fill-opacity=".85"/>${hi("M21 12h4v16h-4z", .4)}`,
   };
   const ids = Object.keys(A);
-  const svg = id => `<svg class="gart" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${A[id]}</svg>`;
+  const svg = id => `<svg class="gart" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g filter="url(#gloss)">${A[id]}</g></svg>`;
   return { has: id => id in A, svg, ids };
 })();
 
@@ -87,7 +87,16 @@ const FRAME_ART = (() => {
     night: () => `<path d="M104 -2a12 12 0 1 0 8 18a9 9 0 1 1-8-18z" fill="#ffe9a8" stroke="#fff" stroke-opacity=".7" stroke-width="1"/>` + star(-2, 8, 6, "#fff") + star(30, -6, 4, "#cfe0ff") + star(70, 106, 5, "#fff") + star(-2, 92, 4, "#cfe0ff") + star(98, 60, 3, "#fff"),
     wood: () => leaf(-8, -4, 40) + leaf(96, -6, 140) + leaf(96, 104, 220) + leaf(-8, 102, 320) + corners((x, y) => `<circle cx="${x}" cy="${y}" r="4" fill="#7a4518" stroke="#c58a4e" stroke-width="1.4"/>`),
   };
-  return { has: k => k in A, svg: k => `<svg class="fart" viewBox="-16 -16 132 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${A[k]()}</svg>` };
+  const PAL = {
+    gold: ["#fff3a8", "#d19a1a", "#8a5a05"], neon: ["#00f0ff", "#7a5cff", "#ff00e6"], hearts: ["#ff9ab8", "#e5374a", "#a8101f"],
+    ice: ["#f6feff", "#8fd6ff", "#3f93cf"], fire: ["#ffe14d", "#ff6a1f", "#b8200c"], rose: ["#ffc2d4", "#d6366f", "#8a1a44"],
+    candy: ["#ffffff", "#ff8fb0", "#7ad7f0"], emerald: ["#b6f7d4", "#17a56d", "#0a5a3a"], royal: ["#dac8ff", "#6a3fd1", "#3a1a8a"],
+    casino: ["#e5374a", "#9a1426", "#1b1b1b"], night: ["#9db2ff", "#2f3f95", "#121a4a"], wood: ["#e0a96f", "#9b6a30", "#5a3612"],
+  };
+  const rr = (x, y, w, h, r) => `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+  const ring = k => { const p = PAL[k] || PAL.gold; return `<defs><linearGradient id="fg_${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset=".5" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[2]}"/></linearGradient></defs>
+    <path fill-rule="evenodd" d="${rr(-6, -6, 112, 112, 16)} ${rr(1, 1, 98, 98, 10)}" fill="url(#fg_${k})" stroke="#2a1500" stroke-opacity=".45" stroke-width="1.2"/>`; };
+  return { has: k => k in A, svg: k => `<svg class="fart" viewBox="-16 -16 132 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g filter="url(#gloss)">${ring(k)}${A[k]()}</g></svg>` };
 })();
 function frameArt(frameId) {
   const k = String(frameId || "").replace("frame_", "");
