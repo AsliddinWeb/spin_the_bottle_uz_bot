@@ -234,6 +234,8 @@ function renderMe() {
   dc.classList.toggle("hidden", !dt.length); dc.classList.toggle("ready", dready > 0); $("b", dc).textContent = dt.filter(x => x.claimed).length + "/" + dt.length;
   if (dready > (renderMe.dready || 0)) { toast(t("dt_ready"), 3500); sfx.ach(); }
   renderMe.dready = dready;
+  if (ME.rank > (renderMe.rank ?? ME.rank)) { toast(t("rk_up", { r: RANK_E[ME.rank] + " " + rankName(ME.rank) }), 4500); sfx.win(); }
+  renderMe.rank = ME.rank;
 }
 function openDailyTasks() {
   const m = openModal("");
@@ -246,6 +248,12 @@ function openDailyTasks() {
     });
   };
   render();
+}
+const RANK_E = ["🌱", "💫", "🔥", "🌟", "💎"];
+const rankName = i => t("rk_" + i);
+function rankLine(kisses, rank) {   // title + progress to the next one
+  const at = CFG.ranks || [0, 10, 50, 200, 1000], nx = at[rank + 1];
+  return `<div class="rk"><span class="rk-e">${RANK_E[rank]}</span><div class="rk-in"><b>${esc(rankName(rank))}</b>${nx ? `<div class="dt-bar"><i style="width:${Math.min(100, Math.round((kisses - at[rank]) / (nx - at[rank]) * 100))}%"></i></div><small>${kisses}/${nx} 💋 → ${esc(rankName(rank + 1))}</small>` : `<small>${esc(t("rk_max"))}</small>`}</div></div>`;
 }
 function openStarter() {
   const names = { st_spin: "st_spin", st_kiss: "st_kiss", st_gift: "st_gift" }, m = openModal("");
@@ -791,6 +799,7 @@ async function openProfile(uid) {
     m.set(`<div class="ph ${fr}">${c.top ? `<span class="vrib top">TOP</span>` : c.vip ? `<span class="vrib">VIP</span>` : ""}${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span class="big">${esc(initials(c.name))}</span>
         <div class="pn">${esc(c.name)}${c.age ? ", " + c.age : ""}${c.top ? " 🏆" : c.vip ? " 👑" : ""}</div>${me ? "" : `<button class="rep" id="pf-rep">!</button>`}</div>
       <div class="pb">
+        ${rankLine(c.kisses, c.rank || 0)}
         ${trophyChips(c.trophies)}
         <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>
         <div class="stat m"><i>🎵</i>${c.tracks.toLocaleString("ru")}${c.dj ? ` <small class="djb">DJ ${c.dj}</small>` : ""}</div>

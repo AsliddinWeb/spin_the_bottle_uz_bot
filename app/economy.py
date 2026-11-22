@@ -4,7 +4,7 @@ import time
 from datetime import date, timedelta
 
 from . import config, db
-from .catalog import (CHANCE_PACKS, CHANCE_PRICE, DAILY, ITEMS, PACKS, TAG_TASK_NEED, TAG_TASK_REWARD, TAGS, VIP_DAYS, VIP_SMILES, WHEEL, dj_level)
+from .catalog import (CHANCE_PACKS, CHANCE_PRICE, DAILY, ITEMS, PACKS, TAG_TASK_NEED, TAG_TASK_REWARD, TAGS, rank_of, VIP_DAYS, VIP_SMILES, WHEEL, dj_level)
 
 
 def daily_info(u) -> dict:
@@ -58,7 +58,7 @@ def me_payload(uid: int) -> dict:
         "id": uid, "name": u["name"], "age": u["age"], "birth": u["birth"], "gender": u["gender"], "photo": u["photo"],
         "lang": u["lang"], "hearts": u["hearts"], "smiles": u["smiles"], "chances": u["chances"], "kisses": u["kisses"],
         "gifts_sent": u["gifts_sent"], "gifts_received": u["gifts_received"], "spins": u["spins"],
-        "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "vip_until": u["vip_until"],
+        "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "rank": rank_of(u["kisses"]), "vip_until": u["vip_until"],
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
         "daily": daily_info(u), "starter": starter_info(u), "dtasks": daily_tasks_info(uid), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
@@ -186,7 +186,7 @@ def user_card(uid: int) -> dict | None:
     return {
         "id": uid, "name": u["name"], "age": u["age"], "gender": u["gender"], "photo": u["photo"],
         "gifts": gifts, "recent": recent, "gifts_sent": u["gifts_sent"],
-        "vip": db.is_vip(u), "top": uid in top10_ids(), "frame": u["frame"], "kisses": u["kisses"], "tracks": u["tracks"], "dj": dj_level(u["tracks"]),
+        "vip": db.is_vip(u), "top": uid in top10_ids(), "rank": rank_of(u["kisses"]), "frame": u["frame"], "kisses": u["kisses"], "tracks": u["tracks"], "dj": dj_level(u["tracks"]),
         "gifts_received": u["gifts_received"],
         "trophies": {str(r["place"]): r["c"] for r in db.q("SELECT place, COUNT(*) c FROM weekly_awards WHERE uid=? AND place>0 GROUP BY place", uid)},
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],

@@ -107,3 +107,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (39) Music and Video are separate modes in one picker (Musiqa/Video, Hozir/Almashtirish/Navbatga); fab stays available while playing, tapping the player replaces the track; video shows in a closable card; small-phone profile popup scrolls and shrinks.
 - (40) Starter tasks: first spin / first kiss / first gift, +3 hearts each (config.STARTER, /api/starter/claim, chip in HUD). Test: tests/qa_starter.py (9).
 - (41) Kunlik vazifalar: har kuni 3 ta tasodifiy (o'pish/xabar/sovg'a/musiqa/aylantirish), ❤2-5; stats_daily + daily_tasks jadvali, /api/dtask/claim, HUD chip. Test: tests/qa_dtasks.py (9).
+- (42) Unvonlar: o'pishlar bo'yicha Yangi/Tanish/Mashhur/Yulduz/Afsona (10/50/200/1000), profilda progress, unvon ko'tarilganda xabar. catalog.RANK_AT, me/user_card "rank". Test: tests/qa_ranks.py (21).

@@ -145,6 +145,14 @@ WHEEL = [
 DJ_LEVELS = [1, 5, 15, 40, 100, 250]
 
 
+# Ranks by lifetime kisses: Yangi -> Tanish -> Mashhur -> Yulduz -> Afsona
+RANK_AT = [0, 10, 50, 200, 1000]
+
+
+def rank_of(kisses: int) -> int:
+    return sum(1 for n in RANK_AT if kisses >= n) - 1
+
+
 def dj_level(tracks: int) -> int:
     return sum(1 for n in DJ_LEVELS if tracks >= n)
 

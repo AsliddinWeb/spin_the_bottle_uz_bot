@@ -929,3 +929,8 @@ select.rt-per option{color:#222}
 .dt-bar i{display:block;height:100%;background:linear-gradient(#a6dc5a,#6cae2a);border-radius:99px;transition:width .4s}
 .dt-in small{color:#888;font-weight:700}
 .starter-chip.hidden + .starter-chip.dt{left:calc(var(--u)*14)}
+
+/* rank line in the profile */
+.rk{display:flex;align-items:center;gap:12px;margin:2px 0 8px}
+.rk-e{font-size:34px;line-height:1}
+.rk-in{flex:1;min-width:0}.rk-in b{font-size:18px;color:#6b4a1e}.rk-in small{color:#888;font-weight:700;font-size:12px}
