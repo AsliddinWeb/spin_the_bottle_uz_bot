@@ -33,6 +33,7 @@ const ICON = {
   badge: svgI('<path d="M12 2.5l2.2 1.6 2.7-.2 1 2.5 2.3 1.5-.7 2.6.7 2.6-2.3 1.5-1 2.5-2.7-.2L12 21.5l-2.2-1.6-2.7.2-1-2.5L3.8 16l.7-2.6-.7-2.6 2.3-1.5 1-2.5 2.7.2z"/><path d="M8.6 12l2.5 2.5 4.4-4.8"/>'),
   mail: svgI('<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>'),
   flag: svgI('<path d="M5 21V4M5 4.5h12l-2.5 4 2.5 4H5"/>'),
+  kick: svgI('<path d="M4 14l3-8 5 1.5-1.5 4 6 1.5 1.5 3.5-3 2.5H6z"/><path d="M18 3l.8 2.2L21 6l-2.2.8L18 9l-.8-2.2L15 6l2.2-.8zM21 11l.5 1.3 1.3.5-1.3.5L21 14.6l-.5-1.3-1.3-.5 1.3-.5z"/>'),
   music: svgI('<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'),
   user: svgI('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.6-4 3.6-6 7.5-6s6.9 2 7.5 6"/>'),
 };
@@ -317,14 +318,14 @@ function serverNow() { return Date.now() + skew; }
 
 let myTurnKey = "";
 function onState(s) {
-  const prev = T; T = s; skew = s.now - Date.now();
+  const prev = T; T = s; skew = s.now - Date.now(); kickAt = performance.now();
   const mine = (s.phase === "spin_wait" && s.turn === ME.id) || (s.phase === "ask_spinner" && s.turn === ME.id) || (s.phase === "ask_target" && s.target === ME.id);
   const key = mine ? s.phase + ":" + (s.spin ? s.spin.id : 0) + ":" + s.turn : "";
   if (key && key !== myTurnKey) sfx.turn();
   myTurnKey = key;
   if (s.phase === "ask_spinner" && (!prev || prev.phase !== "ask_spinner")) setTimeout(sfx.pair, 900);
   if (prev && prev.seats.length < s.seats.length) sfx.join(); else if (prev && prev.seats.length > s.seats.length) sfx.leave();
-  renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic();
+  renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic(); renderKickBar();
   if (target && !s.seats.find(p => p.uid === target)) closeGifts();
   if (!$("#gift-panel").classList.contains("hidden")) updateGiftHead();
 }
@@ -425,6 +426,7 @@ function renderActions() {
 }
 
 function tick() {
+  if (T && T.kicks && T.kicks.length) renderKickBar();
   const sec = T && T.deadline ? Math.ceil((T.deadline - serverNow()) / 1000) : 0, cnt = sec > 0 && T && ["spin_wait", "ask_spinner", "ask_target"].includes(T.phase);
   $("#tbl-n").classList.toggle("hidden", !cnt); $("#btn-table").classList.toggle("cnt", !!cnt); if (cnt) $("#tbl-n").textContent = sec;
   if (!T || !T.deadline) { $("#timer").textContent = ""; return; }
@@ -533,6 +535,13 @@ function addChat(m) {
   } else if (m.k === "court") {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;
+  } else if (m.k === "kick") {
+    d.className = "msg ev"; d.innerHTML = `<span class="ico">👢</span><div>${esc(t("ev_kick", { a: m.name, b: m.to_name }))}</div>`;
+    m.to_uid === ME.id ? sfx.error() : sfx.no();
+  } else if (m.k === "rescue") {
+    d.className = "msg ev"; d.innerHTML = `<span class="ico">🛟</span><div>${esc(t("ev_rescue", { a: m.name, b: m.to_name }))}</div>`; sfx.win();
+  } else if (m.k === "kickout") {
+    d.className = "msg ev"; d.innerHTML = `<span class="ico">🚪</span><div>${esc(t("ev_kickout", { n: m.name }))}</div>`;
   } else if (m.k === "dj") {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">🏅</span><div><b style="color:#f0a24a">DJ</b> ${esc(t("dj_level", { n: m.level }))}</div>`;
@@ -696,12 +705,12 @@ async function openProfile(uid) {
         </div>
         <div class="acts">
           ${me ? `<button class="a4" id="pf-edit" style="width:100%;border-radius:36px">${t("profile_settings")}</button>` :
-            `<button class="a1" id="pf-pc">${ICON.flag}</button><button class="a2" id="pf-gift">${ICON.music}</button><button class="a3" id="pf-ach">${ICON.badge}</button><button class="a4" id="pf-mail">${ICON.mail}</button>`}
+            `<button class="a1" id="pf-pc">${ICON.kick}</button><button class="a2" id="pf-gift">${ICON.music}</button><button class="a3" id="pf-ach">${ICON.badge}</button><button class="a4" id="pf-mail">${ICON.mail}</button>`}
         </div></div>`);
     const on = (id, fn) => { const e = $(id, m.el); if (e) e.onclick = fn; };
     on("#pf-more", () => { more = !more; render(); });
     on("#pf-rep", () => openReport(uid));
-    on("#pf-pc", () => openReport(uid));
+    on("#pf-pc", () => openKick({ ...c, id: uid }));
     on("#pf-gift", () => { m.close(); openGifts(uid); });
     on("#pf-ach", () => showAchievementsOf(c));
     on("#pf-mail", () => { m.close(); openPm(c); });
@@ -712,6 +721,41 @@ async function openProfile(uid) {
     });
   };
   render();
+}
+
+// ------------------------------------------------------------ kick & rescue
+function kickFreeIn() {   // seconds until the next free kick (0 = ready)
+  const elapsed = Math.max(0, serverNow() / 1000 - (ME.server_time || 0));
+  return Math.max(0, Math.ceil((ME.kick_free_in || 0) - elapsed));
+}
+function openKick(c) {
+  const K = CFG.kick;
+  if (!T || !T.seats.find(s => s.uid === c.id)) return toast(t("not_here"));
+  if (T.kicks && T.kicks.find(k => k.uid === c.id)) return toast(t("kick_pending"));
+  const free = kickFreeIn() === 0, left = kickFreeIn(), pct = free ? 100 : Math.max(4, Math.round((1 - left / K.free_every) * 100));
+  const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, "0");
+  const m = openModal(`<button class="qhelp dark" id="kk-help">?</button><h2>${esc(t("kick_title"))}</h2>
+    <div class="kk-body"><div class="kk-av">${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : esc(initials(c.name))}<i>${ICON.kick}</i></div>
+      <p>${t("kick_q", { n: `<b>${esc(c.name)}</b>`, s: `<b>${K.delay}</b>`, m: `<b>${K.ban_min}</b>` })}</p></div>
+    <p class="kk-warn">${esc(t("kick_warn"))}</p>
+    <div class="kk-bar"><span class="kk-ic">${ICON.kick}</span><div class="kk-track"><i style="width:${pct}%"></i></div><b class="kk-ok ${free ? "on" : ""}">${free ? "✓" : "⏳"}</b></div>
+    <p class="kk-note">${free ? esc(t("kick_free")) : `${esc(t("kick_wait", { t: mm + ":" + ss }))} · ${esc(t("kick_cost", { p: K.price }))}`}</p>
+    <div class="kk-btns"><button class="btn out" id="kk-no">${esc(t("kick_cancel"))}</button><button class="btn" id="kk-go">${esc(t("kick_go"))}${free ? "" : " ❤" + K.price}</button></div>`, { cls: "kick", closable: false });
+  $("#kk-help", m.el).onclick = () => toast(t("kick_help", { s: K.delay, m: K.ban_min, r: K.rescue, f: Math.round(K.free_every / 60) }), 6000);
+  $("#kk-no", m.el).onclick = m.close;
+  $("#kk-go", m.el).onclick = () => { send({ t: "kick", to: c.id }); closeAllModals(); };
+}
+let kickAt = 0;
+function renderKickBar() {
+  let el = $("#kickbar");
+  if (!T || !T.kicks || !T.kicks.length) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement("div"); el.id = "kickbar"; el.className = "in"; $("#felt").appendChild(el); }
+  const K = CFG.kick, passed = (performance.now() - kickAt) / 1000;
+  el.innerHTML = T.kicks.map(k => {
+    const s = Math.max(0, Math.ceil(k.left - passed)), mine = k.uid === ME.id, name = nameOf(k.uid);
+    return `<div class="kb-row ${mine ? "me" : ""}"><span>${esc(mine ? t("kick_banner_me", { s }) : t("kick_banner", { n: name, s }))}</span>${mine || k.by === ME.id ? "" : `<button class="btn" data-r="${k.uid}">${esc(t("rescue_btn", { p: K.rescue }))}</button>`}</div>`;
+  }).join("");
+  el.onclick = e => { const b = e.target.closest("[data-r]"); if (b) send({ t: "rescue", to: +b.dataset.r }); };
 }
 
 function showAchievementsOf(c) {

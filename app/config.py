@@ -44,3 +44,12 @@ PRICES = {k.strip(): v.strip() for k, _, v in (x.partition("=") for x in os.gete
 START_HEARTS = 30
 MAX_SEATS = 12
 TABLE_COUNT = 300
+
+# "Kick & Rescue": a player can kick another one from the table; the kicked player leaves after KICK_DELAY seconds
+# unless somebody rescues them, and cannot come back to that table for KICK_BAN_MIN minutes.
+KICK_DELAY = int(os.getenv("KICK_DELAY", "30"))          # seconds until the kick takes effect
+KICK_BAN_MIN = int(os.getenv("KICK_BAN_MIN", "15"))      # minutes the kicked player cannot rejoin that table
+KICK_FREE_EVERY = int(os.getenv("KICK_FREE_EVERY", "1800"))  # one free kick per this many seconds
+KICK_PRICE = 10          # hearts for a kick when the free one is not ready
+RESCUE_PRICE = 3         # hearts the rescuer pays
+KICK_MIN_PLAYERS = 3     # nobody can be kicked from a table with fewer players

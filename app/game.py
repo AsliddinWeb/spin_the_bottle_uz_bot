@@ -89,6 +89,8 @@ class Table:
         self._expect: tuple | None = None
         self._last_turn = 0
         self._last_seat = -1
+        self.kicks: dict[int, dict] = {}      # kicked uid -> {"by", "until", "task"}: pending kicks that can still be rescued
+        self.kick_ban: dict[int, float] = {}  # uid -> time until which they cannot rejoin this table
 
     # ---- membership -------------------------------------------------
     def free_seat(self) -> int | None:
@@ -116,10 +118,21 @@ class Table:
         await self.broadcast()
         return True
 
+    def kick_banned(self, uid: int) -> bool:
+        return self.kick_ban.get(uid, 0) > time.time()
+
     async def leave(self, uid: int) -> None:
         p = self.players.pop(uid, None)
         if not p:
             return
+        k = self.kicks.pop(uid, None)
+        if k:   # leaving while kicked counts as being kicked (no dodging the ban)
+            k["task"].cancel()
+            self.kick_ban[uid] = time.time() + config.KICK_BAN_MIN * 60
+        if not self.players:
+            for kk in self.kicks.values():
+                kk["task"].cancel()
+            self.kicks.clear()
         if p.client.table is self:
             p.client.table = None
         if self._fut and not self._fut.done() and uid in (self.turn_uid, self.target_uid):
@@ -138,6 +151,7 @@ class Table:
             "seats": [p.public() for p in sorted(self.players.values(), key=lambda p: p.seat)],
             "music": self.music and {k: v for k, v in self.music.items() if k != "by_uid"},
             "queue": len(self.queue),
+            "kicks": [{"uid": u, "by": k["by"], "left": max(0, int(k["until"] - time.time() + .999))} for u, k in self.kicks.items()],
         }
 
     async def broadcast(self, msg: dict | None = None) -> None:
@@ -301,6 +315,64 @@ class Table:
         c = p.client
         await self.leave(uid)
         await c.send({"t": "left", "reason": reason})
+
+    # ---- kick & rescue ------------------------------------------------
+    async def handle_kick(self, client: Client, to_uid: int) -> None:
+        me, tgt = self.players.get(client.uid), self.players.get(to_uid)
+        if not me or not tgt or to_uid == client.uid:
+            return
+        toast = lambda key: client.send({"t": "toast", "key": key})
+        if len(self.players) < config.KICK_MIN_PLAYERS:
+            return await toast("kick_few")
+        if moderation.rank(to_uid) > 0:
+            return await toast("kick_staff")
+        if to_uid in self.kicks:
+            return await toast("kick_pending")
+        if any(k["by"] == client.uid for k in self.kicks.values()):
+            return await toast("kick_busy")
+        if moderation.active(client.uid, "mute"):
+            return await toast("muted")
+        now = int(time.time())
+        # the free kick is claimed atomically; otherwise it costs hearts
+        free = db.x("UPDATE users SET kick_free_ts=? WHERE id=? AND kick_free_ts<=?", now + config.KICK_FREE_EVERY, client.uid, now).rowcount == 1
+        if not free and not db.spend_hearts(client.uid, config.KICK_PRICE):
+            return await toast("no_hearts")
+        self.kicks[to_uid] = {"by": client.uid, "until": time.time() + config.KICK_DELAY, "task": asyncio.create_task(self._kick_timer(to_uid))}
+        moderation.audit(client.uid, "player_kick", to_uid, f"table {self.id}" + ("" if free else f" paid {config.KICK_PRICE}"))
+        await self.say("kick", uid=client.uid, name=me.name, to_uid=to_uid, to_name=tgt.name, secs=config.KICK_DELAY)
+        await self.broadcast()
+        await self.hub.push_me(client.uid)
+
+    async def handle_rescue(self, client: Client, to_uid: int) -> None:
+        me, tgt, k = self.players.get(client.uid), self.players.get(to_uid), self.kicks.get(to_uid)
+        if not me or not tgt or not k or to_uid == client.uid or k["by"] == client.uid:
+            return
+        if not db.spend_hearts(client.uid, config.RESCUE_PRICE):
+            return await client.send({"t": "toast", "key": "no_hearts"})
+        k = self.kicks.pop(to_uid, None)
+        if not k:   # the timer fired while we were paying: give the hearts back
+            db.add_hearts(client.uid, config.RESCUE_PRICE)
+            return
+        k["task"].cancel()
+        moderation.audit(client.uid, "player_rescue", to_uid, f"table {self.id}")
+        await self.say("rescue", uid=client.uid, name=me.name, to_uid=to_uid, to_name=tgt.name)
+        await self.broadcast()
+        await self.hub.push_me(client.uid)
+
+    async def _kick_timer(self, uid: int) -> None:
+        try:
+            await asyncio.sleep(config.KICK_DELAY)
+        except asyncio.CancelledError:
+            return
+        k, p = self.kicks.pop(uid, None), self.players.get(uid)
+        if not k or not p:
+            return
+        if len(self.players) < config.KICK_MIN_PLAYERS:   # the table emptied meanwhile: the kick is void
+            await self.broadcast()
+            return
+        self.kick_ban[uid] = time.time() + config.KICK_BAN_MIN * 60
+        await self.say("kickout", uid=uid, name=p.name)
+        await self.kick(uid, "kicked")
 
     # ---- chat / gifts / music ----------------------------------------
     async def handle_chat(self, client: Client, text: str) -> None:
@@ -523,6 +595,13 @@ class Hub:
                 table = self.table(int(tid))
             if not table:
                 return
+            if table.kick_banned(c.uid):   # kicked from that table recently
+                await c.send({"t": "toast", "key": "kick_banned"})
+                if tid not in (None, "random", 0):
+                    return
+                table = next((x for x in (self.pick_random(exclude=cur) for _ in range(8)) if not x.kick_banned(c.uid)), None)
+                if not table:
+                    return
             if cur == table.id:
                 await c.send({"t": "joined", "table": table.id, "history": list(table.chat)})
                 await table.broadcast()
@@ -547,6 +626,10 @@ class Hub:
                 await tb.handle_chat(c, m.get("text", ""))
             elif t == "gift":
                 await tb.handle_gift(c, int(m.get("to", 0)), str(m.get("gift", "")), str(m.get("url", "")))
+            elif t == "kick":
+                await tb.handle_kick(c, int(m.get("to", 0)))
+            elif t == "rescue":
+                await tb.handle_rescue(c, int(m.get("to", 0)))
             elif t == "gesture":
                 await tb.handle_gesture(c, str(m.get("id", "")))
             elif t == "music_ended":

@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS worn(user_id INTEGER, slot TEXT, emoji TEXT, ts INTEG
 """)
 _db.execute("CREATE TABLE IF NOT EXISTS tracks_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, vid TEXT, title TEXT, ts INTEGER)")
 _db.execute("CREATE INDEX IF NOT EXISTS tracks_log_vid ON tracks_log(vid)")
-for _col in ("birth TEXT DEFAULT ''", "smiles INTEGER DEFAULT 3", "role TEXT DEFAULT ''", "username TEXT DEFAULT ''", "warns INTEGER DEFAULT 0"):
+for _col in ("birth TEXT DEFAULT ''", "smiles INTEGER DEFAULT 3", "role TEXT DEFAULT ''", "username TEXT DEFAULT ''", "warns INTEGER DEFAULT 0", "kick_free_ts INTEGER DEFAULT 0"):
     try:
         _db.execute(f"ALTER TABLE users ADD COLUMN {_col}")
     except sqlite3.OperationalError:

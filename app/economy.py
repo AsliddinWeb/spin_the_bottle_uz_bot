@@ -27,7 +27,7 @@ def me_payload(uid: int) -> dict:
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
         "daily": daily_info(u), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
-        "server_time": int(time.time()),
+        "server_time": int(time.time()), "kick_free_in": max(0, (u["kick_free_ts"] or 0) - int(time.time())),
     }
 
 

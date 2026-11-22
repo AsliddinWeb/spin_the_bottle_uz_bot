@@ -103,6 +103,7 @@ async def get_config():
         "payments": config.PAYMENTS, "pay_info": config.PAY_INFO,
         "items": [{"id": k, **v} for k, v in ITEMS.items()],
         "daily": DAILY, "chance_price": CHANCE_PRICE, "chance_packs": [{"n": n, "price": p} for n, p in CHANCE_PACKS.items()],
+        "kick": {"delay": config.KICK_DELAY, "ban_min": config.KICK_BAN_MIN, "free_every": config.KICK_FREE_EVERY, "price": config.KICK_PRICE, "rescue": config.RESCUE_PRICE, "min_players": config.KICK_MIN_PLAYERS},
         "wheel": [{"kind": w[0], "amount": w[1]} for w in WHEEL],
         "achievements": [{"id": a[0], "stat": a[1], "need": a[2], "reward": a[3]} for a in ACHIEVEMENTS],
         "gestures": [{"id": g[0], "emoji": g[1], "price": g[2], "stat": g[3], "need": g[4], "vip": g[5]} for g in GESTURES],

@@ -9,3 +9,5 @@ Ajratilgan dev serverda ishga tushiriladi (haqiqiy bazaga tegmaydi):
 Eslatma: qa_game.py da 4 ta "xato" ko'rinishi mumkin, bu yutuq mukofoti yurakchani qo'shgani uchun (test artefakti, xato emas).
 
     DB_PATH=/tmp/aq.db .venv/bin/python tests/qa_admin.py   # web admin panel API (67 tekshiruv; serverga ADMIN_IDS=1 PRICES=p500=38000 bering)
+
+    ADMIN_IDS=204 KICK_DELAY=6 DB_PATH=/tmp/kq.db  (server)   DB_PATH=/tmp/kq.db .venv/bin/python tests/qa_kick.py   # Pinok va Qutqarish (21 tekshiruv; brauzer tabini yoping, aks holda u stolga qo'shiladi)
