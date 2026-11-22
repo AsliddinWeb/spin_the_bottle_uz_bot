@@ -4,7 +4,7 @@ import time
 from datetime import date, timedelta
 
 from . import config, db
-from .catalog import (CHANCE_PRICE, DAILY, ITEMS, PACKS, TAG_TASK_NEED, TAG_TASK_REWARD, TAGS, VIP_DAYS, VIP_SMILES, WHEEL, dj_level)
+from .catalog import (CHANCE_PACKS, CHANCE_PRICE, DAILY, ITEMS, PACKS, TAG_TASK_NEED, TAG_TASK_REWARD, TAGS, VIP_DAYS, VIP_SMILES, WHEEL, dj_level)
 
 
 def daily_info(u) -> dict:
@@ -70,10 +70,11 @@ def last_winner() -> dict | None:
     return dict(r) if r else None
 
 
-def buy_chance(uid: int) -> bool:
-    if not db.spend_hearts(uid, CHANCE_PRICE):
+def buy_chance(uid: int, n: int = 1) -> bool:
+    price = CHANCE_PACKS.get(n)
+    if price is None or not db.spend_hearts(uid, price):
         return False
-    db.inc(uid, "chances")
+    db.inc(uid, "chances", n)
     return True
 
 

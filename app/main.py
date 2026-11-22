@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import auth, bot as botmod, config, db, economy, orders
-from .catalog import (TAGS, ACHIEVEMENTS, CHANCE_PRICE, DAILY, GESTURES, GIFTS, ITEMS, PACKS, VIP_DAYS,
+from .catalog import (TAGS, ACHIEVEMENTS, CHANCE_PACKS, CHANCE_PRICE, DAILY, GESTURES, GIFTS, ITEMS, PACKS, VIP_DAYS,
                       VIP_SMILES, VIP_STARS, WHEEL)
 from .game import hub
 
@@ -102,7 +102,7 @@ async def get_config():
         "vip": {"stars": VIP_STARS, "days": VIP_DAYS, "price": orders.price_text("vip")},
         "payments": config.PAYMENTS, "pay_info": config.PAY_INFO,
         "items": [{"id": k, **v} for k, v in ITEMS.items()],
-        "daily": DAILY, "chance_price": CHANCE_PRICE,
+        "daily": DAILY, "chance_price": CHANCE_PRICE, "chance_packs": [{"n": n, "price": p} for n, p in CHANCE_PACKS.items()],
         "wheel": [{"kind": w[0], "amount": w[1]} for w in WHEEL],
         "achievements": [{"id": a[0], "stat": a[1], "need": a[2], "reward": a[3]} for a in ACHIEVEMENTS],
         "gestures": [{"id": g[0], "emoji": g[1], "price": g[2], "stat": g[3], "need": g[4], "vip": g[5]} for g in GESTURES],
@@ -227,9 +227,16 @@ async def wheel_spin(u=Depends(auth.current_user)):
     return {**r, "me": economy.me_payload(u["id"])}
 
 
+class ChancePack(BaseModel):
+    n: int = 1
+
+
 @app.post("/api/wheel/buy")
-async def wheel_buy(u=Depends(auth.current_user)):
-    if not economy.buy_chance(u["id"]):
+async def wheel_buy(b: ChancePack | None = None, u=Depends(auth.current_user)):
+    n = b.n if b else 1
+    if n not in CHANCE_PACKS:
+        raise HTTPException(400, "bad_pack")
+    if not economy.buy_chance(u["id"], n):
         raise HTTPException(400, "no_hearts")
     return economy.me_payload(u["id"])
 

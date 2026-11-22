@@ -97,7 +97,9 @@ ITEMS = {
 }
 DEFAULT_BOTTLE = "bottle_green"
 
-CHANCE_PRICE = 10  # hearts per wheel chance
+# wheel chances sold in packs: amount -> price in hearts (same packs as the original shop)
+CHANCE_PACKS = {1: 5, 5: 20, 15: 45, 50: 150, 300: 900}
+CHANCE_PRICE = CHANCE_PACKS[1]  # hearts for a single chance
 
 # Achievements are generated per stat: (id, stat, threshold, reward hearts). Ids look like "kisses_50".
 _TIERS = {

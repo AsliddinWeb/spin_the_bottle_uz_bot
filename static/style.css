@@ -774,3 +774,20 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 #boot .btitle{position:absolute;top:54%;left:50%;margin:0;transform:translate(-50%,-50%) rotate(-3deg);animation:none;opacity:0;transition:opacity .22s}
 #boot.tt .btitle,#boot.tt.felt .btitle{opacity:1}
 #boot.re .btitle,#boot.re .bbar{display:none}
+
+/* wheel: own art, lime selector wedge + golden arrow badge, chance shop */
+.wheel-box{position:relative}
+.wheel-box .wsel{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.wheel-box .wpt{position:absolute;left:-9%;top:50%;width:22%;height:22%;transform:translateY(-50%);filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));pointer-events:none}
+.wheel-box #wheel{filter:drop-shadow(0 5px 8px rgba(0,0,0,.45))}
+.price-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;color:#fff}
+.chance-pill svg{vertical-align:middle}
+.modal.dark .winner-bar .wn-t{color:#ffd966;font-weight:800}
+.modal.dark .winner-bar{color:#fff;align-items:center}
+.modal.chshop h2{color:#2a6a55;text-shadow:none}
+.cs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cs-i{position:relative;background:#fff;border-radius:14px;padding:6px 4px 8px;box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:2px;color:#222}
+.cs-i:active{transform:scale(.97)}
+.cs-n{position:absolute;left:8px;top:4px;color:#17a37c;font-size:20px}
+.dstack{width:72%;margin-top:14px}
+.cs-p{font-weight:800;font-size:17px}

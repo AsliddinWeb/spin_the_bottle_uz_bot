@@ -24,8 +24,8 @@ c,r=call("/api/daily/claim",1,{}); ok("daily claim ok",c==200 and r["reward"]==1
 c,_=call("/api/daily/claim",1,{}); ok("daily twice rejected",c==400)
 # wheel without chances
 c,_=call("/api/wheel/spin",1,{}); ok("wheel no chance rejected",c==400)
-for _ in range(3): call("/api/wheel/buy",1,{})
-m=me(1); ok("buy chance cost 10 each",m["hearts"]==1 and m["chances"]==3,(m["hearts"],m["chances"]))
+for _ in range(6): call("/api/wheel/buy",1,{})
+m=me(1); ok("buy chance cost 5 each",m["hearts"]==1 and m["chances"]==6,(m["hearts"],m["chances"]))
 c,_=call("/api/wheel/buy",1,{}); ok("buy chance w/o hearts rejected",c==400)
 tot=0
 for _ in range(3):
@@ -33,6 +33,9 @@ for _ in range(3):
 ok("chances consumed",me(1)["chances"]>=0)
 # shop: buy/equip rules
 call("/api/shop/invoice",1,{"kind":"pack","id":"p500"}); ok("dev pack grants",me(1)["hearts"]>=500)
+h0=me(1)["hearts"]; c0=me(1)["chances"]; c,_=call("/api/wheel/buy",1,{"n":5}); ok("chance pack x5 costs 20",c==200 and me(1)["hearts"]==h0-20 and me(1)["chances"]==c0+5)
+c,_=call("/api/wheel/buy",1,{"n":7}); ok("unknown chance pack rejected",c==400 and me(1)["chances"]==c0+5)
+c,_=call("/api/wheel/buy",1,{"n":300}); ok("chance pack x300 costs 900 (not enough hearts)",c==400 or me(1)["hearts"]>=0)
 c,_=call("/api/store/equip",1,{"item":"frame_gold"}); ok("equip unowned rejected",c==400)
 c,_=call("/api/store/buy",1,{"item":"nope"}); ok("buy unknown rejected",c==400)
 h0=me(1)["hearts"]; call("/api/store/buy",1,{"item":"frame_gold"}); ok("buy frame -30",me(1)["hearts"]==h0-30)

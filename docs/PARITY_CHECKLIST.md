@@ -30,7 +30,7 @@ Original bilan o'zaro ta'sir: **faqat ko'rish** (sovg'a, xarid, xabar, g'ildirak
 | H2 | VIP oynasi | ✅ (2026-11-02) | VIP egasi ko'rinishi Telegramda sinaldi: sotib olish tugmasi yo'q, "VIP до", 6 slayd, 😊5 + Собрать. Akkauntga vaqtincha VIP berilib qaytarildi |
 | H3 | Бесплатные сердечки / Akciya | ✅ (2026-11-02) | original: do'st kartasi "Узнать" → "Акция!" oynasi (❤20 / ❤50 Premium, [Пригласить]); "Бесплатные сердечки!" (2 ta Перейти + Получить +❤5) alohida. Ikkalasi qilindi; Premium do'st uchun ❤50 serverda ham |
 | H4 | Komplimentlar vazifasi | ✅ (2026-11-02) | original: tasodifiy o'yinchi rasmi, "Что ты думаешь об этом игроке?", 6 rangli teg, "сделать ещё 10 → ❤10". Bizda aynan shunday (server tomoni bilan), sinaldi |
-| I1 | Omad g'ildiragi | ✅ (2026-11-02) | originalda yarim shaffof panellar, bizda qora karta; yutuqchi paneli |
+| I1 | Omad g'ildiragi | ✅ (2026-11-22, video bilan qayta) | originalda yarim shaffof panellar, bizda qora karta; yutuqchi paneli |
 | J1 | ☰ menyu ro'yxati | ✅ (2026-11-02) | telefonda ishladi, original bilan solishtirilmagan |
 | K1 | Достижения | ✅ tuzilish (2026-11-02) | 333 ta (original) vs 89 ta (bizda, 7 statistika bo'yicha pog'onalar) |
 | K2 | Рейтинги | ✅ (2026-11-02) | davr tanlagichi faqat "за все время" |
@@ -89,3 +89,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (23) Entry sequence rebuilt from the user's screen recording (2026-11-22): green felt + doodles, white pill progress bar (52% wide, at 54%), then title, then table. Gifts: added propeller hat, kinder egg, smoothie, crown2 (46 gifts).
 - (24) Sound parity from the user's recording (audio analysed with FFT): the original is nearly silent; measured: tick at ~4.1s into the 4.9s spin (bright 1.8-2.7 kHz), shimmer when the pair meets (1.6-2.3 kHz, 0.4s), two-partial bell (861+1507 Hz, 2.7s) when sound is switched on. Our spin ticks/whoosh kept but quieter (client wants spin sounds). Spin duration measured 4.9s (ours 5.0s), pair glide 0.8s (ours 0.7s).
 - (25) Tapping the bottle on someone else's turn shows «Сейчас бутылочку крутит X. Дождись своего хода!» (3 languages, 2.2s throttle) — seen in the user's recording.
+- (26) Wheel redrawn from the user's recording: teal segments + golden rim, own icons (heart/smile/dice), lime selector wedge and golden arrow badge, dice pill, winner panel with yellow title, chance shop popup (packs 1/5/15/50/300 for ❤5/20/45/150/900; single chance now ❤5 instead of ❤10). qa_economy 64/64.

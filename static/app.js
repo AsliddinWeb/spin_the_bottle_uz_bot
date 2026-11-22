@@ -1102,19 +1102,42 @@ async function openTables() {
 
 // ------------------------------------------------------------ wheel
 let wheelRot = 0;
+const GOLD = "url(#gGold)";
+const heartPath = (x, y, s, f = "url(#gRed)") => `<path transform="translate(${x} ${y}) scale(${s / 10})" d="M0 9C-12 0-9-9-4.5-9C-2-9 0-7 0-5C0-7 2-9 4.5-9C9-9 12 0 0 9Z" fill="${f}" stroke="#7a0f1e" stroke-opacity=".5" stroke-width="1" stroke-linejoin="round"/>`;
+const smileSvg = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#gYellow)" stroke="#a86a00" stroke-opacity=".6" stroke-width="1.4"/><circle cx="${x - r * .35}" cy="${y - r * .2}" r="${r * .11}" fill="#6b3a00"/><circle cx="${x + r * .35}" cy="${y - r * .2}" r="${r * .11}" fill="#6b3a00"/><path d="M${x - r * .45} ${y + r * .15}Q${x} ${y + r * .7} ${x + r * .45} ${y + r * .15}" fill="none" stroke="#6b3a00" stroke-width="${r * .12}" stroke-linecap="round"/>`;
+const diceSvg = (x, y, s) => `<rect x="${x - s}" y="${y - s}" width="${s * 2}" height="${s * 2}" rx="${s * .35}" fill="#17a37c" stroke="#0b5e49" stroke-width="1.5"/>${[[-.5, -.5], [.5, -.5], [0, 0], [-.5, .5], [.5, .5]].map(([dx, dy]) => `<circle cx="${x + dx * s}" cy="${y + dy * s}" r="${s * .17}" fill="#eafff6"/>`).join("")}`;
 function wheelSvg() {
-  const n = CFG.wheel.length, step = 360 / n, R = 150, cx = 160, cy = 160;
+  const n = CFG.wheel.length, step = 360 / n, cx = 160, cy = 160;
   const pt = (a, r) => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
-  let out = `<svg id="wheel" viewBox="0 0 320 320"><circle cx="160" cy="160" r="158" fill="#f3b73b"/><circle cx="160" cy="160" r="150" fill="#e29a1a"/>`;
+  let out = `<svg id="wheel" viewBox="0 0 320 320"><circle cx="160" cy="160" r="159" fill="${GOLD}"/><circle cx="160" cy="160" r="150" fill="#b97a10"/><circle cx="160" cy="160" r="147" fill="${GOLD}"/><circle cx="160" cy="160" r="141" fill="#0b6a54"/>`;
   CFG.wheel.forEach((w, i) => {
-    const a0 = i * step - step / 2, a1 = i * step + step / 2, [x0, y0] = pt(a0, 142), [x1, y1] = pt(a1, 142);
-    const jack = w.amount === 1000;
-    out += `<path d="M160 160L${x0} ${y0}A142 142 0 0 1 ${x1} ${y1}Z" fill="${jack ? "#9be04a" : i % 2 ? "#3bb38a" : "#52c79e"}" stroke="#2c8f6e" stroke-width="1"/>`;
-    const [tx, ty] = pt(i * step, 105);
-    out += `<g transform="translate(${tx} ${ty}) rotate(${i * step - 90})"><text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.3)" stroke-width=".6">${w.kind === "hearts" ? "❤️" : w.kind === "smiles" ? "😊" : "🎲"}</text>
-      <text x="30" y="2" text-anchor="middle" dominant-baseline="middle" font-size="${w.amount >= 100 ? 15 : 17}" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width=".6">${w.amount}</text></g>`;
+    const a0 = i * step - step / 2, a1 = i * step + step / 2, [x0, y0] = pt(a0, 139), [x1, y1] = pt(a1, 139);
+    out += `<path d="M160 160L${x0} ${y0}A139 139 0 0 1 ${x1} ${y1}Z" fill="${i % 2 ? "#16a47c" : "#0f8f6c"}" stroke="#0b6a54" stroke-width=".8"/>`;
+    const [ix, iy] = pt(i * step, 114), [nx, ny] = pt(i * step, 78);
+    const icon = w.kind === "hearts" ? heartPath(ix, iy, 15) : w.kind === "smiles" ? smileSvg(ix, iy, 12) : diceSvg(ix, iy, 10);
+    out += icon + `<g transform="translate(${nx} ${ny}) rotate(${i * step - 90})"><text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-size="${w.amount >= 100 ? 17 : 19}" font-weight="900" fill="#ffe9a0" stroke="#7a4a00" stroke-opacity=".45" stroke-width=".8">${w.amount}</text></g>`;
   });
-  return out + `<circle cx="160" cy="160" r="30" fill="#f3b73b"/><text x="160" y="160" font-size="34" text-anchor="middle" dominant-baseline="middle">🤍</text></svg>`;
+  return out + `<circle cx="160" cy="160" r="36" fill="#9a6408"/><circle cx="160" cy="160" r="33" fill="${GOLD}"/>${heartPath(160, 162, 21, "#fff")}</svg>`;
+}
+// fixed "selector": lime wedge from the pointer toward the centre, and the golden arrow badge on the left rim
+const WHEEL_SEL = (() => {
+  const step = 360 / 16, pt = (a, r) => [160 + r * Math.sin(a * Math.PI / 180), 160 - r * Math.cos(a * Math.PI / 180)];
+  const [x0, y0] = pt(270 - step / 2, 139), [x1, y1] = pt(270 + step / 2, 139);
+  return `<svg class="wsel" viewBox="0 0 320 320"><defs><radialGradient id="wselg" cx="0" cy="0.5" r="1"><stop offset="0" stop-color="#d8ff7a" stop-opacity=".95"/><stop offset="1" stop-color="#7fe04a" stop-opacity=".05"/></radialGradient></defs><path d="M160 160L${x0} ${y0}A139 139 0 0 1 ${x1} ${y1}Z" fill="url(#wselg)"/></svg>
+  <svg class="wpt" viewBox="0 0 80 80"><path d="M6 40L30 10H66Q72 10 72 16V64Q72 70 66 70H30Z" fill="${GOLD}" stroke="#7a4a00" stroke-width="2.4" stroke-linejoin="round"/><path d="M20 40h30M40 28l14 12-14 12" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 40h30M40 28l14 12-14 12" fill="none" stroke="#a86a00" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/></svg>`;
+})();
+// bundles of green dice for the chance shop (own art)
+const diceStack = k => { const pos = [[0, 6], [-13, 14], [13, 14], [-6, -4], [7, -6], [0, -16], [-18, 2], [18, 2], [0, 26]].slice(0, k); return `<svg viewBox="-34 -30 68 66" class="dstack">${pos.map(([x, y]) => diceSvg(x, y, 9)).join("")}</svg>`; };
+const PACK_ART = { 1: 1, 5: 3, 15: 5, 50: 7, 300: 9 };
+
+function openChanceShop(onBought) {
+  const m = openModal("", { cls: "green chshop" });
+  m.set(`<h2>${t("chance_shop")}</h2><div class="cs-grid">${CFG.chance_packs.map(p => `<button class="cs-i" data-n="${p.n}"><b class="cs-n">${p.n}</b>${diceStack(PACK_ART[p.n] || 3)}<span class="cs-p">❤️ ${p.price}</span></button>`).join("")}</div>`);
+  m.el.onclick = async e => {
+    const b = e.target.closest(".cs-i"); if (!b) return;
+    try { ME = await api("/api/wheel/buy", "POST", { n: +b.dataset.n }); renderMe(); sfx.coin(); toast(t("chance_bought", { n: b.dataset.n })); m.close(); onBought && onBought(); }
+    catch (er) { toast(t("no_hearts")); m.close(); openShop(); }
+  };
 }
 
 async function openWheel() {
@@ -1123,23 +1146,21 @@ async function openWheel() {
   const m = openModal("", { cls: "dark" });
   const render = () => {
     m.root.style.background = "rgba(0,0,0,.38)";
-    m.set(`<div class="wh-top"><h2>${t("wheel_title")}</h2><p class="center" style="margin:4px 0 8px">${t("wheel_desc")}</p>
-      <div class="center wh-line">${t("chances")}: <span class="chance-pill">🎲 <b>${ME.chances}</b> <button class="pl" id="wh-buy">+</button></span></div></div>
-      <div class="wheel-box">${wheelSvg()}<span class="pointer">👉</span></div>
-      <div class="center" style="margin-bottom:8px">${t("price")}: 🎲 1</div>
+    m.set(`<div class="wh-top"><button class="qhelp" id="wh-help">?</button><h2>${t("wheel_title")}</h2><p class="center" style="margin:4px 0 8px">${t("wheel_desc")}</p>
+      <div class="center wh-line">${t("chances")}: <span class="chance-pill"><svg viewBox="-12 -12 24 24" width="22" height="22">${diceSvg(0, 0, 10)}</svg> <b>${ME.chances}</b> <button class="pl" id="wh-buy">+</button></span></div></div>
+      <div class="wheel-box">${wheelSvg()}${WHEEL_SEL}</div>
+      <div class="center price-row">${t("price")}: <svg viewBox="-12 -12 24 24" width="22" height="22">${diceSvg(0, 0, 10)}</svg> <b>1</b></div>
       <div class="center"><button class="btn" id="wh-spin" style="min-width:60%;font-size:19px;padding:12px">${t("spin_btn")}</button></div>
       <div class="winner-bar">${info.winner
-        ? `${miniAv(info.winner.photo, info.winner.name)}<div>${t(info.winner.amount >= 100 ? "winner" : "winner_small", { name: `<b>${esc(info.winner.name)}</b>` })} <b>❤️${info.winner.amount}</b></div>`
+        ? `${miniAv(info.winner.photo, info.winner.name)}<div><span class="wn-t">${t("winner_title")}</span><br><b>${esc(info.winner.name)}</b> ${t(info.winner.amount >= 100 ? "winner_tail" : "winner_small_tail")} <b>❤️${info.winner.amount}</b></div>`
         : `<span style="font-size:34px">🎰</span><div>${t("winner_none")}</div>`}</div>`);
     $("#wheel", m.el).style.transform = `rotate(${wheelRot}deg)`;
     $("#wheel", m.el).style.transition = "none";
-    $("#wh-buy", m.el).onclick = async () => {
-      if (busy) return;
-      try { ME = await api("/api/wheel/buy", "POST"); renderMe(); render(); } catch { toast(t("no_hearts")); m.close(); openShop(); }
-    };
+    $("#wh-help", m.el).onclick = () => toast(t("wheel_desc"), 3500);
+    $("#wh-buy", m.el).onclick = () => { if (!busy) openChanceShop(() => document.body.contains(m.root) && render()); };
     $("#wh-spin", m.el).onclick = async () => {
       if (busy) return;
-      if (ME.chances < 1) return toast(t("no_chances"));
+      if (ME.chances < 1) return openChanceShop(() => document.body.contains(m.root) && render());
       busy = true;
       try {
         const r = await api("/api/wheel/spin", "POST");
