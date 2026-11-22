@@ -396,7 +396,7 @@ function renderCenter() {
   $("#arc-bot").classList.toggle("hidden", !kissed);                                // target said yes too
   const box = $("#center-msg"); let msg = "";
   switch (T.phase) {
-    case "waiting": msg = t("waiting"); break;
+    case "waiting": msg = T.need === "f" ? t("wait_girls") : T.need === "m" ? t("wait_boys") : t("waiting"); break;
     case "between": msg = t("next_turn"); break;
     case "spin_wait": msg = ""; break;
     case "ask_spinner": msg = T.turn === ME.id ? t("your_choice") : t("ask_kiss"); break;

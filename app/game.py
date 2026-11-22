@@ -97,6 +97,16 @@ class Table:
         used = {p.seat for p in self.players.values()}
         return next((i for i in range(config.MAX_SEATS) if i not in used), None)
 
+    def can_play(self) -> bool:
+        """A table plays only with at least one boy and one girl: a kiss is always boy-girl."""
+        m, f = self.counts()
+        return m > 0 and f > 0
+
+    def need(self) -> str:
+        """Which gender the table is waiting for: 'f' (girls), 'm' (boys) or '' (nobody yet / not waiting)."""
+        m, f = self.counts()
+        return "" if (m and f) else ("f" if m else ("m" if f else ""))
+
     def counts(self) -> tuple[int, int]:
         m = sum(1 for p in self.players.values() if p.gender == "m")
         f = sum(1 for p in self.players.values() if p.gender == "f")
@@ -110,8 +120,7 @@ class Table:
         self.players[client.uid] = Player(client, seat, u)
         client.table = self
         db.touch_recent(client.uid, self.id)
-        if len(self.players) >= 2:
-            self.wake.set()
+        self.wake.set()
         if not self._task or self._task.done():
             self._task = asyncio.create_task(self.run())
         await client.send({"t": "joined", "table": self.id, "history": list(self.chat)})
@@ -135,7 +144,7 @@ class Table:
             self.kicks.clear()
         if p.client.table is self:
             p.client.table = None
-        if self._fut and not self._fut.done() and uid in (self.turn_uid, self.target_uid):
+        if self._fut and not self._fut.done() and (uid in (self.turn_uid, self.target_uid) or not self.can_play()):   # nobody of the other gender left: stop waiting for the spin
             self._fut.set_result(LEFT)
         if self.music and self.music.get("by_uid") == uid and not self.players:
             self.music, self.queue = None, []
@@ -150,7 +159,7 @@ class Table:
             "result": self.result,
             "seats": [p.public() for p in sorted(self.players.values(), key=lambda p: p.seat)],
             "music": self.music and {k: v for k, v in self.music.items() if k != "by_uid"},
-            "queue": len(self.queue),
+            "queue": len(self.queue), "need": self.need(),
             "kicks": [{"uid": u, "by": k["by"], "left": max(0, int(k["until"] - time.time() + .999))} for u, k in self.kicks.items()],
         }
 
@@ -183,14 +192,13 @@ class Table:
             self._fut.set_result(value)
 
     def pick_target(self, spinner: Player) -> Player | None:
-        others = [p for p in self.players.values() if p.uid != spinner.uid]
+        # only the opposite gender can be chosen (boy-girl kisses; no boy-boy or girl-girl pairs)
+        others = [p for p in self.players.values() if p.uid != spinner.uid and p.gender and p.gender != spinner.gender]
         if not others:
             return None
         weights = []
         for p in others:
             w = 1.0
-            if spinner.gender and p.gender and spinner.gender != p.gender:
-                w *= 3
             inv = db.q1("SELECT armed FROM inventory WHERE user_id=? AND item='magnet'", p.uid)
             if inv and inv["armed"] > 0:
                 w *= 4
@@ -202,15 +210,15 @@ class Table:
     async def run(self) -> None:
         try:
             while self.players:
-                if len(self.players) < 2:
+                if not self.can_play():
                     self.phase, self.turn_uid, self.target_uid, self.deadline, self.result = "waiting", 0, 0, 0, ""
                     self.wake.clear()  # clear before any await so a join during broadcast isn't lost
                     await self.broadcast()
-                    if len(self.players) < 2:
+                    if not self.can_play():
                         await self.wake.wait()
                     continue
                 await self.one_turn()
-                if len(self.players) >= 2:   # short "waiting for the next turn" gap between turns (as in the original)
+                if self.can_play():   # short "waiting for the next turn" gap between turns (as in the original)
                     self.phase, self.turn_uid, self.target_uid, self.deadline, self.result = "between", 0, 0, 0, ""
                     await self.broadcast()
                     await asyncio.sleep(NEXT_GAP)
@@ -510,12 +518,15 @@ class Hub:
             self.tables[tid] = Table(self, tid)
         return self.tables[tid]
 
-    def pick_random(self, exclude: int = 0) -> Table:
+    def pick_random(self, exclude: int = 0, gender: str = "") -> Table:
         ts = [self.table(i) for i in range(1, config.TABLE_COUNT + 1)]
         ts = [t for t in ts if t.id != exclude and len(t.players) < config.MAX_SEATS]
         pool = [t for t in ts if len(t.players) >= 2] or [t for t in ts if len(t.players) == 1]
         if pool:
-            return random.choices(pool, [len(t.players) for t in pool])[0]
+            def w(t):   # tables where the opposite gender is already sitting start a game right away
+                other = sum(1 for p in t.players.values() if gender and p.gender and p.gender != gender)
+                return len(t.players) * (3 if other else 1)
+            return random.choices(pool, [w(t) for t in pool])[0]
         return next(t for t in ts if not t.players)
 
     async def connect(self, ws, uid: int) -> Client:
@@ -591,7 +602,7 @@ class Hub:
             tid = m.get("table")
             cur = c.table.id if c.table else 0
             if tid in (None, "random", 0):
-                table = self.pick_random(exclude=cur)
+                table = self.pick_random(exclude=cur, gender=(db.get_user(c.uid) or {'gender': ''})['gender'])
             else:
                 table = self.table(int(tid))
             if not table:
@@ -600,7 +611,7 @@ class Hub:
                 await c.send({"t": "toast", "key": "kick_banned"})
                 if tid not in (None, "random", 0):
                     return
-                table = next((x for x in (self.pick_random(exclude=cur) for _ in range(8)) if not x.kick_banned(c.uid)), None)
+                table = next((x for x in (self.pick_random(exclude=cur, gender=(db.get_user(c.uid) or {'gender': ''})['gender']) for _ in range(8)) if not x.kick_banned(c.uid)), None)
                 if not table:
                     return
             if cur == table.id:
