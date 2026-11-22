@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, bot as botmod, config, db, economy, orders
+from . import auth, bot as botmod, config, db, economy, orders, tgmusic
 from .catalog import (RANK_AT, TAGS, ACHIEVEMENTS, CHANCE_PACKS, CHANCE_PRICE, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, DAILY, GESTURES, GIFTS, ITEMS, PACKS, VIP_DAYS,
                       VIP_SMILES, VIP_STARS, WHEEL)
 from .game import hub
@@ -159,9 +159,27 @@ async def upload_photo(request: Request, u=Depends(auth.current_user)):
     return economy.me_payload(u["id"])
 
 
+@app.get("/api/music/tg")
+async def music_tg(u=Depends(auth.current_user)):
+    """Audio files from the player's Telegram profile playlist."""
+    return await tgmusic.profile_list(u["id"])
+
+
+@app.get("/api/tgaudio/{fid}")
+async def tg_audio(fid: str, init: str = ""):
+    """Streams a profile audio through the cache (Range supported). Auth via ?init= because <audio> cannot send headers."""
+    from fastapi.responses import FileResponse
+    if not auth.authenticate(init):
+        raise HTTPException(401, "unauthorized")
+    p = await tgmusic.fetch(fid)
+    if not p:
+        raise HTTPException(404, "no_audio")
+    return FileResponse(p, media_type="audio/mpeg", headers={"Cache-Control": "private, max-age=3600"})
+
+
 @app.get("/api/music/popular")
-async def music_popular(u=Depends(auth.current_user)):
-    rows = db.q("SELECT vid, MAX(title) AS title, COUNT(*) AS n FROM tracks_log GROUP BY vid ORDER BY n DESC, MAX(id) DESC LIMIT 20")
+async def music_popular(mode: str = "audio", u=Depends(auth.current_user)):
+    rows = db.q("SELECT vid, MAX(title) AS title, COUNT(*) AS n FROM tracks_log WHERE COALESCE(mode,'audio')=? GROUP BY vid ORDER BY n DESC, MAX(id) DESC LIMIT 20", "video" if mode == "video" else "audio")
     return [{"vid": r["vid"], "title": r["title"]} for r in rows]
 
 
@@ -208,8 +226,8 @@ async def music_search(q: str, u=Depends(auth.current_user)):
 
 
 @app.get("/api/music/history")
-async def music_history(u=Depends(auth.current_user)):
-    rows = db.q("SELECT vid, title FROM tracks_log WHERE user_id=? GROUP BY vid ORDER BY MAX(id) DESC LIMIT 20", u["id"])
+async def music_history(mode: str = "audio", u=Depends(auth.current_user)):
+    rows = db.q("SELECT vid, title FROM tracks_log WHERE user_id=? AND COALESCE(mode,'audio')=? GROUP BY vid ORDER BY MAX(id) DESC LIMIT 20", u["id"], "video" if mode == "video" else "audio")
     return [{"vid": r["vid"], "title": r["title"]} for r in rows]
 
 

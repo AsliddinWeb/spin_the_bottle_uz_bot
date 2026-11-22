@@ -319,7 +319,7 @@ function bindUi() {
     if (T.turn === ME.id) { $("#bottle").classList.remove("tap"); send({ t: "spin" }); return; }
     if (Date.now() - lastWaitToast > 2200) { lastWaitToast = Date.now(); toast(t("not_your_turn", { n: nameOf(T.turn) })); }   // "X is spinning right now, wait for your turn"
   };
-  $("#dj-fab").onclick = e => { const b = e.target.closest("[data-k]"); if (b) openMusicPicker(b.dataset.k); };
+  $("#dj-fab").onclick = e => { const b = e.target.closest("[data-k]"); if (b) b.dataset.k === "video" ? openMusicPicker("music_now", "video") : openMusicPicker(b.dataset.k); };
   const range = $("#pl-range"); range.value = ls.get("musicVol", "0");
   range.oninput = () => { ls.set("musicVol", range.value); applyVolume(); };
   $("#pl-icon").onclick = () => { range.value = parseInt(range.value) ? 0 : 60; ls.set("musicVol", range.value); applyVolume(); };
@@ -662,10 +662,14 @@ let yt, ytReady = false, curTid = "", ytHidden = false;
 const yth = $("#yt-holder");
 yth.insertAdjacentHTML("beforeend", '<button id="yt-x" aria-label="hide">✕</button>');
 $("#yt-x").onclick = () => { ytHidden = true; yth.classList.remove("video"); };
-$("#player").onclick = e => { if (e.target.closest("#pl-icon,#pl-range")) return; if (T && T.music && T.music.mode === "video" && ytHidden) { ytHidden = false; yth.classList.add("video"); return; } openMusicPicker("music_now"); };
+$("#player").onclick = e => { if (e.target.closest("#pl-icon,#pl-range")) return; if (T && T.music && T.music.mode === "video" && ytHidden) { ytHidden = false; yth.classList.add("video"); return; } openMusicPicker("music_now", T && T.music && T.music.mode === "video" ? "video" : "audio"); };
+const tga = new Audio(); tga.preload = "auto";
+tga.onended = () => send({ t: "music_ended", tid: curTid });
 function applyVolume() {
   const v = parseInt($("#pl-range").value);
   $("#pl-icon").textContent = v ? "🔊" : "🔇";
+  tga.volume = v / 100; tga.muted = !v;
+  if (tga.src && v && tga.paused && T && T.music && T.music.fid) tga.play().catch(() => { });
   if (!yt || !ytReady) return;
   if (v) { yt.unMute(); yt.setVolume(v); yt.playVideo(); } else yt.mute();
 }
@@ -677,13 +681,19 @@ function loadYT(cb) {
 function handleMusic() {
   const m = T.music, box = $("#player");
   yth.classList.toggle("video", !!m && m.mode === "video" && !ytHidden);
-  if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } curTid = ""; return; }
+  if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } tga.pause(); curTid = ""; return; }
   box.classList.remove("hidden");
   $("#pl-title").textContent = m.title; $("#pl-by").textContent = m.by + (T.queue ? ` · +${T.queue}` : "");
   const who = T.seats.find(p => p.name === m.by);
   $("#pl-cover").innerHTML = who && who.photo ? `<img src="${esc(who.photo)}">` : esc(initials(m.by));
   if (m.tid === curTid) return;
-  curTid = m.tid; ytHidden = false; yth.classList.toggle("video", m.mode === "video");
+  curTid = m.tid; ytHidden = false; yth.classList.toggle("video", m.mode === "video" && !m.fid);
+  if (m.fid) {   // Telegram profile track: plain audio element, no YouTube
+    if (yt && ytReady) { try { yt.stopVideo(); } catch { } }
+    tga.src = `/api/tgaudio/${encodeURIComponent(m.fid)}?init=${encodeURIComponent(initData)}`; applyVolume();
+    return;
+  }
+  tga.pause();
   loadYT(() => {
     if (yt) { yt.loadVideoById(m.vid); applyVolume(); return; }
     yt = new YT.Player("yt", {
@@ -749,43 +759,53 @@ $("#gs-close").onclick = () => $("#gest-panel").classList.add("hidden");
 $("#gs-smiles").onclick = () => openVip();
 
 // ------------------------------------------------------------ music picker
-const favTracks = () => { try { return JSON.parse(ls.get("favTracks", "[]")); } catch { return []; } };
-function openMusicPicker(kind) {
+const favKey = mode => mode === "video" ? "favVideos" : "favTracks";
+const favTracks = mode => { try { return JSON.parse(ls.get(favKey(mode), "[]")); } catch { return []; } };
+const fmtDur = s => s ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : "";
+// Music and video are two separate screens: each opens only its own list (music has the Telegram-profile tab, video does not).
+function openMusicPicker(kind, mode = "audio") {
   const gOf = () => CFG.gifts.find(x => x.id === kind); let g = gOf(); if (!g) return;
   if (ME.hearts < Math.min(...["music_now", "music_queue"].map(k => CFG.gifts.find(x => x.id === k).price))) { toast(t("no_hearts")); return openShop(); }
-  let mode = ls.get("mpMode", "audio");
-  const m = openModal(""); let tab = "pop", list = [], findQ = "";
+  const video = mode === "video", m = openModal("", { cls: "mpick" });
+  let tab = "pop", list = [], findQ = "";
   const thumb = v => `https://i.ytimg.com/vi/${v}/mqdefault.jpg`;
-  const pick = vid => { g = gOf(); if (ME.hearts < g.price) { toast(t("no_hearts")); return openShop(); } send({ t: "gift", to: 0, gift: kind, url: "https://youtu.be/" + vid, mode }); m.close(); };
+  const pick = (vid, tgFid) => {
+    g = gOf(); if (ME.hearts < g.price) { toast(t("no_hearts")); return openShop(); }
+    send({ t: "gift", to: 0, gift: kind, url: tgFid ? "tg:" + tgFid : "https://youtu.be/" + vid, mode }); m.close();
+  };
   const load = async () => {
-    list = tab === "fav" ? favTracks() : tab === "link" || tab === "find" ? [] : await api(tab === "hist" ? "/api/music/history" : "/api/music/popular").catch(() => []);
+    list = tab === "fav" ? favTracks(mode) : tab === "link" || tab === "find" ? []
+      : tab === "tg" ? await api("/api/music/tg").catch(() => [])
+      : await api((tab === "hist" ? "/api/music/history" : "/api/music/popular") + "?mode=" + mode).catch(() => []);
     render();
   };
   const render = () => {
-    const favs = new Set(favTracks().map(x => x.vid));
-    const titles = { pop: t("music_popular"), fav: t("music_saved"), hist: t("music_history"), find: t("music_find"), link: t("music_link") };
-    g = gOf(); const playing = !!(T && T.music);
-    m.set(`<div class="mp-seg" id="mp-mode"><button data-m="audio" class="${mode === "audio" ? "on" : ""}">🎵 ${esc(t("mode_music"))}</button><button data-m="video" class="${mode === "video" ? "on" : ""}">🎬 ${esc(t("mode_video"))}</button></div>
+    g = gOf(); const playing = !!(T && T.music), favs = new Set(favTracks(mode).map(x => x.vid));
+    const tabs = video ? [["pop", "🔥"], ["fav", "⭐"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]] : [["pop", "🔥"], ["fav", "⭐"], ["tg", "👤"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]];
+    const titles = { pop: t(video ? "video_popular" : "music_popular"), fav: t("music_saved"), hist: t("music_history"), find: t("music_find"), link: t("music_link"), tg: t("music_tg") };
+    const grid = list.length ? (tab === "tg"
+      ? `<div class="mp-rows">${list.map(x => `<div class="mp-row" data-f="${esc(x.fid)}"><div><b>${esc(x.title)}</b><small>${esc(x.artist)}</small></div><span>${fmtDur(x.dur)}</span></div>`).join("")}</div>`
+      : `<div class="mp-grid">${list.map(x => `<div class="mp-card" data-v="${x.vid}"><div class="mp-th"><img loading="lazy" src="${thumb(x.vid)}"><button class="mp-star ${favs.has(x.vid) ? "on" : ""}" data-star="${x.vid}">★</button></div><div class="mp-tt">${esc(x.title)}</div></div>`).join("")}</div>`)
+      : `<p class="sub center">${esc(tab === "tg" ? t("music_tg_empty") : t("no_tracks"))}</p>`;
+    m.set(`<h2 class="mp-h">${video ? "🎬 " + esc(t("mode_video")) : "🎵 " + esc(t("mode_music"))}</h2>
       <div class="mp-seg sm" id="mp-kind"><button data-k="music_now" class="${kind === "music_now" ? "on" : ""}">${esc(t(playing ? "mp_replace" : "mp_now"))} · ❤${CFG.gifts.find(x => x.id === "music_now").price}</button><button data-k="music_queue" class="${kind === "music_queue" ? "on" : ""}">${esc(t("mp_queue"))} · ❤${CFG.gifts.find(x => x.id === "music_queue").price}</button></div>
-      <div class="mp-tabs">${[["pop", "🔥"], ["fav", "⭐"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]].map(([k, i]) => `<button data-tab="${k}" class="${k === tab ? "on" : ""}">${i}</button>`).join("")}</div>
-      <p class="mp-title">${titles[tab]} · ❤${g.price}</p>
+      <div class="mp-tabs">${tabs.map(([k, i]) => `<button data-tab="${k}" class="${k === tab ? "on" : ""}">${i}</button>`).join("")}</div>
+      <p class="mp-title">${titles[tab]}</p>
       ${tab === "find" ? `<form class="mp-find" id="mp-form"><input id="mp-q" placeholder="${esc(t("music_find"))}" value="${esc(findQ)}" autocomplete="off"><button class="btn">🔍</button></form>` : ""}
-      ${tab === "link" ? `<label class="field"><input id="mp-url" placeholder="https://youtu.be/…" inputmode="url"></label><button class="btn wide" id="mp-go">OK</button>`
-        : list.length ? `<div class="mp-grid">${list.map(x => `<div class="mp-card" data-v="${x.vid}"><div class="mp-th"><img loading="lazy" src="${thumb(x.vid)}"><button class="mp-star ${favs.has(x.vid) ? "on" : ""}" data-star="${x.vid}">★</button></div><div class="mp-tt">${esc(x.title)}</div></div>`).join("")}</div>` : `<p class="sub">${t("no_tracks")}</p>`}`);
-    $$("#mp-mode [data-m]", m.el).forEach(b => b.onclick = () => { mode = b.dataset.m; ls.set("mpMode", mode); render(); });
+      ${tab === "link" ? `<label class="field"><input id="mp-url" placeholder="https://youtu.be/…" inputmode="url"></label><button class="btn wide" id="mp-go">OK</button>` : grid}`);
     $$("#mp-kind [data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; render(); });
     $$("[data-tab]", m.el).forEach(b => b.onclick = () => { tab = b.dataset.tab; load(); });
     $$("[data-star]", m.el).forEach(b => b.onclick = e => {
-      e.stopPropagation(); const v = b.dataset.star, cur = favTracks();
-      const item = list.find(x => x.vid === v);
-      ls.set("favTracks", JSON.stringify(cur.some(x => x.vid === v) ? cur.filter(x => x.vid !== v) : [...cur, { vid: v, title: item ? item.title : v }]));
-      if (tab === "fav") list = favTracks(); render();
+      e.stopPropagation(); const v = b.dataset.star, cur = favTracks(mode), item = list.find(x => x.vid === v);
+      ls.set(favKey(mode), JSON.stringify(cur.some(x => x.vid === v) ? cur.filter(x => x.vid !== v) : [...cur, { vid: v, title: item ? item.title : v }]));
+      if (tab === "fav") list = favTracks(mode); render();
     });
     $$("[data-v]", m.el).forEach(c => c.onclick = () => pick(c.dataset.v));
+    $$("[data-f]", m.el).forEach(c => c.onclick = () => pick("", c.dataset.f));
     const fm = $("#mp-form", m.el);
     if (fm) fm.onsubmit = async e => {
       e.preventDefault(); findQ = $("#mp-q", m.el).value.trim(); if (findQ.length < 2) return;
-      list = await api("/api/music/search?q=" + encodeURIComponent(findQ)).catch(() => []); render(); $("#mp-q", m.el).focus();
+      list = await api("/api/music/search?q=" + encodeURIComponent(findQ + (video ? " video" : ""))).catch(() => []); render(); $("#mp-q", m.el).focus();
     };
     const go = $("#mp-go", m.el);
     if (go) go.onclick = () => { const mt = ($("#mp-url", m.el).value.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) || [])[1]; mt ? pick(mt) : toast(t("bad_url")); };

@@ -938,3 +938,15 @@ select.rt-per option{color:#222}
 /* seasonal event chip */
 .starter-chip.ev{left:calc(var(--u)*46);background:linear-gradient(#ffb36b,#ff7a3a);color:#fff}
 .starter-chip.hidden + .starter-chip.hidden + .starter-chip.ev{left:calc(var(--u)*14)}
+
+/* separate music / video screens */
+.mp-h{margin:0 0 8px;text-align:center}
+.mp-rows{display:flex;flex-direction:column}
+.mp-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #eef0f3;cursor:pointer}
+.mp-row b{display:block;font-size:15px}.mp-row small{color:#999;font-weight:700}.mp-row span{color:#999;font-weight:700;font-size:13px}
+.mp-tabs{gap:12px}.mp-tabs button{font-size:28px}
+.modal.mpick{max-height:calc(var(--vh)*82)}
+
+#boot .bbar{top:46%}
+#boot .btitle{top:46%}
+#boot-msg{bottom:26vh}

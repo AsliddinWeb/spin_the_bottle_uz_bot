@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS worn(user_id INTEGER, slot TEXT, emoji TEXT, ts INTEG
 """)
 _db.execute("CREATE TABLE IF NOT EXISTS tracks_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, vid TEXT, title TEXT, ts INTEGER)")
 _db.execute("CREATE INDEX IF NOT EXISTS tracks_log_vid ON tracks_log(vid)")
+try:
+    _db.execute("ALTER TABLE tracks_log ADD COLUMN mode TEXT DEFAULT 'audio'")
+except sqlite3.OperationalError:
+    pass
 _db.execute("CREATE TABLE IF NOT EXISTS stats_daily(day TEXT, uid INTEGER, kisses INTEGER DEFAULT 0, tracks INTEGER DEFAULT 0, gifts INTEGER DEFAULT 0, PRIMARY KEY(day, uid))")
 _db.execute("CREATE INDEX IF NOT EXISTS stats_daily_uid ON stats_daily(uid, day)")
 for _col in ("spins INTEGER DEFAULT 0", "msgs INTEGER DEFAULT 0", "gifts_sent INTEGER DEFAULT 0"):

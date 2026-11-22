@@ -109,3 +109,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (41) Kunlik vazifalar: har kuni 3 ta tasodifiy (o'pish/xabar/sovg'a/musiqa/aylantirish), ❤2-5; stats_daily + daily_tasks jadvali, /api/dtask/claim, HUD chip. Test: tests/qa_dtasks.py (9).
 - (42) Unvonlar: o'pishlar bo'yicha Yangi/Tanish/Mashhur/Yulduz/Afsona (10/50/200/1000), profilda progress, unvon ko'tarilganda xabar. catalog.RANK_AT, me/user_card "rank". Test: tests/qa_ranks.py (21).
 - (43) Fasl tadbirlari: admin paneldagi "Tadbir" bo'limidan boshlanadi/to'xtatiladi (Sevishganlar kuni/Navro'z/Yangi yil shablonlari), davomida har o'pishga +❤N, o'yinchida chip va xabar. app/events.py, /api/admin/events. Test: tests/qa_events.py (12).
+- (44) Musiqa va video alohida oynalar (fab: 📼 🎧 🎬), rejim treklarga yoziladi; musiqada "Telegram pleylist" tabi (getUserProfileAudios + bot orqali keshlangan oqim /api/tgaudio). Boot yozuvi balandroq. Test: tests/qa_media.py (8).

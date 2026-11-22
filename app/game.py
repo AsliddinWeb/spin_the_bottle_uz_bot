@@ -7,7 +7,7 @@ from collections import deque
 
 import httpx
 
-from . import chatfilter, config, db, economy, events, moderation
+from . import chatfilter, config, db, economy, events, moderation, tgmusic
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
@@ -420,13 +420,21 @@ class Table:
         if vip_only and not db.is_vip(u):
             await client.send({"t": "toast", "key": "need_vip"})
             return
-        vid = ""
+        vid = fid = tg_title = ""
         if kind in ("music_now", "music_queue"):
-            m = YT_RE.search(url or "")
-            if not m:
-                await client.send({"t": "toast", "key": "bad_url"})
-                return
-            vid = m.group(1)
+            if (url or "").startswith("tg:"):   # a track from the player's own Telegram profile
+                item = await tgmusic.lookup(client.uid, url[3:])
+                if not item:
+                    await client.send({"t": "toast", "key": "bad_url"})
+                    return
+                fid, tg_title = item["fid"], item["full"]
+                mode = "audio"
+            else:
+                m = YT_RE.search(url or "")
+                if not m:
+                    await client.send({"t": "toast", "key": "bad_url"})
+                    return
+                vid = m.group(1)
         if not db.spend_hearts(client.uid, price):
             await client.send({"t": "toast", "key": "no_hearts"})
             return
@@ -445,15 +453,16 @@ class Table:
                  client.uid, to_uid, gift_id, emoji, int(time.time()))
 
         level_up = 0
-        if vid:
+        if vid or fid:
             before = db.get_user(client.uid)["tracks"]
             db.inc(client.uid, "tracks")
             if dj_level(before + 1) > dj_level(before):
                 level_up = dj_level(before + 1)
-            title = await fetch_title(vid)
-            db.x("INSERT INTO tracks_log(user_id,vid,title,ts) VALUES(?,?,?,?)", client.uid, vid, title, int(time.time()))
-            track = {"vid": vid, "title": title, "by": sender.name, "by_uid": sender.uid,
-                     "tid": f"{vid}-{now_ms()}", "mode": "video" if mode == "video" else "audio"}
+            title = tg_title if fid else await fetch_title(vid)
+            if vid:
+                db.x("INSERT INTO tracks_log(user_id,vid,title,ts,mode) VALUES(?,?,?,?,?)", client.uid, vid, title, int(time.time()), "video" if mode == "video" else "audio")
+            track = {"vid": vid, "fid": fid, "title": title, "by": sender.name, "by_uid": sender.uid,
+                     "tid": f"{vid or fid[:12]}-{now_ms()}", "mode": "video" if mode == "video" else "audio"}
             if g[3] == "music_now" or not self.music:
                 self.music = track
             else:
