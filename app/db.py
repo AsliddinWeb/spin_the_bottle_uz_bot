@@ -51,6 +51,12 @@ _db.execute("CREATE TABLE IF NOT EXISTS tracks_log(id INTEGER PRIMARY KEY AUTOIN
 _db.execute("CREATE INDEX IF NOT EXISTS tracks_log_vid ON tracks_log(vid)")
 _db.execute("CREATE TABLE IF NOT EXISTS stats_daily(day TEXT, uid INTEGER, kisses INTEGER DEFAULT 0, tracks INTEGER DEFAULT 0, gifts INTEGER DEFAULT 0, PRIMARY KEY(day, uid))")
 _db.execute("CREATE INDEX IF NOT EXISTS stats_daily_uid ON stats_daily(uid, day)")
+for _col in ("spins INTEGER DEFAULT 0", "msgs INTEGER DEFAULT 0", "gifts_sent INTEGER DEFAULT 0"):
+    try:
+        _db.execute(f"ALTER TABLE stats_daily ADD COLUMN {_col}")
+    except sqlite3.OperationalError:
+        pass
+_db.execute("CREATE TABLE IF NOT EXISTS daily_tasks(day TEXT, uid INTEGER, task TEXT, ts INTEGER, PRIMARY KEY(day, uid, task))")
 _db.execute("CREATE TABLE IF NOT EXISTS pair_kisses(day TEXT, lo INTEGER, hi INTEGER, n INTEGER DEFAULT 0, PRIMARY KEY(day, lo, hi))")
 _db.execute("CREATE TABLE IF NOT EXISTS weekly_awards(week TEXT, place INTEGER, uid INTEGER, hearts INTEGER, kisses INTEGER, ts INTEGER, PRIMARY KEY(week, place))")
 _db.execute("CREATE INDEX IF NOT EXISTS weekly_awards_uid ON weekly_awards(uid, week)")
@@ -135,7 +141,7 @@ def spend_hearts(uid: int, n: int) -> bool:
     return cur.rowcount == 1
 
 
-DAILY_COL = {"kisses": "kisses", "tracks": "tracks", "gifts_received": "gifts"}   # counters that also feed the day/week/month rating lists
+DAILY_COL = {"kisses": "kisses", "tracks": "tracks", "gifts_received": "gifts", "spins": "spins", "msgs": "msgs", "gifts_sent": "gifts_sent"}   # counters that also feed the day/week/month rating lists
 
 
 def pair_kiss(a: int, b: int) -> int:

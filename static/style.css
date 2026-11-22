@@ -921,3 +921,11 @@ select.rt-per option{color:#222}
 /* starter tasks chip next to the daily gift */
 .starter-chip{position:absolute;left:calc(var(--u)*14);top:calc(var(--u)*14.6);z-index:3;background:rgba(255,255,255,.92);border-radius:99px;padding:calc(var(--u)*1) calc(var(--u)*2.6);font-size:calc(var(--u)*3.6);font-weight:800;color:#6b4a1e;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .starter-chip.ready{background:#8cc63f;color:#fff;animation:wob 1.2s infinite}
+
+/* daily tasks chip + progress */
+.starter-chip.dt{left:calc(var(--u)*30)}
+.card2.dt .dt-in{flex:1;min-width:0;margin-right:10px}
+.dt-bar{height:8px;border-radius:99px;background:#e6e8ec;margin:6px 0 2px;overflow:hidden}
+.dt-bar i{display:block;height:100%;background:linear-gradient(#a6dc5a,#6cae2a);border-radius:99px;transition:width .4s}
+.dt-in small{color:#888;font-weight:700}
+.starter-chip.hidden + .starter-chip.dt{left:calc(var(--u)*14)}

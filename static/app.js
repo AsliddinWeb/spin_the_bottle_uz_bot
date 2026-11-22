@@ -230,6 +230,22 @@ function renderMe() {
   chip.classList.toggle("hidden", !st.length); chip.classList.toggle("ready", ready > 0); $("b", chip).textContent = n + "/" + st.length;
   if (ready > (renderMe.ready || 0)) { toast(t("st_ready"), 3500); sfx.ach(); }
   renderMe.ready = ready;
+  const dt = ME.dtasks || [], dc = $("#btn-dtask"), dready = dt.filter(x => x.n >= x.goal && !x.claimed).length;
+  dc.classList.toggle("hidden", !dt.length); dc.classList.toggle("ready", dready > 0); $("b", dc).textContent = dt.filter(x => x.claimed).length + "/" + dt.length;
+  if (dready > (renderMe.dready || 0)) { toast(t("dt_ready"), 3500); sfx.ach(); }
+  renderMe.dready = dready;
+}
+function openDailyTasks() {
+  const m = openModal("");
+  const render = () => {
+    const dt = ME.dtasks || [];
+    m.set(`<h2>📅 ${esc(t("dt_title"))}</h2><p class="sub center">${esc(t("dt_sub"))}</p>
+      ${dt.map(x => `<div class="card2 dt"><div class="dt-in"><b>${esc(t("dt_" + x.id))}</b><div class="dt-bar"><i style="width:${Math.round(x.n / x.goal * 100)}%"></i></div><small>${x.n}/${x.goal}</small></div>${x.claimed ? "✔" : `<button class="btn" data-c="${x.id}" ${x.n >= x.goal ? "" : "disabled"}>+❤${x.reward}</button>`}</div>`).join("")}`);
+    $$("[data-c]", m.el).forEach(b => b.onclick = async () => {
+      try { ME = await api("/api/dtask/claim", "POST", { id: b.dataset.c }); renderMe(); sfx.win(); render(); } catch { toast(t("not_yet")); }
+    });
+  };
+  render();
 }
 function openStarter() {
   const names = { st_spin: "st_spin", st_kiss: "st_kiss", st_gift: "st_gift" }, m = openModal("");
@@ -254,6 +270,7 @@ function bindUi() {
   $("#btn-table").onclick = openTables;
   $("#btn-daily").onclick = openDaily;
   $("#btn-starter").onclick = openStarter;
+  $("#btn-dtask").onclick = openDailyTasks;
   $("#gp-plus").onclick = openShop;
   $("#gp-close").onclick = closeGifts;
   $("#chat-form").onsubmit = e => {

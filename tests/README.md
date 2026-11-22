@@ -14,3 +14,4 @@ Eslatma: qa_game.py da 4 ta "xato" ko'rinishi mumkin, bu yutuq mukofoti yurakcha
     DB_PATH=/tmp/rq.db .venv/bin/python tests/qa_ratings.py   # reytinglar: kun/hafta/oy/hammasi (10 tekshiruv)
     DB_PATH=/tmp/wq.db .venv/bin/python tests/qa_weekly.py   # haftalik top va juft kuniga 3 o'pish chegarasi (11 tekshiruv, serversiz)
     DB_PATH=/tmp/sq.db .venv/bin/python tests/qa_starter.py   # boshlang'ich vazifalar (9 tekshiruv)
+    DB_PATH=/tmp/dq.db .venv/bin/python tests/qa_dtasks.py   # kunlik vazifalar (9 tekshiruv)

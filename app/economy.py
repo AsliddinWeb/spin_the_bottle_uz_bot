@@ -17,6 +17,24 @@ def daily_info(u) -> dict:
     return {"available": available, "day": day, "streak": streak}
 
 
+def daily_tasks_info(uid: int) -> list:
+    """Today's 3 tasks (same for the whole day, different per player): progress comes from stats_daily, claims from daily_tasks."""
+    day = db.today()
+    ids = random.Random(f"{uid}:{day}").sample(config.DAILY_TASKS, 3)
+    row = db.q1("SELECT * FROM stats_daily WHERE day=? AND uid=?", day, uid)
+    got = {r["task"] for r in db.q("SELECT task FROM daily_tasks WHERE day=? AND uid=?", day, uid)}
+    return [{"id": i, "goal": g, "n": min(g, (row[col] or 0) if row else 0), "reward": r, "claimed": i in got} for i, col, g, r in ids]
+
+
+def claim_daily_task(uid: int, key: str) -> bool:
+    t = next((x for x in daily_tasks_info(uid) if x["id"] == key), None)
+    if not t or t["claimed"] or t["n"] < t["goal"]:
+        return False
+    db.x("INSERT OR IGNORE INTO daily_tasks(day,uid,task,ts) VALUES(?,?,?,?)", db.today(), uid, key, int(time.time()))
+    db.add_hearts(uid, t["reward"])
+    return True
+
+
 def starter_info(u) -> list:
     """First-session tasks (spin, kiss, gift): done when the stat is >= 1; the list disappears once everything is claimed."""
     cl = db.claimed(u)
@@ -42,7 +60,7 @@ def me_payload(uid: int) -> dict:
         "gifts_sent": u["gifts_sent"], "gifts_received": u["gifts_received"], "spins": u["spins"],
         "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "vip_until": u["vip_until"],
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
-        "daily": daily_info(u), "starter": starter_info(u), "claimed": db.claimed(u), "notify": bool(u["notify"]),
+        "daily": daily_info(u), "starter": starter_info(u), "dtasks": daily_tasks_info(uid), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
         "server_time": int(time.time()), "kick_free_in": max(0, (u["kick_free_ts"] or 0) - int(time.time())),
     }

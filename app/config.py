@@ -58,5 +58,6 @@ KICK_MIN_PLAYERS = 3     # nobody can be kicked from a table with fewer players
 # per pair per day in the day/week/month lists, so two accounts cannot farm the top by kissing each other.
 WEEKLY_REWARDS = [100, 50, 25]
 WEEKLY_MIN = 5
+DAILY_TASKS = [("kiss3", "kisses", 3, 4), ("msg5", "msgs", 5, 2), ("gift1", "gifts_sent", 1, 3), ("music1", "tracks", 1, 5), ("spin3", "spins", 3, 3)]  # 3 random ones per day
 STARTER = [("st_spin", "spins", 3), ("st_kiss", "kisses", 3), ("st_gift", "gifts_sent", 3)]  # (claim key, user stat, reward hearts)
 PAIR_DAILY_CAP = 3
