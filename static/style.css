@@ -762,3 +762,6 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 .frame{position:relative}
 .fart{position:absolute;left:-16%;top:-16%;width:132%;height:132%;pointer-events:none;overflow:visible;z-index:3}
 .dc-pv .frame,.dc-t .frame{margin:6px}
+
+/* a little depth so the flat vector icons read as 3D stickers, closer to the original's glossy look */
+.gart{filter:drop-shadow(0 1.5px 1.2px rgba(60,25,0,.38))}
