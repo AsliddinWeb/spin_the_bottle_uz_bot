@@ -168,6 +168,7 @@ async function boot() {
   const q = new URLSearchParams(location.search);
   initData = (tg && tg.initData) || "";
   CFG = await fetch("/api/config").then(r => r.json());
+  CFG.gifts.forEach(g => { GIFT_BY_EMOJI[g.emoji] = g.id; });
   if (!initData) {
     if (!CFG.dev) { $("#boot-msg").textContent = "Open this game from Telegram"; return; }
     let id = q.get("dev") || ls.get("devid", ""); if (!id) { id = String(100000 + Math.floor(Math.random() * 899999)); }
@@ -323,10 +324,10 @@ function renderSeats() {
       if (!p) { el.className = "seat empty"; el.innerHTML = `<div class="av"></div>`; }
       else {
         const fr = p.frame ? "fr-" + p.frame.replace("frame_", "") : "";
-        el.innerHTML = `<div class="frame ${fr}"><div class="av">${avInner(p.photo, p.name)}</div></div>${p.gesture ? `<span class="gestE">${p.gesture}</span>` : ""}` +
+        el.innerHTML = `<div class="frame ${fr}"><div class="av">${avInner(p.photo, p.name)}</div>${frameArt(p.frame)}</div>${p.gesture ? `<span class="gestE">${p.gesture}</span>` : ""}` +
           (p.kisses ? `<span class="kb"><i>💋</i><b>${p.kisses}</b></span>` : "") +
-          (p.gifts && p.gifts.hand ? `<span class="gf">${p.gifts.hand}</span>` : "") +
-          (p.gifts && p.gifts.head ? `<span class="gh">${p.gifts.head}</span>` : "") +
+          (p.gifts && p.gifts.hand ? `<span class="gf">${giftIcon(p.gifts.hand)}</span>` : "") +
+          (p.gifts && p.gifts.head ? `<span class="gh">${giftIcon(p.gifts.head)}</span>` : "") +
           (p.vip ? `<span class="vipmark">👑</span>` : "") +
           (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
           `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
@@ -467,7 +468,7 @@ function flyGift(m) {
   const sx = A.left - felt.left + A.width / 2, sy = A.top - felt.top + A.height / 2;
   const ex = B.left - felt.left + B.width * .86, ey = B.top - felt.top + B.height * .72;
   const mx = (sx + ex) / 2, my = Math.min(sy, ey) - Math.abs(ex - sx) * .16 - 16;
-  const el = document.createElement("div"); el.className = "gfly"; el.textContent = m.gift; el.style.fontSize = A.width * .55 + "px";
+  const el = document.createElement("div"); el.className = "gfly"; el.innerHTML = giftIcon(m.gift); el.style.fontSize = A.width * .55 + "px";
   $("#felt").appendChild(el); eb.classList.add("gwait"); gwaitUntil[m.to_uid] = performance.now() + FLY_MS;
   const at = (x, y, s, r) => `translate(${x}px,${y}px) translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
   const an = el.animate([
@@ -507,7 +508,7 @@ function addChat(m) {
       giftSound(m); if (near) box.scrollTop = box.scrollHeight; return;
     }
     d.className = "msg"; d.dataset.gk = key; d.dataset.to = String(m.to_uid);
-    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${m.gift}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
+    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
     giftSound(m);
   } else if (m.k === "kiss") {
     d.className = "msg ev"; d.innerHTML = `<span class="ico">💋</span><div>${esc(t("ev_kiss", { a: m.name, b: m.to_name }))}</div>`;
@@ -570,7 +571,7 @@ function openGifts(uid) {
   CFG.gifts.forEach(x => {
     const locked = x.vip && !ME.vip;
     const b = document.createElement("button"); b.className = "gi" + (locked ? " lock" : "");
-    b.innerHTML = `<span class="e">${x.emoji}</span><span class="p">${locked ? "🔒" : "❤️" + x.price}</span>`;
+    b.innerHTML = `<span class="e">${giftIcon(x.id)}</span><span class="p">${locked ? "🔒" : "❤️" + x.price}</span>`;
     b.onclick = () => giveGift(x);
     g.appendChild(b);
   });
@@ -666,9 +667,9 @@ async function openProfile(uid) {
         <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>
         <div class="stat m"><i>🎵</i>${c.tracks.toLocaleString("ru")}${c.dj ? ` <small class="djb">DJ ${c.dj}</small>` : ""}</div>
         <div class="stat s"><i>😊</i>${c.gifts_received.toLocaleString("ru")}</div>
-        ${c.gifts.length ? `<div class="gbox">${c.gifts.slice(0, more ? 40 : 8).map(g => `<span class="gchip">${g.emoji}<b>${g.n}</b></span>`).join("")}</div>` : ""}
+        ${c.gifts.length ? `<div class="gbox">${c.gifts.slice(0, more ? 40 : 8).map(g => `<span class="gchip">${giftIcon(g.emoji)}<b>${g.n}</b></span>`).join("")}</div>` : ""}
         ${more ? `<div class="stat g"><i>🏅</i>${c.ach.length}</div><div class="stat s"><i>🎁</i>${c.gifts_sent.toLocaleString("ru")}</div>
-          ${c.recent.length ? `<div class="rcv">${c.recent.map(r => `<span title="${esc(r.name)}">${r.emoji}<small>${esc(r.name.slice(0, 9))}</small></span>`).join("")}</div>` : ""}` : ""}
+          ${c.recent.length ? `<div class="rcv">${c.recent.map(r => `<span title="${esc(r.name)}">${giftIcon(r.emoji)}<small>${esc(r.name.slice(0, 9))}</small></span>`).join("")}</div>` : ""}` : ""}
         <div class="chev"><button id="pf-more">${more ? "︿" : "﹀"}</button></div>
         <div class="suit">
           <div class="sa">${sp ? (sp.photo ? `<img src="${esc(sp.photo)}" referrerpolicy="no-referrer">` : esc(initials(sp.name))) : "♡"}</div>
@@ -977,10 +978,10 @@ function openStore(kind) {
     const cur = frames.find(f => f.id === sel), have = !sel || (ME.inv[sel] && ME.inv[sel].qty > 0), eq = sel === ME.frame;
     const cls = sel ? "fr-" + sel.replace("frame_", "") : "";
     m.set(`<h2>${sel ? t(sel) : t("no_decor")}</h2>
-      <div class="dc-top"><div class="dc-pv"><div class="frame ${cls}"><div class="av" style="--av:78px">${avInner(ME.photo, ME.name)}</div></div><small>${esc(ME.name)}${ME.age ? ", " + ME.age : ""}</small></div>
+      <div class="dc-top"><div class="dc-pv"><div class="frame ${cls}"><div class="av" style="--av:78px">${avInner(ME.photo, ME.name)}</div>${frameArt(sel)}</div><small>${esc(ME.name)}${ME.age ? ", " + ME.age : ""}</small></div>
         <div class="dc-info"><p>${sel ? esc(t(sel)) : t("keep_plain")}</p><button class="btn ${eq ? "gray" : ""}" id="dc-apply" ${eq ? "disabled" : ""}>${have ? t("apply") : "❤️ " + cur.price}</button></div></div>
       <div class="dc-grid"><button class="dc-t ${!sel ? "on" : ""}" data-f=""><span class="dc-none">✕</span>${ME.frame === "" ? "<b>✓</b>" : ""}</button>
-        ${frames.map(f => `<button class="dc-t ${sel === f.id ? "on" : ""}" data-f="${f.id}"><div class="frame fr-${f.id.replace("frame_", "")}"><div class="av" style="--av:42px"><div class="ini" style="font-size:16px">A</div></div></div>${ME.frame === f.id ? "<b>✓</b>" : (ME.inv[f.id] && ME.inv[f.id].qty > 0) ? "" : `<b>❤️${f.price}</b>`}</button>`).join("")}</div>`);
+        ${frames.map(f => `<button class="dc-t ${sel === f.id ? "on" : ""}" data-f="${f.id}"><div class="frame fr-${f.id.replace("frame_", "")}"><div class="av" style="--av:42px"><div class="ini" style="font-size:16px">A</div></div>${frameArt(f.id)}</div>${ME.frame === f.id ? "<b>✓</b>" : (ME.inv[f.id] && ME.inv[f.id].qty > 0) ? "" : `<b>❤️${f.price}</b>`}</button>`).join("")}</div>`);
     $$("[data-f]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.f; render(); });
     $("#dc-apply", m.el).onclick = async () => {
       try {

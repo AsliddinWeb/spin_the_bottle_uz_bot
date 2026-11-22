@@ -748,3 +748,17 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 @keyframes gland{from{transform:scale(1.7)}}
 .seat.gland .gh{animation-name:glandh}
 @keyframes glandh{from{transform:translateX(-62%) rotate(-10deg) scale(1.7)}}
+
+/* gift art (SVG) sizing: every place that used an emoji now sizes the icon with the same font-size */
+.gart{width:1em;height:1em;display:block;overflow:visible}
+.gi .e{display:grid;place-items:center;width:1.15em;height:1.15em}
+.gf,.gh{display:block;width:1em;height:1em;line-height:1}
+.giftline .g{display:block;width:1em;height:1em}
+.gfly{width:1em;height:1em}
+.gchip .gart{display:inline-block;width:1.3em;height:1.3em;vertical-align:middle}
+.rcv span .gart{display:inline-block;width:1.4em;height:1.4em}
+
+/* frame ornaments (SVG overlay drawn outside the avatar border) */
+.frame{position:relative}
+.fart{position:absolute;left:-16%;top:-16%;width:132%;height:132%;pointer-events:none;overflow:visible;z-index:3}
+.dc-pv .frame,.dc-t .frame{margin:6px}

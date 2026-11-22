@@ -84,3 +84,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (18) Bottle spin 3.6s -> 5.0s, 6 turns (original has a long slow tail; duration estimated from ~0.5s-spaced frames).
 - (19) Gift flight: sent gift flies in an arc (1.7s) from sender seat to receiver's hand slot, receiver's worn gift stays hidden until landing, bounce on landing; whoosh at start, hit sound at landing. Observed on the original (a rose gliding to the receiver avatar's lower-right corner); exact original duration unknown (estimated).
 - (20) Between-turns state 'Ждем следующего хода' (1.5s, 3 languages) — closes B6.
+- (21) Own vector art: 42 gift icons (static/art.js GIFT_ART, used in panel, seats, chat, flight, profile) + 12 frame ornaments (FRAME_ART overlay on top of the CSS borders). Original images are not copied; style compared only by eye. Not yet compared side by side (Telegram was locked).
