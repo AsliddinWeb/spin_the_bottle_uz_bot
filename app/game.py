@@ -305,7 +305,7 @@ class Table:
             db.add_hearts(p.uid, reward)
             db.inc(p.uid, "kisses", daily=counted)
             p.tkiss += 1
-        await self.say("kiss", uid=a.uid, name=a.name, to_uid=b.uid, to_name=b.name)
+        await self.say("kiss", uid=a.uid, name=a.name, to_uid=b.uid, to_name=b.name, n=a.tkiss)
         for p in (a, b):
             await self.notify_achievements(p.uid)
         await self.finish("kiss", 3.6)

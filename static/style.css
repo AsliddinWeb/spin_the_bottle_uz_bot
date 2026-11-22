@@ -950,3 +950,15 @@ select.rt-per option{color:#222}
 #boot .bbar{top:46%}
 #boot .btitle{top:46%}
 #boot-msg{bottom:26vh}
+
+/* lipstick prints on the avatars after a kiss */
+.lipst{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:7;transition:opacity 1.4s}
+.lipst.fade{opacity:0}
+.lipst i{position:absolute;aspect-ratio:64/44;transform:rotate(var(--r));animation:lipstamp .22s cubic-bezier(.2,1.7,.4,1) both;filter:drop-shadow(0 1px 1.5px rgba(80,0,20,.4))}
+.lipst i svg{width:100%;height:100%;display:block}
+@keyframes lipstamp{from{transform:rotate(var(--r)) scale(2.2);opacity:0}to{transform:rotate(var(--r)) scale(1);opacity:.95}}
+.kmark{display:inline-flex;align-items:center;gap:6px;font-weight:900;color:#7bbf2a;font-size:20px}
+.kmark i{font-style:normal;font-size:26px}
+/* the task chips stay small and still so they never cover a player */
+.starter-chip{top:calc(var(--u)*13.2);font-size:calc(var(--u)*3.1);padding:calc(var(--u)*.7) calc(var(--u)*2.2)}
+.starter-chip.ready{animation:none;box-shadow:0 0 0 2px #fff,0 2px 8px rgba(80,160,20,.6)}

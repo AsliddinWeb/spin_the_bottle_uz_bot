@@ -468,6 +468,21 @@ function renderCenter() {
 const LIPS_SVG = `<svg class="kl" viewBox="0 0 64 44" xmlns="http://www.w3.org/2000/svg"><g filter="url(#gloss)"><path d="M5 24C13 8 25 8 32 15C39 8 51 8 59 24C51 38 42 41 32 41C22 41 13 38 5 24Z" fill="url(#gRed)" stroke="#7a0f1e" stroke-opacity=".5" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 24C18 29 46 29 57 24" fill="none" stroke="#6a0a18" stroke-width="2.2" stroke-linecap="round"/><path d="M15 17C20 13 25 13 29 16C24 16 19 17 15 17Z" fill="#fff" fill-opacity=".6"/></g></svg>`;
 const heartMini = c => `<svg viewBox="-12 -11 24 22"><path d="M0 9C-12 0-9-9-4.5-9C-2-9 0-7 0-5C0-7 2-9 4.5-9C9-9 12 0 0 9Z" fill="${c}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M-6-6C-4-7-2-6-1.5-4" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/></svg>`;
 const sparkMini = `<svg viewBox="-10 -10 20 20"><path d="M0-9L2.4-2.4L9 0L2.4 2.4L0 9L-2.4 2.4L-9 0L-2.4-2.4Z" fill="#fff6c8" stroke="#ffd34d" stroke-width="1"/></svg>`;
+const LIP_COLS = ["#e5231f", "#d4141c", "#c4147f", "#e0267a", "#ff3d8a"];
+const lipSvg = c => `<svg viewBox="0 0 64 44"><path d="M5 24C13 8 25 8 32 15C39 8 51 8 59 24C51 38 42 41 32 41C22 41 13 38 5 24Z" fill="${c}"/><path d="M6 24C20 30 44 30 58 24" fill="none" stroke="rgba(60,0,20,.55)" stroke-width="2" stroke-linecap="round"/><path d="M16 19c5-5 10-4 14-1" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+function lipPrints(seatEl) {   // lipstick marks stamped on a player's photo one after another, each with its own smack; they stay for a while
+  const fr = seatEl.querySelector(".frame"); if (!fr) return;
+  fr.querySelectorAll(".lipst").forEach(e => e.remove());
+  const layer = document.createElement("div"); layer.className = "lipst"; fr.appendChild(layer);
+  const n = 8 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < n; i++) {
+    const l = document.createElement("i"), s = 22 + Math.random() * 30;
+    l.innerHTML = lipSvg(LIP_COLS[Math.floor(Math.random() * LIP_COLS.length)]);
+    l.style.cssText = `width:${s}%;left:${Math.random() * 78 - 6}%;top:${Math.random() * 78 - 8}%;--r:${Math.round(Math.random() * 90 - 45)}deg;animation-delay:${i * 70}ms`;
+    layer.appendChild(l); setTimeout(() => sfx.smack(), i * 70);
+  }
+  setTimeout(() => { layer.classList.add("fade"); setTimeout(() => layer.remove(), 1500); }, 11000);
+}
 function kissFx() {
   const felt = $("#felt"); if (!felt) return;
   felt.querySelectorAll(".kfx").forEach(e => e.remove());
@@ -494,7 +509,7 @@ function kissFx() {
   [T && T.turn, T && T.target].forEach(uid => {
     const i = uid ? seatOf(uid) : -1; if (i < 0) return;
     const el = $("#seat" + i), p = T.seats.find(s => s.uid === uid), r = el.getBoundingClientRect();
-    el.classList.add("kissing"); setTimeout(() => el.classList.remove("kissing"), 1200);
+    el.classList.add("kissing"); setTimeout(() => el.classList.remove("kissing"), 1200); lipPrints(el);
     const f = document.createElement("div"); f.className = "kf"; f.textContent = "+❤" + (K.reward + (p && p.vip ? K.vip_bonus : 0));
     f.style.left = (r.left + r.width / 2 - c0.left) + "px"; f.style.top = (r.top - c0.top) + "px"; root.appendChild(f);
   });
@@ -634,7 +649,7 @@ function addChat(m) {
     d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
     giftSound(m);
   } else if (m.k === "kiss") {
-    d.className = "msg ev"; d.innerHTML = `<span class="ico">💋</span><div>${esc(t("ev_kiss", { a: m.name, b: m.to_name }))}</div>`;
+    d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="kmark"><i>💋</i> <b>x${m.n || 1}</b> »</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;
   } else if (m.k === "court") {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;

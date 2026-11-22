@@ -142,6 +142,10 @@ const sfx = (() => {
       noise(.07, { f0: 2600, f1: 900, q: 2, v: .8 }); tone(1400, .09, { to: 520, v: .7, type: "sine" }); noise(.05, { f0: 3500, q: 3, v: .5, at: .09 });
       arp([784, 988, 1175, 1568], .08, { d: .5, v: .6 });
     },
+    smack: (at = 0) => {
+      if (!ready()) return; const k = 0.85 + Math.random() * .4;
+      noise(.05, { f0: 2400 * k, f1: 900, q: 2.2, v: .55, at }); tone(1250 * k, .07, { to: 480, v: .5, type: "sine", at }); noise(.03, { f0: 3800, q: 3, v: .3, at: at + .06 });
+    },
     no: () => { if (!ready()) return; haptic("warn"); tone(330, .28, { type: "triangle", to: 250, v: .7, lp: 1800 }); tone(247, .42, { type: "triangle", to: 170, v: .7, at: .22, lp: 1500 }); },
     turn: () => { if (!ready() || throttle("turn", 800)) return; haptic("light"); arp([659, 880], .11, { d: .3, v: .8 }); },
     tick: () => { if (!ready() || throttle("tick", 300)) return; tone(1200, .04, { type: "square", v: .25, lp: 3000 }); },
