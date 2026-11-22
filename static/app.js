@@ -75,9 +75,9 @@ function toast(msg, ms = 2600) {
 function openModal(html, { cls = "", closable = true, onclose } = {}) {
   const ov = document.createElement("div"); ov.className = "ov";
   ov.innerHTML = `<div class="modal ${cls}">${closable ? '<button class="x">✕</button>' : ""}<div class="mb"></div></div>`;
-  $("#modal-root").appendChild(ov);
+  $("#modal-root").appendChild(ov); sfx.open();
   const m = { el: $(".mb", ov), root: ov };
-  m.close = () => { ov.remove(); onclose && onclose(); };
+  m.close = () => { ov.remove(); sfx.close(); onclose && onclose(); };
   m.set = h => { m.el.innerHTML = h; };
   m.set(html);
   if (closable) { $(".x", ov).onclick = m.close; ov.addEventListener("click", e => { if (e.target === ov) m.close(); }); }
@@ -87,25 +87,7 @@ const closeAllModals = () => $("#modal-root").innerHTML = "";
 const openLink = u => (tg && tg.openLink ? tg.openLink(u) : window.open(u, "_blank"));
 const openTg = u => (tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, "_blank"));
 
-// ------------------------------------------------------------ sound
-let actx;
-function tone(f, d = .12, type = "sine", vol = 1, at = 0) {
-  const v = parseFloat(ls.get("sfx", "0.7")) * vol; if (!v) return;
-  try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = actx.createOscillator(), g = actx.createGain(), s = actx.currentTime + at;
-    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v * .25, s); g.gain.exponentialRampToValueAtTime(.001, s + d);
-    o.connect(g).connect(actx.destination); o.start(s); o.stop(s + d);
-  } catch {}
-}
-const sfx = {
-  click: () => tone(520, .06, "triangle"),
-  spin: () => { for (let i = 0; i < 14; i++) tone(300 + (i % 2) * 80, .04, "square", .35, i * i * .02 + i * .06); },
-  kiss: () => [660, 830, 990, 1320].forEach((f, i) => tone(f, .18, "sine", 1, i * .09)),
-  gift: () => { tone(740, .08, "triangle"); tone(1110, .14, "triangle", 1, .08); },
-  win: () => [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, .2, "triangle", 1, i * .1)),
-  no: () => { tone(260, .15, "sawtooth", .5); tone(190, .22, "sawtooth", .5, .12); },
-};
+// ------------------------------------------------------------ sound (engine in sfx.js)
 document.addEventListener("click", e => { if (e.target.closest("button")) sfx.click(); }, true);
 
 
@@ -297,8 +279,14 @@ function handle(m) {
 // ------------------------------------------------------------ table rendering
 function serverNow() { return Date.now() + skew; }
 
+let myTurnKey = "";
 function onState(s) {
-  T = s; skew = s.now - Date.now();
+  const prev = T; T = s; skew = s.now - Date.now();
+  const mine = (s.phase === "spin_wait" && s.turn === ME.id) || (s.phase === "ask_spinner" && s.turn === ME.id) || (s.phase === "ask_target" && s.target === ME.id);
+  const key = mine ? s.phase + ":" + (s.spin ? s.spin.id : 0) + ":" + s.turn : "";
+  if (key && key !== myTurnKey) sfx.turn();
+  myTurnKey = key;
+  if (prev && prev.seats.length < s.seats.length) sfx.join(); else if (prev && prev.seats.length > s.seats.length) sfx.leave();
   renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic();
   if (target && !s.seats.find(p => p.uid === target)) closeGifts();
   if (!$("#gift-panel").classList.contains("hidden")) updateGiftHead();
@@ -403,6 +391,7 @@ function tick() {
   $("#tbl-n").classList.toggle("hidden", !cnt); $("#btn-table").classList.toggle("cnt", !!cnt); if (cnt) $("#tbl-n").textContent = sec;
   if (!T || !T.deadline) { $("#timer").textContent = ""; return; }
   const left = Math.ceil((T.deadline - serverNow()) / 1000);
+  if (myTurnKey && left > 0 && left <= 3) sfx.tick();
   $("#timer").textContent = ["ask_spinner", "ask_target"].includes(T.phase) && left > 0 ? left : "";
 }
 
@@ -430,7 +419,7 @@ function handleSpin() {
     const delta = (((want - rot) % 360) + 360) % 360;
     rot += 360 * 5 + delta;
     b.style.transition = `transform ${s.dur}s cubic-bezier(.15,.55,.1,1)`;
-    b.style.transform = `rotate(${rot}deg)`; sfx.spin();
+    b.style.transform = `rotate(${rot}deg)`; sfx.spin(s.dur, 360 * 5 + delta);
   } else {
     rot = Math.round(want / 360) * 360 + want; b.style.transition = "none"; b.style.transform = `rotate(${rot}deg)`;
   }
@@ -441,13 +430,18 @@ function addPm(m) {
   const box = $("#chat"), d = document.createElement("div"); d.className = "msg";
   d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble pm"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">🔒 ${esc(m.name)}:</span> ${esc(m.text)}</div>`;
   $(".bubble", d).onclick = () => openPm({ id: m.uid, name: m.name });
-  box.appendChild(d); box.scrollTop = box.scrollHeight;
+  box.appendChild(d); box.scrollTop = box.scrollHeight; sfx.pm();
 }
 function seatPhoto(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.photo : ""; }
+function giftSound(m) {
+  if (m.blocked) return sfx.no();
+  if (m.uid === ME.id) sfx.giftSend(m.gift); else if (m.to_uid === ME.id) sfx.giftGot(m.gift); else sfx.giftHit(m.gift);
+}
 function addChat(m) {
   const box = $("#chat"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
   const d = document.createElement("div");
   if (m.k === "msg") {
+    if (m.uid !== ME.id) sfx.chat();
     d.className = "msg";
     d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
     const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
@@ -467,11 +461,11 @@ function addChat(m) {
         last.dataset.to = [...tos, m.to_uid].join(",");
         $(".giftline", last).insertAdjacentHTML("beforeend", miniAv(seatPhoto(m.to_uid), m.to_name));
       }
-      sfx.gift(); if (near) box.scrollTop = box.scrollHeight; return;
+      giftSound(m); if (near) box.scrollTop = box.scrollHeight; return;
     }
     d.className = "msg"; d.dataset.gk = key; d.dataset.to = String(m.to_uid);
     d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${m.gift}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
-    sfx.gift();
+    giftSound(m);
   } else if (m.k === "kiss") {
     d.className = "msg ev"; d.innerHTML = `<span class="ico">💋</span><div>${esc(t("ev_kiss", { a: m.name, b: m.to_name }))}</div>`;
   } else if (m.k === "court") {
@@ -1008,7 +1002,7 @@ async function openRatings() {
 
 function openSettings() {
   const m = openModal(`<h2>${t("settings")}</h2>
-    <div class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🔊</span><b>${t("sounds")}</b><input id="st-sfx" type="range" min="0" max="1" step=".05" value="${ls.get("sfx", "0.7")}" style="flex:1"></div>
+    <div class="row" style="background:none;padding:6px 0"><span id="st-snd" style="font-size:26px;cursor:pointer">🔊</span><b>${t("sounds")}</b><input id="st-sfx" type="range" min="0" max="1" step=".05" value="${ls.get("sfx", "0.7")}" style="flex:1"></div>
     <div class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🎵</span><b>${t("music")}</b><input id="st-mus" type="range" min="0" max="100" value="${ls.get("musicVol", "0")}" style="flex:1"></div>
     <label class="row" style="background:none;padding:6px 0;cursor:pointer"><span style="font-size:26px">🔔</span><b>${t("notify_label")}</b><input id="st-notify" type="checkbox" ${ME.notify ? "checked" : ""} style="width:22px;height:22px;accent-color:#8cbb2d"></label>
     <label class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🌐</span><b>${t("language")}</b><select id="st-lang" style="padding:6px 8px;border-radius:10px;border:1.5px solid #ddd;font-size:15px"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select></label>
@@ -1021,7 +1015,8 @@ function openSettings() {
   $("#st-lang", m.el).onchange = async e => {
     try { ME = await api("/api/profile", "POST", { name: ME.name, birth: ME.birth || "", age: ME.age, gender: ME.gender, lang: e.target.value }); lang = ME.lang; applyStatic(); m.close(); toast("✓"); } catch { toast(t("err")); }
   };
-  $("#st-sfx", m.el).oninput = e => { ls.set("sfx", e.target.value); tone(660, .1); };
+  $("#st-snd", m.el).onclick = () => { const r = $("#st-sfx", m.el); r.value = parseFloat(r.value) ? 0 : 0.7; r.oninput({ target: r }); };
+  $("#st-sfx", m.el).oninput = e => { ls.set("sfx", e.target.value); sfx.click(); };
   $("#st-mus", m.el).oninput = e => { ls.set("musicVol", e.target.value); $("#pl-range").value = e.target.value; applyVolume(); };
   $$("[data-s]", m.el).forEach(b => b.onclick = () => {
     m.close();
@@ -1087,10 +1082,10 @@ async function openWheel() {
       try {
         const r = await api("/api/wheel/spin", "POST");
         const step = 360 / CFG.wheel.length, delta = (((270 - r.index * step - wheelRot) % 360) + 360) % 360;
-        wheelRot += 360 * 5 + delta;
+        wheelRot += 360 * 5 + delta; sfx.wheel(5, 360 * 5 + delta);
         const w = $("#wheel", m.el); void w.getBoundingClientRect(); w.style.transition = ""; w.style.transform = `rotate(${wheelRot}deg)`;
         setTimeout(() => {
-          ME = r.me; renderMe(); busy = false; sfx.win();
+          ME = r.me; renderMe(); busy = false; sfx.wheelStop(true);
           toast(t("you_won", { text: r.kind === "hearts" ? `❤️ ${r.amount}` : r.kind === "smiles" ? `😊 ${r.amount}` : `🎲 ${r.amount}` }), 3500);
           if (document.body.contains(m.root)) { wheelRot %= 360; render(); }
         }, 5200);
