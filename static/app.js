@@ -163,21 +163,33 @@ function openReport(uid) {
   const x = T[l] || T.ru, b = document.querySelector("#boot");
   b.querySelector(".b1").textContent = x[0]; b.querySelector(".b2").textContent = x[1]; b.querySelector(".b3").textContent = x[2];
 })();
+// Entry sequence (as in the original): green screen with a progress bar -> title -> table.
+const bootT0 = performance.now();
+function bootProgress(p) { $("#boot").style.setProperty("--p", p + "%"); }
+function bootDone() {
+  const el = $("#boot"); bootProgress(100);
+  setTimeout(() => {
+    el.className = "tt";                                        // bar off, title on
+    setTimeout(() => { el.classList.add("felt"); setTimeout(() => el.classList.add("off"), 280); }, 850);
+  }, Math.max(0, 650 - (performance.now() - bootT0)) + 120);
+}
 async function boot() {
+  bootProgress(14);
   if (tg) { tg.ready(); tg.expand(); if (tg.onEvent) tg.onEvent("viewportChanged", setUnits); try { tg.setHeaderColor("#000000"); if (tg.setBackgroundColor) tg.setBackgroundColor("#f4f4f5"); if (tg.setBottomBarColor) tg.setBottomBarColor("#ffffff"); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch {} }
   const q = new URLSearchParams(location.search);
   initData = (tg && tg.initData) || "";
   CFG = await fetch("/api/config").then(r => r.json());
   CFG.gifts.forEach(g => { GIFT_BY_EMOJI[g.emoji] = g.id; });
+  bootProgress(42);
   if (!initData) {
     if (!CFG.dev) { $("#boot-msg").textContent = "Open this game from Telegram"; return; }
     let id = q.get("dev") || ls.get("devid", ""); if (!id) { id = String(100000 + Math.floor(Math.random() * 899999)); }
     ls.set("devid", id); initData = "dev:" + id;
   }
   try { ME = await api("/api/me"); } catch { const bm = $("#boot-msg"); if (bm) bm.textContent = "Auth failed"; return; }
-  lang = ME.lang; applyStatic(); renderMe();
+  bootProgress(72); lang = ME.lang; applyStatic(); renderMe();
   bindUi(); setBottle(ME.bottle);
-  $("#boot").classList.add("felt"); setTimeout(() => $("#boot").classList.add("off"), 350);
+  bootDone();
   if (!ME.age) await profileModal(true);
   connect();
   loadCompliments();
@@ -262,7 +274,7 @@ function connect() {
   ws.onopen = () => { reconnectDelay = 800; };
   ws.onmessage = ev => handle(JSON.parse(ev.data));
   ws.onclose = e => {
-    $("#boot").classList.remove("off"); $("#boot-msg").textContent = e.code === 4001 ? "Opened in another window" : t("reconnecting");
+    $("#boot").className = "re felt"; $("#boot-msg").textContent = e.code === 4001 ? "Opened in another window" : t("reconnecting");
     if (e.code === 4001 || e.code === 4003 || e.code === 4004) return;
     setTimeout(connect, reconnectDelay); reconnectDelay = Math.min(reconnectDelay * 1.6, 8000);
   };
@@ -272,7 +284,7 @@ function connect() {
 function handle(m) {
   switch (m.t) {
     case "hello":
-      ME = m.me; renderMe(); $("#boot").classList.add("off");
+      ME = m.me; renderMe(); if ($("#boot").classList.contains("re")) $("#boot").classList.add("off");   // only the reconnect overlay closes here; the entry sequence closes itself
       send({ t: "join", table: parseInt(sessionStorage.getItem("tbl")) || "random" });
       break;
     case "me": ME = m.me; renderMe(); if (!$("#gest-panel").classList.contains("hidden")) renderGestures(); break;

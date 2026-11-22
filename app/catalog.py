@@ -5,9 +5,13 @@ GIFTS = [
     ("music_now", "📼", 9, "music_now", False),
     ("music_queue", "🎧", 5, "music_queue", False),
     ("crown1", "👑", 3, "gift", False),
+    ("crown2", "🔱", 3, "gift", False),
     ("king", "🤴", 3, "gift", False),
     ("queen", "👸", 3, "gift", False),
     ("medal", "🏅", 3, "gift", False),
+    ("propeller", "🧢", 2, "gift", False),
+    ("egg", "🥚", 1, "gift", False),
+    ("smoothie", "🥤", 2, "gift", False),
     ("leaf", "🍁", 1, "gift", False),
     ("wreath", "🌼", 2, "gift", False),
     ("basket", "🧺", 1, "gift", False),
@@ -47,7 +51,7 @@ GIFTS = [
 ]
 GIFT_MAP = {g[0]: g for g in GIFTS}
 # gifts worn on the head; everything else sits in the avatar's corner ("hand")
-HEAD_IDS = {"crown1", "king", "queen", "batcrown", "joker", "viking", "pirate", "tophat", "sombrero", "wreath"}
+HEAD_IDS = {"crown1", "crown2", "propeller", "king", "queen", "batcrown", "joker", "viking", "pirate", "tophat", "sombrero", "wreath"}
 
 # Telegram Stars packs: id -> (stars, hearts, bonus%)
 PACKS = {

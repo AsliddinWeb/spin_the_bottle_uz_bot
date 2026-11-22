@@ -109,12 +109,12 @@ const sfx = (() => {
   };
   function giftKind(e) {
     if (!e) return "";
-    if ("🍅🐸🐷🍼🤡🥚🍌".includes(e)) return "splat";
-    if ("🍸🍹🍷🥃🥂🍾🍺🥛🍨🍰".includes(e)) return "drink";
+    if ("🍅🐸🐷🍼🤡🍌".includes(e)) return "splat";
+    if ("🍸🍹🍷🥃🥂🍾🍺🥛🍨🍰🥤".includes(e)) return "drink";
     if ("💎💍🏆🏅".includes(e)) return "jewel";
-    if ("👑🤴👸🎩🧢🪖⚔️🦇".includes(e)) return "royal";
+    if ("👑🔱🤴👸🎩🪖⚔️🦇".includes(e)) return "royal";
     if ("🌹🌷💐🥀🌿🌱🌵🍓💋".includes(e)) return "flower";
-    if ("🦆🐧🍬🎲".includes(e)) return "cute";
+    if ("🦆🐧🍬🎲🧢🥚".includes(e)) return "cute";
     return "";
   }
   ["pointerdown", "touchstart", "keydown"].forEach(ev => document.addEventListener(ev, api.unlock, { once: true, passive: true }));

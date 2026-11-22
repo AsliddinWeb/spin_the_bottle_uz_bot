@@ -765,3 +765,12 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 
 /* a little depth so the flat vector icons read as 3D stickers, closer to the original's glossy look */
 .gart{filter:drop-shadow(0 1.5px 1.2px rgba(60,25,0,.38))}
+
+/* entry screen, measured from a screen recording of the original: green felt + doodles, white pill progress bar (52% wide) at 54%, then the title */
+#boot,#boot.felt{background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.55' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .17  0 0 0 0 .04  0 0 0 1.1 -.35'/></filter><rect width='800' height='800' filter='url(%23n)'/></svg>") 0 0/120px,radial-gradient(ellipse at 50% 38%,#729f46,#66903f 72%) #6b9443}
+#boot .bbar{display:none;position:absolute;left:24%;width:52%;top:54%;height:4.4vw;max-height:40px;min-height:18px;transform:translateY(-50%);border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);padding:max(2px,.9vw);box-sizing:border-box}
+#boot.load .bbar{display:block}
+#boot .bbar i{display:block;height:100%;width:var(--p,8%);border-radius:99px;background:linear-gradient(#bde463,#98cb44 52%,#84b838);transition:width .4s ease-out}
+#boot .btitle{position:absolute;top:54%;left:50%;margin:0;transform:translate(-50%,-50%) rotate(-3deg);animation:none;opacity:0;transition:opacity .22s}
+#boot.tt .btitle,#boot.tt.felt .btitle{opacity:1}
+#boot.re .btitle,#boot.re .bbar{display:none}
