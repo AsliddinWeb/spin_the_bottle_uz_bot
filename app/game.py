@@ -12,7 +12,7 @@ from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
 DEC_T = 12       # seconds to answer the kiss prompt
-SPIN_DUR = 3.6   # bottle animation
+SPIN_DUR = 5.0   # bottle animation
 GIFT_TTL = 86400  # seconds a gift stays on an avatar (it is stored, so it survives leaving / restarts)
 LEFT = object()
 

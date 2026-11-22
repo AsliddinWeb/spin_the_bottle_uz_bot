@@ -435,9 +435,9 @@ function handleSpin() {
   const want = angleToSeat(ti);
   if (T.phase === "spinning") {
     const delta = (((want - rot) % 360) + 360) % 360;
-    rot += 360 * 5 + delta;
+    rot += 360 * 6 + delta;
     b.style.transition = `transform ${s.dur}s cubic-bezier(.15,.55,.1,1)`;
-    b.style.transform = `rotate(${rot}deg)`; sfx.spin(s.dur, 360 * 5 + delta);
+    b.style.transform = `rotate(${rot}deg)`; sfx.spin(s.dur, 360 * 6 + delta);
   } else {
     rot = Math.round(want / 360) * 360 + want; b.style.transition = "none"; b.style.transform = `rotate(${rot}deg)`;
   }
