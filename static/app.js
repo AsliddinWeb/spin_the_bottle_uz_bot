@@ -75,9 +75,15 @@ function toast(msg, ms = 2600) {
 function openModal(html, { cls = "", closable = true, onclose } = {}) {
   const ov = document.createElement("div"); ov.className = "ov";
   ov.innerHTML = `<div class="modal ${cls}">${closable ? '<button class="x">✕</button>' : ""}<div class="mb"></div></div>`;
-  $("#modal-root").appendChild(ov); sfx.open();
+  const root = $("#modal-root"); root.querySelectorAll(".ov:not(.out)").forEach(o => o.classList.add("under"));  // older popups stay visible behind the new one
+  root.appendChild(ov); sfx.open();
   const m = { el: $(".mb", ov), root: ov };
-  m.close = () => { ov.remove(); sfx.close(); onclose && onclose(); };
+  m.close = () => {
+    if (ov.classList.contains("out")) return;
+    ov.classList.add("out"); setTimeout(() => ov.remove(), 170); sfx.close(); onclose && onclose();
+    const rest = [...root.querySelectorAll(".ov:not(.out)")].filter(o => o !== ov), top = rest[rest.length - 1];
+    if (top) top.classList.remove("under");
+  };
   m.set = h => { m.el.innerHTML = h; };
   m.set(html);
   if (closable) { $(".x", ov).onclick = m.close; ov.addEventListener("click", e => { if (e.target === ov) m.close(); }); }
@@ -179,7 +185,19 @@ async function boot() {
 
 function tableLabel() { $("#table-no").innerHTML = `${esc(t("table"))}<br>${T.id}`; }
 
+function showAch(id) {
+  const x = CFG.achievements.find(q => q.id === id); if (!x) return;
+  const tier = CFG.achievements.filter(q => q.stat === x.stat).sort((p, q) => p.need - q.need);
+  const n = Math.max(1, Math.ceil((tier.findIndex(q => q.id === id) + 1) / tier.length * 3));
+  const m = openModal(`<h2>${esc(t("ach_congrats"))}</h2><div class="sub">${esc(t("ach_unlocked"))}</div>
+    <div class="stars">${"★".repeat(n)}<i>${"★".repeat(3 - n)}</i></div>
+    <div class="rays"><div class="medal">${ACH_ICON[x.stat] || "🏅"}</div></div>
+    <div class="req">${esc(t("achs_" + x.stat, { n: x.need }))}</div>
+    <button class="btn cta-ok" style="width:100%">${esc(t("ach_continue"))} +❤${x.reward}</button>`, { cls: "achm", closable: false });
+  $(".cta-ok", m.el).onclick = m.close; sfx.ach();
+}
 function applyStatic() {
+  [["btn-wheel", "wheel_title"], ["btn-rating", "ratings"], ["btn-menu", "hud_menu"], ["btn-settings", "settings"], ["btn-table", "hud_table"]].forEach(([id, k]) => { const e = $("#" + id); if (e) e.title = t(k); });
   document.documentElement.lang = lang;
   $("#chat-input").placeholder = t("type_msg");
   $("#gp-label").textContent = t("send_gift");
@@ -267,7 +285,7 @@ function handle(m) {
     case "banned": showBanned(m); break;
     case "court": openCourtPop(m); break;
     case "compliment": showCompliment(m); sfx.gift(); break;
-    case "ach": { const a = CFG.achievements.find(x => x.id === m.id); toast(t("toast_ach", { name: a ? t("achs_" + a.stat, { n: a.need }) : "" }), 3500); }; sfx.win(); break;
+    case "ach": showAch(m.id); break;
     case "left":
       T = null; closeGifts();
       if (m.reason === "afk") toast(t("left_afk"), 4000);

@@ -80,3 +80,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - 2026-11-02 (14): xarid Stars o'rniga admin orqali (buyurtma -> admin tasdiqlaydi). tests/qa_orders.py 24/24. Telegramda sinalmagan; .env da SUPPORT, PAY_INFO, PRICES hali to'ldirilmagan.
 - (15) Web admin panel /admin + /panel bot command (app/adminapi.py, static/admin.*), tests/qa_admin.py 67/67
 - (16) Sound engine static/sfx.js (WebAudio, 25 sounds, haptics): spin ticks follow bottle easing, kiss/no-kiss, gift categories, wheel, turn ping, countdown, chat/PM, modals. Not yet compared with original audio (cannot be heard from screenshots).
+- (17) Motion polish: modals drop in from the top + animate out, older popups stay stacked behind (scaled/dimmed), achievement popup (rays, stars, medal) instead of a toast, desktop tooltips on HUD buttons, press feedback, reduced-motion support. Observed on the original; frame timing is approximate (screenshot capture ~3 fps).
