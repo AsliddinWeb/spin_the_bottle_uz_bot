@@ -355,6 +355,13 @@ async def court(b: Target, u=Depends(auth.current_user)):
     return {"price": r, "me": economy.me_payload(u["id"])}
 
 
+@app.post("/api/court/decline")
+async def court_decline(u=Depends(auth.current_user)):
+    if not economy.decline_court(u["id"]):
+        raise HTTPException(400, "no_suitor")
+    return {"ok": True}
+
+
 @app.post("/api/compliment")
 async def send_compliment(b: Compliment, u=Depends(auth.current_user)):
     from . import chatfilter, moderation

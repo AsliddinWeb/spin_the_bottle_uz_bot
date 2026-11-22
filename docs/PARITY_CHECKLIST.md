@@ -41,7 +41,7 @@ Original bilan o'zaro ta'sir: **faqat ko'rish** (sovg'a, xarid, xabar, g'ildirak
 | L2 | Настройки профиля | ✅ (2026-11-02) | |
 | M1 | Сменить стол | ✅ (2026-11-02) | |
 | N1 | Boshqa o'yinchi profili | ✅ (2026-11-02, rasm resurslaridan tashqari) | original (o'z profilim) ko'rildi: VIP lenta, bio, 💋/🎵/😊, "Ухаживает ... [Отказаться]", 4 tugma: qizil qalqon, binafsha 🎵, to'q sariq nishon, ko'k pochta. VIP lenta va binafsha 🎵 qo'shildi; bio va "Отказаться" yo'q; qizil/binafsha tugma vazifalari noma'lum |
-| N2 | «Ухаживания» oynasi | ⬜ | |
+| N2 | «Ухаживания» oynasi | ⛔ | original oynasi faqat kimdir ❤ to'lab ухаживать qilganda chiqadi, ko'rish uchun pul sarflash kerak; bizda oyna bor (court_title «Ухаживания», nom va matn o'zimizniki). Profilda «Отказаться» (original N1 da ko'rilgan) qo'shildi 2026-11-22 |
 | O1 | Bot xabarlari (eslatma, kompliment teaser, e'lon) | 🔧 | MAX tugmasi yo'q |
 | P1 | «Акция!» oynasi | ✅ (2026-11-02) | qilindi (soxta taymersiz) |
 
@@ -93,3 +93,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (27) Kick & Rescue («Пинок и Спасение») from the user's recording: dialog (own art), free kick every 30 min else ❤10, rescue ❤3, 30s delay, 15 min rejoin ban, ≥3 players, staff immune, audit log, banner with countdown + rescue button, chat events (3 languages). tests/qa_kick.py 21/21. Numbers other than 30s/15min are our own choices (config.KICK_*).
 - (28) Art upgrade: SVG lighting filter (#gloss: specular bevel + soft shadow) on all 46 gift icons and on the frames; frames now have a bevelled metallic band (own palette per frame) under the ornaments. Original (from the recording) has ~27 themed frames at ❤500 and glossy 3D icons; ours: 12 frames, own art. Not copied.
 - (29) 12 new frames (jungle, castle, chain, cards, diamond, tech, thorns, cane, filigree, galaxy, sakura, inferno): own SVG art, prices ❤60-120 (original sells ~27 frames at ❤500; our prices are a placeholder for the owner to decide), names in 3 languages. 24 frames total. qa_economy 64/64.
+- (30) Courtship: target can decline the current suitor from their own profile («Отказаться» / Rad etish / Decline) — POST /api/court/decline; price restarts from 1. qa_economy 67/67. The courtship popup itself cannot be viewed on the original without paying ❤.

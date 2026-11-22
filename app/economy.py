@@ -173,6 +173,11 @@ def court(suitor: int, target: int) -> str | int:
     return price
 
 
+def decline_court(uid: int) -> bool:
+    """The courted player turns the current suitor away (the hearts they already received stay); the price starts again from 1."""
+    return db.x("DELETE FROM courtship WHERE target=?", uid).rowcount == 1
+
+
 def tag_task(uid: int) -> dict:
     """State of the 'rate 10 players' task plus the next player to rate."""
     done = db.q1("SELECT COUNT(*) c FROM tag_votes WHERE voter=?", uid)["c"]

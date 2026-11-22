@@ -701,7 +701,7 @@ async function openProfile(uid) {
         <div class="suit">
           <div class="sa">${sp ? (sp.photo ? `<img src="${esc(sp.photo)}" referrerpolicy="no-referrer">` : esc(initials(sp.name))) : "♡"}</div>
           <div class="si">${sp ? `<div class="l">${esc(t("courting"))} <b>${esc(sp.name)}</b></div><div class="h">❤ ${sp.price}</div>` : `<div class="l">${t("court_none")}</div>`}
-            ${me ? "" : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
+            ${me ? (sp ? `<button class="btn out" id="pf-decl">${t("court_decline")}</button>` : "") : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
         </div>
         <div class="acts">
           ${me ? `<button class="a4" id="pf-edit" style="width:100%;border-radius:36px">${t("profile_settings")}</button>` :
@@ -715,6 +715,9 @@ async function openProfile(uid) {
     on("#pf-ach", () => showAchievementsOf(c));
     on("#pf-mail", () => { m.close(); openPm(c); });
     on("#pf-edit", () => { m.close(); profileModal(false); });
+    on("#pf-decl", async () => {
+      try { await api("/api/court/decline", "POST"); c = await api("/api/user/" + uid); render(); } catch { toast(t("err")); }
+    });
     on("#pf-court", async () => {
       try { const r = await api("/api/court", "POST", { to: uid }); ME = r.me; renderMe(); c = await api("/api/user/" + uid); sfx.gift(); render(); }
       catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else if (e.code === "already") toast(t("courting") + " ✓"); else toast(t("err")); }
