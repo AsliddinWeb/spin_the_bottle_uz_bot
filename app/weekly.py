@@ -65,6 +65,11 @@ async def weekly_loop() -> None:
     await asyncio.sleep(20)
     while True:
         try:
+            from . import league
+            for la in await asyncio.to_thread(league.award_last_week):
+                print("league award:", la)
+                from .game import hub
+                await hub.push_me(la["uid"])
             awards = await asyncio.to_thread(award_last_week)
             if awards:
                 print("weekly awards:", awards)

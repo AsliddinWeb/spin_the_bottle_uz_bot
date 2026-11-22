@@ -970,3 +970,32 @@ select.rt-per option{color:#222}
 @keyframes boom{0%{transform:scale(.1);opacity:1}40%{transform:scale(1);opacity:1}100%{transform:scale(1.35);opacity:0}}
 .av .slapfx{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:8;border-radius:inherit;background:radial-gradient(circle at 70% 40%,rgba(255,40,40,.7),rgba(255,40,40,.25) 55%,transparent 75%);animation:slapfade 1s ease-out both}
 @keyframes slapfade{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+
+/* league window */
+.modal.league{max-height:calc(var(--vh)*86)}
+.lg-me{display:flex;justify-content:space-around;text-align:center;margin:6px 0}
+.lg-me b{display:block;font-size:24px;color:#6b4a1e}.lg-me small{color:#999;font-weight:700}.lg-me .x2 b{color:#e08a00}
+.lg-bs{display:flex;gap:10px;justify-content:center;margin:10px 0}
+.lg-b{position:relative;width:54px;height:54px;border-radius:50%;background:#eef3ff;font-size:26px;box-shadow:inset 0 0 0 2px #cfdcf5}
+.lg-b:disabled{opacity:.45}.lg-b i{position:absolute;right:-4px;top:-4px;min-width:20px;height:20px;border-radius:10px;background:#888;color:#fff;font:700 12px/20px system-ui;font-style:normal}
+.lg-b.shop{background:#8cc63f;color:#fff;font-size:30px;box-shadow:none}
+.lg-list{max-height:34vh;overflow:auto}
+.lg-r{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid #eef0f3}
+.lg-r b{width:24px;text-align:center;color:#999}.lg-r span{flex:1;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lg-r em{font-style:normal;font-weight:900;color:#d9380f}
+.lg-r.me{background:#fff7da;border-radius:10px}
+.bs-own{color:#6b8a2e;font-weight:700}
+/* choice boosters: bar under the choice buttons + centre-of-table effects */
+#boostbar{position:absolute;left:var(--cx);top:calc(var(--cy) + var(--u)*30);transform:translateX(-50%);display:flex;gap:calc(var(--u)*3);z-index:9}
+#boostbar button{display:flex;align-items:center;gap:6px;background:#fff;border-radius:99px;padding:calc(var(--u)*1.2) calc(var(--u)*3.4);box-shadow:0 2px 8px rgba(0,0,0,.35);font-size:calc(var(--u)*5);animation:bpop .35s cubic-bezier(.2,1.8,.4,1)}
+#boostbar button b{font-size:calc(var(--u)*3.4);color:#888}
+@keyframes bpop{from{transform:scale(.3);opacity:0}}
+.bfx{position:absolute;left:var(--cx);top:var(--cy);width:calc(var(--u)*34);height:calc(var(--u)*34);transform:translate(-50%,-50%);z-index:12;pointer-events:none;display:grid;place-items:center}
+.bfx svg{width:78%;filter:drop-shadow(0 4px 8px rgba(120,0,0,.5))}
+.bfx.fire .fl{position:absolute;font-size:calc(var(--u)*30);animation:bfire 1.9s ease-out both}
+.bfx.fire svg{position:relative;animation:blip 1.9s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes bfire{0%{transform:scale(.2);opacity:0}25%{transform:scale(1.15);opacity:1}100%{transform:translateY(-12%) scale(1.3);opacity:0}}
+@keyframes blip{0%{transform:scale(.1) rotate(-12deg);opacity:0}30%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1.35);opacity:0}}
+.bfx.slap .hand{font-size:calc(var(--u)*28);animation:bslap 1.7s ease-out both}
+.bfx.slap i{position:absolute;font-style:normal;font-size:calc(var(--u)*22);animation:bhit 1.7s ease-out both}
+@keyframes bslap{0%{transform:translateX(160%) rotate(35deg) scale(.6);opacity:0}22%{transform:translateX(0) rotate(-12deg) scale(1.1);opacity:1}35%{transform:translateX(-6%) rotate(-4deg)}100%{transform:translateY(8%) scale(1.05);opacity:0}}
+@keyframes bhit{0%,18%{transform:scale(0);opacity:0}28%{transform:scale(1.2);opacity:1}100%{transform:scale(1.5);opacity:0}}

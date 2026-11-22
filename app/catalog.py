@@ -110,6 +110,11 @@ ITEMS = {
     "bottle_cola": {"kind": "bottle", "price": 5, "emoji": "🍾"},
     "bottle_gold": {"kind": "bottle", "price": 10, "emoji": "🍾"},
     "bottle_rainbow": {"kind": "bottle", "price": 15, "emoji": "🍾"},
+    "kiss_fire": {"kind": "choice", "price": 15, "emoji": "🔥"},      # "Страстный поцелуй": shown in the table centre after you choose
+    "slap": {"kind": "choice", "price": 10, "emoji": "🖐️"},          # "Пощёчина"
+    "league_x2": {"kind": "league", "price": 20, "emoji": "⭐"},      # x2 league points for 5 minutes
+    "league_limit": {"kind": "league", "price": 25, "emoji": "🔼"},   # +10 to the weekly limit
+    "league_plus5": {"kind": "league", "price": 25, "emoji": "➕"},   # +5 points now
     "magnet": {"kind": "booster", "price": 20, "emoji": "🧲"},
     "double": {"kind": "booster", "price": 15, "emoji": "✨"},
     "shield": {"kind": "booster", "price": 10, "emoji": "🛡️"},

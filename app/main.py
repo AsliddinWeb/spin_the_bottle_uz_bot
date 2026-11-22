@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, bot as botmod, config, db, economy, orders, tgmusic
+from . import auth, bot as botmod, config, db, economy, league, orders, tgmusic
 from .catalog import (RANK_AT, TAGS, ACHIEVEMENTS, CHANCE_PACKS, CHANCE_PRICE, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, DAILY, GESTURES, GIFTS, ITEMS, PACKS, VIP_DAYS,
                       VIP_SMILES, VIP_STARS, WHEEL)
 from .game import hub
@@ -278,6 +278,18 @@ async def store_buy(b: Item, u=Depends(auth.current_user)):
 async def store_equip(b: Item, u=Depends(auth.current_user)):
     if not economy.equip(u["id"], b.item):
         raise HTTPException(400, "not_owned")
+    return economy.me_payload(u["id"])
+
+
+@app.get("/api/league")
+async def league_get(u=Depends(auth.current_user)):
+    return {"me": league.info(u["id"]), "top": league.top(20), "ends": league.week_end(), "prizes": config.LEAGUE_PRIZES}
+
+
+@app.post("/api/league/use")
+async def league_use(b: Item, u=Depends(auth.current_user)):
+    if not league.use(u["id"], b.item):
+        raise HTTPException(400, "none")
     return economy.me_payload(u["id"])
 
 

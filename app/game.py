@@ -7,7 +7,7 @@ from collections import deque
 
 import httpx
 
-from . import chatfilter, config, db, economy, events, moderation, tgmusic
+from . import chatfilter, config, db, economy, events, league, moderation, tgmusic
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
@@ -259,6 +259,7 @@ class Table:
         await self.notify_achievements(spinner.uid)
         self.target_uid = target.uid
         self.spin_id += 1
+        self.boosted = set()
         self.spin_bottle = spinner.bottle
         self.phase = "spinning"
         self.set_deadline(SPIN_DUR)
@@ -295,6 +296,27 @@ class Table:
         await self.broadcast()
         await asyncio.sleep(pause)
 
+    async def handle_boost(self, client, kind: str) -> None:
+        """Choice booster ("Страстный поцелуй" / "Пощёчина"): only the two players of the current spin, once each, right after their choice."""
+        if kind not in ("kiss_fire", "slap") or self.phase not in ("ask_spinner", "ask_target", "result"):
+            return
+        if client.uid not in (self.turn_uid, self.target_uid) or client.uid in getattr(self, "boosted", set()) or client.uid not in self.players:
+            return
+        if db.x("UPDATE inventory SET qty=qty-1 WHERE user_id=? AND item=? AND qty>0", client.uid, kind).rowcount != 1:
+            await client.send({"t": "toast", "key": "no_booster"})
+            return
+        self.boosted = getattr(self, "boosted", set()) | {client.uid}
+        league.add_points(client.uid, 1, boost=False)
+        p = self.players[client.uid]
+        await self.say("boost", uid=p.uid, name=p.name, boost=kind)
+        await self.push_me_safe(client.uid)
+
+    async def push_me_safe(self, uid: int) -> None:
+        try:
+            await hub.push_me(uid)
+        except Exception:
+            pass
+
     async def kiss(self, a: Player, b: Player) -> None:
         counted = db.pair_kiss(a.uid, b.uid) <= config.PAIR_DAILY_CAP   # beyond the cap the kiss still pays, but stays out of the day/week/month lists
         for p in (a, b):
@@ -304,6 +326,8 @@ class Table:
             reward += events.bonus()
             db.add_hearts(p.uid, reward)
             db.inc(p.uid, "kisses", daily=counted)
+            if counted:
+                league.add_points(p.uid, 1)   # a received kiss is worth a league point (x2 booster, weekly limit)
             p.tkiss += 1
         await self.say("kiss", uid=a.uid, name=a.name, to_uid=b.uid, to_name=b.name, n=a.tkiss)
         for p in (a, b):
@@ -642,6 +666,8 @@ class Hub:
             tb = c.table
             if t == "spin":
                 tb.deliver(c.uid, "spin")
+            elif t == "boost":
+                await tb.handle_boost(c, str(m.get("kind", "")))
             elif t == "decide":
                 tb.deliver(c.uid, "decide", bool(m.get("v")))
             elif t == "chat":

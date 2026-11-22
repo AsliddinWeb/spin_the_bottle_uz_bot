@@ -216,7 +216,7 @@ function showAch(id) {
   $(".cta-ok", m.el).onclick = m.close; sfx.ach();
 }
 function applyStatic() {
-  [["btn-wheel", "wheel_title"], ["btn-rating", "ratings"], ["btn-menu", "hud_menu"], ["btn-settings", "settings"], ["btn-table", "hud_table"]].forEach(([id, k]) => { const e = $("#" + id); if (e) e.title = t(k); });
+  [["btn-wheel", "wheel_title"], ["btn-rating", "league_title"], ["btn-menu", "hud_menu"], ["btn-settings", "settings"], ["btn-table", "hud_table"]].forEach(([id, k]) => { const e = $("#" + id); if (e) e.title = t(k); });
   document.documentElement.lang = lang;
   $("#chat-input").placeholder = t("type_msg");
   $("#gp-label").textContent = t("send_gift");
@@ -280,7 +280,7 @@ function openStarter() {
 function bindUi() {
   $("#btn-hearts").onclick = openShop;
   $("#btn-wheel").onclick = openWheel;
-  $("#btn-rating").onclick = openRatings;
+  $("#btn-rating").onclick = openLeague;
   $("#btn-menu").onclick = openMenu;
   $("#btn-settings").onclick = openSettings;
   $("#btn-table").onclick = openTables;
@@ -516,11 +516,32 @@ function kissFx() {
   setTimeout(() => root.remove(), 2800);
 }
 
+const BOOST_E = { kiss_fire: "🔥", slap: "🖐️" };
+let boostUntil = 0, boostSpin = -1, boostUsed = -1;
+function decide(v) {   // answering also opens a short window in which a choice booster can be thrown
+  send({ t: "decide", v }); boostUntil = Date.now() + 7000; boostSpin = T && T.spin ? T.spin.id : -1; setTimeout(updateBoostbar, 7100);
+}
+function updateBoostbar() {
+  const felt = $("#felt"); if (!felt || !T) return;
+  let bar = $("#boostbar"); if (!bar) { bar = document.createElement("div"); bar.id = "boostbar"; felt.appendChild(bar); }
+  const kinds = ["kiss_fire", "slap"].filter(k => ((ME.inv || {})[k] || { qty: 0 }).qty > 0);
+  const ok = (T.turn === ME.id || T.target === ME.id) && Date.now() < boostUntil && T.spin && T.spin.id === boostSpin && boostUsed !== boostSpin && ["ask_spinner", "ask_target", "result"].includes(T.phase) && kinds.length;
+  bar.innerHTML = ok ? kinds.map(k => `<button data-bk="${k}"><span>${BOOST_E[k]}</span><b>${ME.inv[k].qty}</b></button>`).join("") : "";
+  $$("[data-bk]", bar).forEach(b => b.onclick = () => { send({ t: "boost", kind: b.dataset.bk }); boostUsed = boostSpin; bar.innerHTML = ""; });
+}
+function boostFx(kind) {
+  const felt = $("#felt"); if (!felt) return;
+  const e = document.createElement("div"); e.className = "bfx " + (kind === "slap" ? "slap" : "fire");
+  e.innerHTML = kind === "slap" ? `<span class="hand">🖐️</span><i>💥</i>` : `<span class="fl">🔥</span>${LIPS_SVG}`;
+  felt.appendChild(e); setTimeout(() => e.remove(), 2300);
+  if (kind === "slap") { sfx.giftPlay("slipper"); setTimeout(() => sfx.smack(), 220); } else sfx.kiss();
+}
 function renderActions() {
   const a = $("#actions"); a.innerHTML = "";
   const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "cta " + cls; b.textContent = txt; b.onclick = () => { a.innerHTML = ""; fn(); }; a.appendChild(b); };
-  if (T.phase === "ask_spinner" && T.turn === ME.id) { btn(t("kiss_btn"), "", () => send({ t: "decide", v: true })); btn(t("skip_btn"), "alt", () => send({ t: "decide", v: false })); }
-  else if (T.phase === "ask_target" && T.target === ME.id) { btn(t("yes_btn"), "", () => send({ t: "decide", v: true })); btn(t("no_btn"), "alt", () => send({ t: "decide", v: false })); }
+  if (T.phase === "ask_spinner" && T.turn === ME.id) { btn(t("kiss_btn"), "", () => decide(true)); btn(t("skip_btn"), "alt", () => decide(false)); }
+  else if (T.phase === "ask_target" && T.target === ME.id) { btn(t("yes_btn"), "", () => decide(true)); btn(t("no_btn"), "alt", () => decide(false)); }
+  updateBoostbar();
 }
 
 function tick() {
@@ -669,6 +690,9 @@ function addChat(m) {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">🏅</span><div><b style="color:#f0a24a">DJ</b> ${esc(t("dj_level", { n: m.level }))}</div>`;
     sfx.win();
+  } else if (m.k === "boost") {
+    boostFx(m.boost);
+    d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;
   } else if (m.k === "music") {
     d.className = "msg ev"; d.innerHTML = `<span class="ico">♪</span><div>${esc(m.title)}<small style="display:block;color:#888">${esc(m.name)}</small></div>`;
   } else return;
@@ -1218,21 +1242,41 @@ function openStore(kind) {
 }
 
 // ---- boosters: round icons with counts, tap for details
+async function openLeague() {
+  let d; try { d = await api("/api/league"); } catch { return toast(t("err")); }
+  const m = openModal("", { cls: "league" }), inv = id => (ME.inv[id] || { qty: 0 }).qty, it = id => CFG.items.find(i => i.id === id);
+  const render = () => {
+    const left = Math.max(0, d.ends - Math.floor(Date.now() / 1000)), dd = Math.floor(left / 86400), hh = Math.floor(left % 86400 / 3600), me = d.me;
+    m.set(`<button class="qhelp" id="lg-help">?</button><h2>🏆 ${esc(t("league_title"))}</h2>
+      <p class="sub center">${esc(t("league_end", { d: dd, h: hh }))}</p>
+      <div class="lg-me"><div><b>${me.rank ? "#" + me.rank : "—"}</b><small>${esc(t("league_rank"))}</small></div><div><b>${me.pts}/${me.limit}</b><small>${esc(t("league_pts"))}</small></div>${me.x2_left ? `<div class="x2"><b>×2</b><small>${esc(t("league_x2_left", { m: Math.ceil(me.x2_left / 60) }))}</small></div>` : ""}</div>
+      <div class="dt-bar"><i style="width:${Math.min(100, Math.round(me.pts / me.limit * 100))}%"></i></div>
+      <div class="lg-bs">${["league_x2", "league_limit", "league_plus5"].map(id => `<button class="lg-b" data-use="${id}" ${inv(id) ? "" : "disabled"} title="${esc(t(id + "_n"))}"><span>${it(id).emoji}</span><i>${inv(id)}</i></button>`).join("")}<button class="lg-b shop" id="lg-shop">＋</button></div>
+      <div class="lg-list">${d.top.map((r, i) => `<div class="lg-r ${r.uid === ME.id ? "me" : ""}"><b>${i + 1}</b>${miniAv(r.photo, r.name)}<span>${esc(r.name)}</span><em>${r.pts}</em></div>`).join("") || `<p class="sub center">${esc(t("league_empty"))}</p>`}</div>`);
+    $("#lg-help", m.el).onclick = () => toast(t("league_help", { n: d.me.limit }), 12000);
+    $("#lg-shop", m.el).onclick = () => { m.close(); openBoosters(); };
+    $$("[data-use]", m.el).forEach(b => b.onclick = async () => {
+      try { ME = await api("/api/league/use", "POST", { item: b.dataset.use }); renderMe(); sfx.win(); d = await api("/api/league"); render(); } catch { toast(t("not_yet")); }
+    });
+  };
+  render();
+}
 function openBoosters() {
   const m = openModal("", { cls: "boost" }); let sel = "";
-  const groups = [["b_choice", ["magnet", "double"]], ["b_league", ["shield"]]];
+  const groups = [["b_choice", ["kiss_fire", "slap"]], ["b_league", ["league_x2", "league_limit", "league_plus5"]], ["b_other", ["magnet", "double", "shield"]]];
   const render = () => {
     const it = id => CFG.items.find(i => i.id === id), inv = id => ME.inv[id] || { qty: 0, armed: 0 };
     m.set(`<button class="qhelp" id="bs-help">?</button><h2>${t("boosters_title")}</h2><p class="center" style="margin:2px 0 6px;font-weight:600">${t("boosters_desc")}</p>
       ${groups.map(([title, ids]) => `<div class="bs-h"><span>${t(title)}</span></div><div class="bs-row">${ids.map(id => `<button class="bs-i ${sel === id ? "on" : ""}" data-b="${id}"><span>${it(id).emoji}</span><i>${inv(id).qty + inv(id).armed}</i></button>`).join("")}</div>`).join("")}
       ${sel ? `<div class="bs-d"><b>${t(sel + "_n")}</b><small>${t(sel + "_d")}</small>
-        <div class="bs-a"><button class="btn" data-buy="${sel}">❤️ ${it(sel).price}</button>${inv(sel).qty ? `<button class="btn blue" data-arm="${sel}">${t("use")} (${inv(sel).qty})</button>` : ""}</div>
+        <div class="bs-a"><button class="btn" data-buy="${sel}">❤️ ${it(sel).price}</button>${inv(sel).qty ? (it(sel).kind === "league" ? `<button class="btn blue" data-lg="${sel}">${t("use")} (${inv(sel).qty})</button>` : it(sel).kind === "choice" ? `<small class="bs-own">× ${inv(sel).qty} · ${t("choice_hint")}</small>` : `<button class="btn blue" data-arm="${sel}">${t("use")} (${inv(sel).qty})</button>`) : ""}</div>
         ${inv(sel).armed ? `<small style="color:#4a9">${t("armed", { n: inv(sel).armed })}</small>` : ""}</div>` : ""}`);
     $$("[data-b]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.b; render(); });
-    $("#bs-help", m.el).onclick = () => toast(t("boosters_help"), 5000);
+    $("#bs-help", m.el).onclick = () => toast(t("boosters_help"), 12000);
     const act = async (path, body) => { try { ME = await api(path, "POST", body); renderMe(); render(); } catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(t("err")); } };
     $$("[data-buy]", m.el).forEach(b => b.onclick = () => act("/api/store/buy", { item: b.dataset.buy }));
     $$("[data-arm]", m.el).forEach(b => b.onclick = () => act("/api/store/arm", { item: b.dataset.arm }));
+    $$("[data-lg]", m.el).forEach(b => b.onclick = () => act("/api/league/use", { item: b.dataset.lg }));
   };
   render();
 }

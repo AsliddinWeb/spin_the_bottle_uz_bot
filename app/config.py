@@ -58,6 +58,12 @@ KICK_MIN_PLAYERS = 3     # nobody can be kicked from a table with fewer players
 # per pair per day in the day/week/month lists, so two accounts cannot farm the top by kissing each other.
 WEEKLY_REWARDS = [100, 50, 25]
 WEEKLY_MIN = 5
+LEAGUE_LIMIT = 30          # league points per week that incoming kisses can bring ("лимит на входящие поцелуи")
+LEAGUE_X2_SEC = 300        # x2 booster lasts 5 minutes
+LEAGUE_LIMIT_PLUS = 10     # "Расширение лимита": +10 to this week's limit
+LEAGUE_PLUS_PTS = 5        # "+5 очков": instant, ignores the limit
+LEAGUE_MIN = 5             # minimum points to win a weekly prize
+LEAGUE_PRIZES = {1: {"kiss_fire": 3, "slap": 3, "league_x2": 2, "league_plus5": 1}, 2: {"kiss_fire": 2, "slap": 2, "league_x2": 1}, 3: {"kiss_fire": 1, "slap": 1, "league_x2": 1}}
 DAILY_TASKS = [("kiss3", "kisses", 3, 4), ("msg5", "msgs", 5, 2), ("gift1", "gifts_sent", 1, 3), ("music1", "tracks", 1, 5), ("spin3", "spins", 3, 3)]  # 3 random ones per day
 STARTER = [("st_spin", "spins", 3), ("st_kiss", "kisses", 3), ("st_gift", "gifts_sent", 3)]  # (claim key, user stat, reward hearts)
 PAIR_DAILY_CAP = 3
