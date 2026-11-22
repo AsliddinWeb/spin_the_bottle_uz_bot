@@ -14,7 +14,7 @@ const ERR = {
   self: "o'zingizga qo'llab bo'lmaydi", rank: "bu odam sizdan yuqori yoki teng darajada", need_admin: "admin huquqi kerak", need_mod: "moderator huquqi kerak",
   need_owner: "faqat owner", no_user: "foydalanuvchi topilmadi", bad_role: "noto'g'ri rol", bad_what: "noto'g'ri maydon", is_owner: "owner rolini o'zgartirib bo'lmaydi",
   handled: "allaqachon ko'rib chiqilgan", no_order: "buyurtma topilmadi", bad_text: "matn noto'g'ri", no_bot: "bot ulanmagan", busy: "xabar yuborish davom etmoqda",
-  bad_word: "so'z noto'g'ri (2-30 belgi, bo'sh joysiz)", need_role: "ruxsat yo'q", empty: "bo'sh", bad_duration: "muddat noto'g'ri", bad_act: "noma'lum amal", forbidden: "ruxsat yo'q",
+  bad_word: "so'z noto'g'ri (2-30 belgi, bo'sh joysiz)", bad_event: "tadbir ma'lumoti noto'g'ri (nomi, bonus 0-20, muddat 1-60 kun)", no_event: "tadbir topilmadi", need_role: "ruxsat yo'q", empty: "bo'sh", bad_duration: "muddat noto'g'ri", bad_act: "noma'lum amal", forbidden: "ruxsat yo'q",
 };
 const ROLE_TXT = { owner: "owner", admin: "admin", mod: "moderator", "": "o'yinchi" };
 const REASON = { abuse: "haqorat", spam: "spam", nsfw: "18+", fraud: "aldash", age: "yosh" };
@@ -34,7 +34,7 @@ const rank = () => RANK[ME.role] || 0;
 
 // ---------------------------------------------------------------- shell
 const TABS = [["dash", "📊 Bosh", 1], ["users", "👥 O'yinchilar", 1], ["reports", "🚩 Shikoyat", 1], ["orders", "🛒 Buyurtma", 2], ["tables", "🎮 Stollar", 1],
-["photos", "🖼 Rasmlar", 1], ["filter", "🧹 Filtr", 1], ["audit", "📜 Audit", 1], ["broadcast", "📣 Xabar", 2], ["backup", "💾 Zaxira", 3]];
+["events", "🎉 Tadbir", 2], ["photos", "🖼 Rasmlar", 1], ["filter", "🧹 Filtr", 1], ["audit", "📜 Audit", 1], ["broadcast", "📣 Xabar", 2], ["backup", "💾 Zaxira", 3]];
 let badges = {};
 
 function drawTabs() {
@@ -49,7 +49,7 @@ function closeSheet() { $("#sheet").hidden = true; $("#sheet-body").innerHTML = 
 
 async function render() {
   const v = $("#view"); v.innerHTML = `<p class="muted">Yuklanmoqda…</p>`;
-  const fn = { dash, users, reports, orders, tables, photos, filter, audit, broadcast, backup }[tab];
+  const fn = { dash, users, reports, orders, tables, events, photos, filter, audit, broadcast, backup }[tab];
   try { await fn(v); } catch (e) { v.innerHTML = `<p class="muted">Xato: ${esc(e.message)}</p>`; }
   refreshBadges();
 }
@@ -196,6 +196,35 @@ async function filter(v) {
   v.onclick = async e => {
     const u = e.target.closest("[data-u]"); if (u) { e.preventDefault(); return userSheet(+u.dataset.u); }
     const w = e.target.closest("[data-w]"); if (w && confirm(`"${w.dataset.w}" o'chirilsinmi?`) && await run(() => api("/filter/words/" + encodeURIComponent(w.dataset.w), "DELETE"), "O'chirildi")) render();
+  };
+}
+
+// ---------------------------------------------------------------- seasonal events
+const EV_PRESETS = [
+  { e: "💘", uz: "Sevishganlar kuni", ru: "День влюблённых", en: "Valentine's Day", b: 2, d: 7 },
+  { e: "🌸", uz: "Navro'z", ru: "Навруз", en: "Navruz", b: 2, d: 5 },
+  { e: "🎄", uz: "Yangi yil", ru: "Новый год", en: "New Year", b: 3, d: 10 },
+];
+async function events(v) {
+  const d = await api("/events"), a = d.active;
+  v.innerHTML = `${a ? `<div class="item"><div class="grow"><b>${esc(a.emoji)} ${esc(a.name.uz)}</b> <span class="pill">+❤${a.bonus} / o'pish</span><div class="muted">${fmt(a.starts)} → ${fmt(a.ends)}</div></div><button data-stop="${a.id}">To'xtatish</button></div>` : `<p class="muted">Hozir tadbir yo'q.</p>`}
+    <h3>Yangi tadbir</h3>
+    <div>${EV_PRESETS.map((p, i) => `<button data-p="${i}">${p.e} ${esc(p.uz)}</button>`).join(" ")}</div>
+    <div class="row"><input id="ev-e" placeholder="🎉" style="max-width:60px"><input id="ev-uz" placeholder="Nomi (uz)"></div>
+    <div class="row"><input id="ev-ru" placeholder="Название (ru)"><input id="ev-en" placeholder="Name (en)"></div>
+    <div class="row"><input id="ev-b" type="number" min="0" max="20" value="2" style="max-width:90px"> <span class="muted">❤ qo'shimcha har o'pishga</span>
+      <input id="ev-d" type="number" min="1" max="60" value="7" style="max-width:90px"> <span class="muted">kun</span></div>
+    <div class="row"><button id="ev-go">🎉 Boshlash</button></div>
+    <h3>Tarix</h3><div class="muted">${d.list.map(x => `${esc(x.emoji)} ${esc(x.name.uz)} · +❤${x.bonus} · ${fmt(x.starts)}–${fmt(x.ends)}${x.enabled ? "" : " · to'xtatilgan"}`).join("<br>") || "—"}</div>`;
+  v.onclick = async e => {
+    const p = e.target.closest("[data-p]");
+    if (p) { const x = EV_PRESETS[+p.dataset.p]; $("#ev-e").value = x.e; $("#ev-uz").value = x.uz; $("#ev-ru").value = x.ru; $("#ev-en").value = x.en; $("#ev-b").value = x.b; $("#ev-d").value = x.d; return; }
+    const s = e.target.closest("[data-stop]");
+    if (s && confirm("Tadbir to'xtatilsinmi?") && await run(() => api("/events/" + s.dataset.stop + "/stop", "POST", {}), "To'xtatildi")) render();
+  };
+  $("#ev-go").onclick = async () => {
+    const body = { uz: $("#ev-uz").value, ru: $("#ev-ru").value, en: $("#ev-en").value, emoji: $("#ev-e").value, bonus: +$("#ev-b").value, days: +$("#ev-d").value };
+    if (await run(() => api("/events", "POST", body), "Tadbir boshlandi")) render();
   };
 }
 

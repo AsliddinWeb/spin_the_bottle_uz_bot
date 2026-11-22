@@ -66,7 +66,7 @@ Quyida hozirgi holat tahlili, undagi bo'shliqlar ("o'yindan mano yo'q bo'lib qol
 | C | Boshlang'ich vazifalar paneli (3 qadam) | ✅ tayyor |
 | D | Kunlik vazifalar (3 ta tasodifiy) + mukofot | ✅ tayyor |
 | E | Unvonlar (daraja yo'li) | ✅ tayyor |
-| F | Fasl tadbirlari (admin paneldan) | ⏳ |
+| F | Fasl tadbirlari (admin paneldan) | ✅ tayyor |
 | G | Kengaytirish: PostgreSQL + ko'p jarayon (1M ro'yxat / 1000 onlayn) | ⏳ reja |
 
 ## 6. Mijozdan tasdiq kerak bo'lgan savollar

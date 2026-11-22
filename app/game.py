@@ -7,7 +7,7 @@ from collections import deque
 
 import httpx
 
-from . import chatfilter, config, db, economy, moderation
+from . import chatfilter, config, db, economy, events, moderation
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
@@ -301,6 +301,7 @@ class Table:
             reward = KISS_REWARD + (TABLE_VIP_KISS_BONUS if p.vip else 0)
             if db.consume_armed(p.uid, "double"):
                 reward *= 2
+            reward += events.bonus()
             db.add_hearts(p.uid, reward)
             db.inc(p.uid, "kisses", daily=counted)
             p.tkiss += 1

@@ -108,3 +108,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (40) Starter tasks: first spin / first kiss / first gift, +3 hearts each (config.STARTER, /api/starter/claim, chip in HUD). Test: tests/qa_starter.py (9).
 - (41) Kunlik vazifalar: har kuni 3 ta tasodifiy (o'pish/xabar/sovg'a/musiqa/aylantirish), ❤2-5; stats_daily + daily_tasks jadvali, /api/dtask/claim, HUD chip. Test: tests/qa_dtasks.py (9).
 - (42) Unvonlar: o'pishlar bo'yicha Yangi/Tanish/Mashhur/Yulduz/Afsona (10/50/200/1000), profilda progress, unvon ko'tarilganda xabar. catalog.RANK_AT, me/user_card "rank". Test: tests/qa_ranks.py (21).
+- (43) Fasl tadbirlari: admin paneldagi "Tadbir" bo'limidan boshlanadi/to'xtatiladi (Sevishganlar kuni/Navro'z/Yangi yil shablonlari), davomida har o'pishga +❤N, o'yinchida chip va xabar. app/events.py, /api/admin/events. Test: tests/qa_events.py (12).

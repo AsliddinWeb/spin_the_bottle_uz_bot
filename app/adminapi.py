@@ -9,7 +9,7 @@ import time
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
-from . import auth, backup, bot as botmod, chatfilter, config, db, moderation as mod, orders
+from . import auth, backup, bot as botmod, chatfilter, config, db, events, moderation as mod, orders
 
 router = APIRouter(prefix="/api/admin")
 ADMIN = mod.RANK["admin"]
@@ -426,3 +426,37 @@ async def photos(limit: int = 40, offset: int = 0, u=Depends(staff)):
     rows = db.q("SELECT id, name, photo, last_seen FROM users WHERE photo LIKE ? ORDER BY rowid DESC LIMIT ? OFFSET ?",
                 like, max(1, min(limit, 100)), max(0, offset))
     return {"total": total, "photos": [dict(r) for r in rows]}
+
+
+# ---------------------------------------------------------------- seasonal events
+class EventIn(BaseModel):
+    uz: str
+    ru: str = ""
+    en: str = ""
+    emoji: str = ""
+    bonus: int = 2
+    days: float = 7
+
+
+@router.get("/events")
+async def events_list(u=Depends(staff)):
+    return {"active": events.active(), "list": events.listing(), "now": int(time.time())}
+
+
+@router.post("/events")
+async def events_add(b: EventIn, u=Depends(staff)):
+    _need(u, ADMIN)
+    eid = events.create({"uz": b.uz, "ru": b.ru, "en": b.en}, b.emoji, b.bonus, b.days, u["id"])
+    if not eid:
+        _fail("bad_event")
+    mod.audit(u["id"], "event_add", 0, f"#{eid} {b.uz} +{b.bonus} / {b.days}d")
+    return {"id": eid}
+
+
+@router.post("/events/{eid}/stop")
+async def events_stop(eid: int, u=Depends(staff)):
+    _need(u, ADMIN)
+    if not events.stop(eid):
+        raise HTTPException(404, "no_event")
+    mod.audit(u["id"], "event_stop", 0, f"#{eid}")
+    return {"ok": True}

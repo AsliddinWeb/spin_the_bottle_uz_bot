@@ -934,3 +934,7 @@ select.rt-per option{color:#222}
 .rk{display:flex;align-items:center;gap:12px;margin:2px 0 8px}
 .rk-e{font-size:34px;line-height:1}
 .rk-in{flex:1;min-width:0}.rk-in b{font-size:18px;color:#6b4a1e}.rk-in small{color:#888;font-weight:700;font-size:12px}
+
+/* seasonal event chip */
+.starter-chip.ev{left:calc(var(--u)*46);background:linear-gradient(#ffb36b,#ff7a3a);color:#fff}
+.starter-chip.hidden + .starter-chip.hidden + .starter-chip.ev{left:calc(var(--u)*14)}

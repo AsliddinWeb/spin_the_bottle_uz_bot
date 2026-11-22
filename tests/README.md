@@ -16,3 +16,4 @@ Eslatma: qa_game.py da 4 ta "xato" ko'rinishi mumkin, bu yutuq mukofoti yurakcha
     DB_PATH=/tmp/sq.db .venv/bin/python tests/qa_starter.py   # boshlang'ich vazifalar (9 tekshiruv)
     DB_PATH=/tmp/dq.db .venv/bin/python tests/qa_dtasks.py   # kunlik vazifalar (9 tekshiruv)
     DB_PATH=/tmp/kr.db .venv/bin/python tests/qa_ranks.py   # unvonlar (21 tekshiruv)
+    ADMIN_IDS=1 DB_PATH=/tmp/ev.db (server)   .venv/bin/python tests/qa_events.py   # fasl tadbirlari (12 tekshiruv)

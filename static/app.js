@@ -236,6 +236,14 @@ function renderMe() {
   renderMe.dready = dready;
   if (ME.rank > (renderMe.rank ?? ME.rank)) { toast(t("rk_up", { r: RANK_E[ME.rank] + " " + rankName(ME.rank) }), 4500); sfx.win(); }
   renderMe.rank = ME.rank;
+  const ev = ME.event, ec = $("#btn-event");
+  ec.classList.toggle("hidden", !ev); if (ev) ec.innerHTML = `${esc(ev.emoji)} <b>+❤${ev.bonus}</b>`;
+  if (ev && renderMe.ev !== ev.id) { renderMe.ev = ev.id; toast(`${ev.emoji} ${ev.name} · ${t("ev_bonus", { n: ev.bonus })}`, 5000); sfx.ach(); }
+}
+function openEvent() {
+  const ev = ME.event; if (!ev) return;
+  const left = Math.max(0, ev.ends - Math.floor(Date.now() / 1000)), d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600);
+  const m = openModal(`<h2>${esc(ev.emoji)} ${esc(ev.name)}</h2><p class="center" style="font-size:18px">${esc(t("ev_bonus", { n: ev.bonus }))}</p><p class="sub center">${esc(t("ev_left", { d, h }))}</p>`);
 }
 function openDailyTasks() {
   const m = openModal("");
@@ -279,6 +287,7 @@ function bindUi() {
   $("#btn-daily").onclick = openDaily;
   $("#btn-starter").onclick = openStarter;
   $("#btn-dtask").onclick = openDailyTasks;
+  $("#btn-event").onclick = openEvent;
   $("#gp-plus").onclick = openShop;
   $("#gp-close").onclick = closeGifts;
   $("#chat-form").onsubmit = e => {
