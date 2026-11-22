@@ -818,3 +818,17 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 #kickbar.in{animation:mdrop .3s}
 .kb-row.me{background:rgba(190,40,30,.88)}
 .kb-row .btn{padding:6px 12px;font-size:14px;border-radius:11px;flex:none}
+
+/* base borders under the SVG rings of the newer frames */
+.frame.fr-jungle{padding:3px;background:#2f8f3a}
+.frame.fr-castle{padding:3px;background:#8a8f99}
+.frame.fr-chain{padding:3px;background:#5a6370}
+.frame.fr-cards{padding:3px;background:#e8e8e8}
+.frame.fr-diamond{padding:3px;background:#7fe0ff}
+.frame.fr-tech{padding:3px;background:#1fb5a5}
+.frame.fr-thorns{padding:3px;background:#4a0d18}
+.frame.fr-cane{padding:3px;background:#ff7a90}
+.frame.fr-filigree{padding:3px;background:#e0b13a}
+.frame.fr-galaxy{padding:3px;background:#4a2fb0}
+.frame.fr-sakura{padding:3px;background:#ff9ec0}
+.frame.fr-inferno{padding:3px;background:#222}
