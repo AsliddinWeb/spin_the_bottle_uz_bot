@@ -103,3 +103,5 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (36) Gender rule: only boy-girl pairs (pick_target opposite gender, table waits for the missing gender, random table prefers the opposite gender). Test: tests/qa_gender.py (9).
 - (37) TOP badge for top-10 by kisses replaces VIP (seat, chat, profile). Test: tests/qa_top.py (5).
 - (38) Per-gift sounds (42 gifts, GS table in sfx.js), head gifts land top-left, drinks bottom-right with pour effect, tomato/egg splat, frog hop.
+
+- (39) Music and Video are separate modes in one picker (Musiqa/Video, Hozir/Almashtirish/Navbatga); fab stays available while playing, tapping the player replaces the track; video shows in a closable card; small-phone profile popup scrolls and shrinks.

@@ -405,7 +405,7 @@ class Table:
         await self.say("msg", uid=p.uid, name=p.name, photo=p.photo, vip=p.vip, top=p.uid in economy.top10_ids(), text=text)
         await self.notify_achievements(p.uid)
 
-    async def handle_gift(self, client: Client, to_uid: int, gift_id: str, url: str = "") -> None:
+    async def handle_gift(self, client: Client, to_uid: int, gift_id: str, url: str = "", mode: str = "audio") -> None:
         sender = self.players.get(client.uid)
         target = self.players.get(to_uid)
         g = GIFT_MAP.get(gift_id)
@@ -452,7 +452,7 @@ class Table:
             title = await fetch_title(vid)
             db.x("INSERT INTO tracks_log(user_id,vid,title,ts) VALUES(?,?,?,?)", client.uid, vid, title, int(time.time()))
             track = {"vid": vid, "title": title, "by": sender.name, "by_uid": sender.uid,
-                     "tid": f"{vid}-{now_ms()}"}
+                     "tid": f"{vid}-{now_ms()}", "mode": "video" if mode == "video" else "audio"}
             if g[3] == "music_now" or not self.music:
                 self.music = track
             else:
@@ -637,7 +637,7 @@ class Hub:
             elif t == "chat":
                 await tb.handle_chat(c, m.get("text", ""))
             elif t == "gift":
-                await tb.handle_gift(c, int(m.get("to", 0)), str(m.get("gift", "")), str(m.get("url", "")))
+                await tb.handle_gift(c, int(m.get("to", 0)), str(m.get("gift", "")), str(m.get("url", "")), str(m.get("mode", "audio")))
             elif t == "kick":
                 await tb.handle_kick(c, int(m.get("to", 0)))
             elif t == "rescue":

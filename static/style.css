@@ -895,3 +895,25 @@ select.rt-per option{color:#222}
 @keyframes splatin{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:.95}}
 @keyframes splatout{from{transform:translateY(0);opacity:.95}to{transform:translateY(22%);opacity:0}}
 .av .drop{position:absolute;left:50%;top:50%;border-radius:50%;pointer-events:none;z-index:7}
+
+/* small phones: popups scroll instead of being cut off, photo and stat rows shrink */
+.modal.prof{overflow-y:auto;overscroll-behavior:contain}
+@media (max-height:700px){
+  .prof .ph{height:min(calc(min(100vw - 28px,420px)*1.02),calc(var(--vh)*30))!important}
+  .prof .ph .big{font-size:64px}
+  .stat{padding:3px 0;font-size:17px}.stat i{font-size:22px;width:28px}
+  .prof .pb{padding:4px 14px 12px}
+}
+@media (max-height:600px){.prof .ph{height:calc(var(--vh)*24)!important}}
+
+/* music / video: fab stays available while playing, player is tappable, video card floats above the chat */
+#dj-fab.off{display:flex}
+#player{cursor:pointer}
+#yt-holder.video{left:8px;right:auto;top:auto;bottom:calc(var(--u)*17);width:min(58vw,260px);height:min(32.6vw,146px);opacity:1;pointer-events:auto;z-index:20;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.45);background:#000}
+#yt-holder iframe,#yt-holder #yt{width:100%;height:100%;border:0}
+#yt-x{position:absolute;right:4px;top:4px;z-index:2;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:14px;display:none}
+#yt-holder.video #yt-x{display:block}
+.mp-seg{display:flex;gap:6px;background:#eef0f3;border-radius:14px;padding:4px;margin:0 0 8px}
+.mp-seg button{flex:1;padding:9px 6px;border-radius:11px;background:none;font-weight:800;font-size:15px;color:#777}
+.mp-seg button.on{background:#fff;color:#2b8a3e;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.mp-seg.sm button{font-size:13px;padding:7px 4px}
