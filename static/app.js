@@ -1124,16 +1124,18 @@ function openAchievements() {
 }
 
 async function openRatings() {
-  const m = openModal("", { cls: "rate" }); let kind = "kisses";
+  const m = openModal("", { cls: "rate" }); let kind = "kisses", period = "all";
   const tabs = [["kisses", "💋", "most_kissed"], ["tracks", "🎵", "most_music"], ["hearts", "❤️", "most_hearts"], ["court", "💞", "most_court"], ["gifts", "😊", "most_gifts"]];
   const load = async () => {
-    let r; try { r = await api("/api/ratings/" + kind); } catch { return; }
+    let r; const pOK = ["kisses", "tracks", "gifts"].includes(kind); if (!pOK) period = "all";
+    try { r = await api(`/api/ratings/${kind}?period=${period}`); } catch { return; }
     const cur = tabs.find(x => x[0] === kind);
     m.set(`<div class="rt-top"><button class="rt-q" id="rt-q">?</button><div class="rt-ic">${tabs.map(([k, i]) => `<button data-k="${k}" class="${k === kind ? "on" : ""}">${i}</button>`).join("")}</div></div>
-      <div class="rt-sub"><b>${t(cur[2])}</b><span class="rt-per">${t("all_time")} ▾</span></div>
+      <div class="rt-sub"><b>${t(cur[2])}</b>${pOK ? `<select class="rt-per" id="rt-per">${[["day", "period_day"], ["week", "period_week"], ["month", "period_month"], ["all", "all_time"]].map(([k, key]) => `<option value="${k}" ${k === period ? "selected" : ""}>${esc(t(key))}</option>`).join("")}</select>` : `<span class="rt-per">${t("all_time")}</span>`}</div>
       <div class="rt-list">${r.rows.map((x, i) => `<div class="rt2-row"><div class="rt2-ph">${x.photo ? `<img src="${esc(x.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div><b><em>${i + 1}.</em> ${esc(x.name)}${x.vip ? " 👑" : ""}</b><span>${cur[1]} ${x.v.toLocaleString("ru")}</span></div>`).join("")}</div>
       <div class="rt2-row me"><div class="rt2-ph">${ME.photo ? `<img src="${esc(ME.photo)}" referrerpolicy="no-referrer">` : ""}</div><b><em>${r.rank}.</em> ${esc(ME.name)}</b><span>${cur[1]} ${(r.mine || 0).toLocaleString("ru")}</span></div>`);
     $$("[data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; load(); });
+    const ps = $("#rt-per", m.el); if (ps) ps.onchange = () => { period = ps.value; load(); };
     $("#rt-q", m.el).onclick = () => toast(t(cur[2]));
   };
   load();

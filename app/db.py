@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS worn(user_id INTEGER, slot TEXT, emoji TEXT, ts INTEG
 """)
 _db.execute("CREATE TABLE IF NOT EXISTS tracks_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, vid TEXT, title TEXT, ts INTEGER)")
 _db.execute("CREATE INDEX IF NOT EXISTS tracks_log_vid ON tracks_log(vid)")
+_db.execute("CREATE TABLE IF NOT EXISTS stats_daily(day TEXT, uid INTEGER, kisses INTEGER DEFAULT 0, tracks INTEGER DEFAULT 0, gifts INTEGER DEFAULT 0, PRIMARY KEY(day, uid))")
+_db.execute("CREATE INDEX IF NOT EXISTS stats_daily_uid ON stats_daily(uid, day)")
 # indexes for the rating lists, the admin stats and the player list: without them every call scans all users (80-500 ms at 1M users)
 for _ix in ("users_kisses ON users(kisses DESC, id)", "users_gifts ON users(gifts_received DESC, id)", "users_hearts ON users(hearts DESC, id)",
             "users_tracks ON users(tracks DESC, id)", "users_seen ON users(last_seen)", "users_created ON users(created)"):
@@ -130,9 +132,15 @@ def spend_hearts(uid: int, n: int) -> bool:
     return cur.rowcount == 1
 
 
+DAILY_COL = {"kisses": "kisses", "tracks": "tracks", "gifts_received": "gifts"}   # counters that also feed the day/week/month rating lists
+
+
 def inc(uid: int, field: str, n: int = 1) -> None:
     assert field in {"kisses", "gifts_sent", "gifts_received", "spins", "msgs", "chances", "streak", "tracks"}
     x(f"UPDATE users SET {field}={field}+? WHERE id=?", n, uid)
+    if field in DAILY_COL:
+        c = DAILY_COL[field]
+        x(f"INSERT INTO stats_daily(day,uid,{c}) VALUES(?,?,?) ON CONFLICT(day,uid) DO UPDATE SET {c}={c}+?", today(), uid, n, n)
 
 
 def is_vip(u) -> bool:

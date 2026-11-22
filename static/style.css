@@ -864,3 +864,7 @@ html.top #ornament{width:calc(var(--u)*47);opacity:1}
 #boot .btitle .b1{align-self:center;margin-left:-8%}
 #boot .btitle .b3{align-self:center;margin-left:4%}
 #boot .btitle small{font-size:.38em;line-height:1;margin:.08em 0 .02em;align-self:center;margin-left:-14%}
+
+/* rating period picker: a pill with a chevron, like the original's */
+select.rt-per{appearance:none;-webkit-appearance:none;border:0;background:rgba(255,255,255,.35);color:#fff;font:inherit;font-size:15px;padding:7px 30px 7px 14px;border-radius:99px;outline:none}
+select.rt-per option{color:#222}

@@ -265,7 +265,29 @@ _TOP: dict[str, tuple[float, list]] = {}
 TOP_TTL = 20  # seconds the shared top-20 lists are cached
 
 
-def top(field: str, uid: int, limit: int = 20) -> dict:
+PERIOD_DAYS = {"day": 1, "week": 7, "month": 30}
+_TOPP: dict[tuple, tuple[float, object]] = {}
+
+
+def _top_period(field: str, uid: int, period: str, limit: int) -> dict:
+    """Day / week / month list from the per-day counters (stats_daily); shared lists are cached for TOP_TTL seconds."""
+    col = {"kisses": "kisses", "gifts": "gifts", "tracks": "tracks"}[field]
+    since = (date.today() - timedelta(days=PERIOD_DAYS[period] - 1)).isoformat()
+    hit = _TOPP.get((field, period))
+    if hit and time.time() - hit[0] < TOP_TTL and hit[1][0] == since:
+        rows = hit[1][1]
+    else:
+        rows = [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip_until": r["vip_until"], "v": r["v"]} for r in db.q(
+            f"""SELECT u.id,u.name,u.photo,u.vip_until,SUM(s.{col}) AS v FROM stats_daily s JOIN users u ON u.id=s.uid
+                WHERE s.day>=? GROUP BY s.uid HAVING v>0 ORDER BY v DESC, s.uid LIMIT ?""", since, limit)]
+        _TOPP[(field, period)] = (time.time(), (since, rows))
+    me = db.q1(f"SELECT COALESCE(SUM({col}),0) AS v FROM stats_daily WHERE uid=? AND day>=?", uid, since)["v"]
+    rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM (SELECT uid FROM stats_daily WHERE day>=? GROUP BY uid HAVING SUM({col})>?)", since, me)["r"] if me else 0
+    return {"rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
+            "rank": rank, "mine": me, "period": period}
+
+
+def top(field: str, uid: int, limit: int = 20, period: str = "all") -> dict:
     if field == "court":  # biggest courtship price received
         rows = db.q("""SELECT u.id,u.name,u.photo,u.vip_until,c.price AS v FROM courtship c JOIN users u ON u.id=c.target
                        ORDER BY c.price DESC, u.id LIMIT ?""", limit)
@@ -273,6 +295,8 @@ def top(field: str, uid: int, limit: int = 20) -> dict:
         rank = db.q1("SELECT COUNT(*)+1 AS r FROM courtship WHERE price > ?", mine["price"] if mine else 0)["r"]
         return {"rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
                 "rank": rank, "mine": mine["price"] if mine else 0}
+    if period in PERIOD_DAYS and field in ("kisses", "gifts", "tracks"):
+        return _top_period(field, uid, period, limit)
     col = {"kisses": "kisses", "gifts": "gifts_received", "hearts": "hearts", "tracks": "tracks"}[field]
     hit = _TOP.get(field)
     if hit and time.time() - hit[0] < TOP_TTL:   # the top list is shared by everybody: compute it at most once per TTL
