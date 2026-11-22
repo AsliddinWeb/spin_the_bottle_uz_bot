@@ -18,7 +18,7 @@ Original bilan o'zaro ta'sir: **faqat ko'rish** (sovg'a, xarid, xabar, g'ildirak
 | B3 | Stol: 12 o'rindiq joyi va avatar o'lchami (telefon) | ✅ (2026-11-01) | yonma-yon: tepa/chap/pastki qatorlar piksel darajasida mos; o'ng ustun originalda bo'sh edi, shu koordinatalar saqlandi |
 | B4 | Avatar: ism, lab nishoni, sovg'a joylari, ramkalar | 🔧 | ramkalar originalda bezakli (rasm), bizda CSS |
 | B5 | Shisha: aylantirish, "Крути бутылочку!", boshqaning navbati | 🔧 | telefonda ko'rildi: yozuv+o'q joyi mos. Aylanish animatsiyasi va boshqaning navbati yozuvi yonma-yon tekshirilmagan |
-| B6 | "Ждем следующего хода" / kutish matni | 🔧 | bizda "Ждём игроков…"; orada "следующего хода" holati yo'q |
+| B6 | "Ждем следующего хода" / kutish matni | ✅ (2026-11-22) | bizda "Ждём игроков…"; orada "следующего хода" holati yo'q |
 | C1 | O'pish bosqichlari va yashil o'qlar (telefon) | ✅ (2026-11-01, "Поцелует ли в ответ?" matni o'qdan yuqorida — telefonda qayta tasdiqlandi) | telefonda to'liq tur ko'rildi: "Поцелуются или нет?" → tepada o'q → "Поцелует ли в ответ?" → ikkala o'q + "поцеловались". Original bilan o'q shakli va matn joyi mos |
 | D1 | Chat: xabarlar, sovg'a qatori, musiqa, DJ, xushtorlik | 🔧 (tuzatildi, telefonda tekshirilmagan) | original: bitta sovg'a ko'p qabul qiluvchiga qatorda (» » bir nechta avatar), avatarlar kichik yumaloq kvadrat. Bizda bitta qabul qiluvchi |
 | D2 | Chat kiritish qatori (telefon) | ✅ (2026-11-01) | oq qator, kulrang maydonsiz, to'q sariq yuborish tugmasi; emoji tugmasi telefonda yo'q |
@@ -83,3 +83,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (17) Motion polish: modals drop in from the top + animate out, older popups stay stacked behind (scaled/dimmed), achievement popup (rays, stars, medal) instead of a toast, desktop tooltips on HUD buttons, press feedback, reduced-motion support. Observed on the original; frame timing is approximate (screenshot capture ~3 fps).
 - (18) Bottle spin 3.6s -> 5.0s, 6 turns (original has a long slow tail; duration estimated from ~0.5s-spaced frames).
 - (19) Gift flight: sent gift flies in an arc (1.7s) from sender seat to receiver's hand slot, receiver's worn gift stays hidden until landing, bounce on landing; whoosh at start, hit sound at landing. Observed on the original (a rose gliding to the receiver avatar's lower-right corner); exact original duration unknown (estimated).
+- (20) Between-turns state 'Ждем следующего хода' (1.5s, 3 languages) — closes B6.

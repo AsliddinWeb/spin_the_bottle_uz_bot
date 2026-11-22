@@ -13,6 +13,7 @@ from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_
 SPIN_T = 20      # seconds the spinner has to press SPIN
 DEC_T = 12       # seconds to answer the kiss prompt
 SPIN_DUR = 5.0   # bottle animation
+NEXT_GAP = 1.5   # pause between turns
 GIFT_TTL = 86400  # seconds a gift stays on an avatar (it is stored, so it survives leaving / restarts)
 LEFT = object()
 
@@ -195,6 +196,10 @@ class Table:
                         await self.wake.wait()
                     continue
                 await self.one_turn()
+                if len(self.players) >= 2:   # short "waiting for the next turn" gap between turns (as in the original)
+                    self.phase, self.turn_uid, self.target_uid, self.deadline, self.result = "between", 0, 0, 0, ""
+                    await self.broadcast()
+                    await asyncio.sleep(NEXT_GAP)
         except asyncio.CancelledError:
             raise
         except Exception:

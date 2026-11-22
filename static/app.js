@@ -371,13 +371,14 @@ function renderCenter() {
   const box = $("#center-msg"); let msg = "";
   switch (T.phase) {
     case "waiting": msg = t("waiting"); break;
+    case "between": msg = t("next_turn"); break;
     case "spin_wait": msg = ""; break;
     case "ask_spinner": msg = T.turn === ME.id ? t("your_choice") : t("ask_kiss"); break;
     case "ask_target": msg = T.target === ME.id ? t("your_choice") : t("ask_back"); break;
     case "result": msg = T.result === "kiss" ? t("kissed", { a: nameOf(T.turn), b: nameOf(T.target) }) : t("nokiss"); break;
   }
   box.textContent = msg;
-  box.style.top = (T.phase === "waiting" ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
+  box.style.top = (T.phase === "waiting" || T.phase === "between" ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
   if (T.phase === "result" && T.result === "kiss" && lastKiss !== T.spin.id) {
     lastKiss = T.spin.id; kissFx();
   } else if (T.phase === "result" && T.result !== "kiss" && lastKiss !== -T.spin.id) {
