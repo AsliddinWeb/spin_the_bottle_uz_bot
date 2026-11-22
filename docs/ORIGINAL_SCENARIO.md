@@ -10,7 +10,7 @@ Belgilar: ✅ bizda bor · ⚠️ qisman · ❌ yo'q
 3. **Ijtimoiy qatlam:** chat, sovg'alar (bosh/qo'l joylari), imo-ishoralar, xushtorlik ("Ухаживать"), kompliment vazifasi, musiqa/video. ✅
 4. **Maqsadlar (progressiya):**
    - **Reytinglar** (💋 🎵 ❤ 💞 😊, davrlar bilan). ✅
-   - **Yutuqlar:** 333 yulduz (≈111 mavzuli medal × 3 daraja), har birining o'z rasmi va shartli, masalan "Хит": musiqa chalinayotganda 50 ta sovg'a olish. ⚠️ (bizda 89 ta oddiy sanoq yutuqlari)
+   - **Yutuqlar:** 333 yulduz (≈111 mavzuli medal × 3 daraja), har birining o'z rasmi va shartli, masalan "Хит": musiqa chalinayotganda 50 ta sovg'a olish. ⚠️ (bizda 25 ta mavzuli medal = 75 yulduz, qo'shimcha 89 ta oddiy yutuq)
    - **Ligalar (🏆 tugmasi "Лиги"):** haftalik musobaqa, olingan o'pish = liga balli, kirish o'pishlari uchun limit, jadval. ✅ (bu safar qilindi)
    - **Mavsumiy o'tkazma (Сезонный пропуск):** boosterlar shu yerdan yig'iladi. ❌
 5. **Boosterlar (☰ → Бустеры):**
@@ -36,7 +36,7 @@ Belgilar: ✅ bizda bor · ⚠️ qisman · ❌ yo'q
 
 ## 4. Hali qolgan (originaldan farq)
 1. **Mavsumiy o'tkazma** (boosterlar va sovrinlar yo'li) — original tafsiloti ko'rilmagan.
-2. **333 yutuq:** mavzuli medallar (rasm + maxsus shartlar). Bizda 89 ta sanoq yutug'i. Keyingi qadam: 20–30 mavzuli medal ("Хит", "Кофеман", "Романтик"...).
+2. **333 yutuq:** original ≈111 medal. Bizda 25 ta mavzuli medal (`app/medals.py`: Hit, Kofeman, Romantik, DJ, Bombardimonchi, Sovchi ...), qolganlarini shu jadvalga qo'shish oson (bitta qator + 2 matn).
 3. **"Воздушный поцелуй"** (ligada hisobga olinmaydigan o'pish) — qoidasi aniq emas.
 4. **Videoni pleyer ichida ko'rsatish** (hozir alohida suzuvchi karta).
 5. Liga bo'limlari (original jadvalda "Соревнование Лиг" ishtirokchilari — bir nechta liga/divizion bo'lishi mumkin; faqat bitta umumiy jadval qilindi).

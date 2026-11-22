@@ -7,7 +7,7 @@ from collections import deque
 
 import httpx
 
-from . import chatfilter, config, db, economy, events, league, moderation, tgmusic
+from . import chatfilter, config, db, economy, events, league, medals, moderation, tgmusic
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
@@ -119,6 +119,7 @@ class Table:
         u = db.get_user(client.uid)
         self.players[client.uid] = Player(client, seat, u)
         client.table = self
+        medals.inc(client.uid, "joins")
         db.touch_recent(client.uid, self.id)
         self.wake.set()
         if not self._task or self._task.done():
@@ -275,6 +276,8 @@ class Table:
         if ans is LEFT or spinner.uid not in self.players or target.uid not in self.players:
             return
         if ans is not True:
+            if ans is False:
+                medals.inc(spinner.uid, "declines")
             await self.finish("no")
             return
 
@@ -285,6 +288,8 @@ class Table:
         if ans is LEFT or spinner.uid not in self.players or target.uid not in self.players:
             return
         if ans is not True:
+            if ans is False:
+                medals.inc(target.uid, "declines")
             await self.finish("no")
             return
 
@@ -306,6 +311,7 @@ class Table:
             await client.send({"t": "toast", "key": "no_booster"})
             return
         self.boosted = getattr(self, "boosted", set()) | {client.uid}
+        medals.inc(client.uid, "boosters")
         league.add_points(client.uid, 1, boost=False)
         p = self.players[client.uid]
         await self.say("boost", uid=p.uid, name=p.name, boost=kind)
@@ -336,10 +342,13 @@ class Table:
 
     async def notify_achievements(self, uid: int) -> None:
         new = db.check_achievements(uid)
+        got = medals.check(uid)
         c = self.hub.clients.get(uid)
         if c:
             for aid in new:
                 await c.send({"t": "ach", "id": aid})
+            if got:
+                await c.send({"t": "medals", "list": got})
             await self.hub.push_me(uid)
 
     async def kick(self, uid: int, reason: str) -> None:
@@ -468,6 +477,8 @@ class Table:
             gift_id, emoji, _, kind, _ = random.choice(pool)
 
         db.inc(client.uid, "gifts_sent")
+        if not is_music:
+            medals.gift_sent(client.uid, gift_id, kind)
         blocked = False
         if not is_music:
             db.inc(to_uid, "gifts_received")
@@ -496,6 +507,7 @@ class Table:
                 await self.say("dj", uid=sender.uid, name=sender.name, photo=sender.photo, level=level_up)
         else:
             if not blocked:
+                medals.gift_received(to_uid, gift_id, kind, gift_id in HEAD_IDS, bool(self.music))
                 slot = "head" if gift_id in HEAD_IDS else "hand"
                 target.gifts[slot] = (emoji, time.time())
                 db.x("INSERT OR REPLACE INTO worn VALUES(?,?,?,?)", to_uid, slot, emoji, int(time.time()))

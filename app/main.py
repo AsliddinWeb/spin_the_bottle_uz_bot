@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, bot as botmod, config, db, economy, league, orders, tgmusic
+from . import auth, bot as botmod, config, db, economy, league, medals, orders, tgmusic
 from .catalog import (RANK_AT, TAGS, ACHIEVEMENTS, CHANCE_PACKS, CHANCE_PRICE, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, DAILY, GESTURES, GIFTS, ITEMS, PACKS, VIP_DAYS,
                       VIP_SMILES, VIP_STARS, WHEEL)
 from .game import hub
@@ -108,6 +108,7 @@ async def get_config():
         "head_gifts": sorted(HEAD_IDS),
         "kiss": {"reward": KISS_REWARD, "vip_bonus": TABLE_VIP_KISS_BONUS},
         "ranks": RANK_AT,
+        "medals": medals.public(),
         "weekly": {"rewards": config.WEEKLY_REWARDS, "min": config.WEEKLY_MIN, "pair_cap": config.PAIR_DAILY_CAP},
         "kick": {"delay": config.KICK_DELAY, "ban_min": config.KICK_BAN_MIN, "free_every": config.KICK_FREE_EVERY, "price": config.KICK_PRICE, "rescue": config.RESCUE_PRICE, "min_players": config.KICK_MIN_PLAYERS},
         "wheel": [{"kind": w[0], "amount": w[1]} for w in WHEEL],

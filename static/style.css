@@ -999,3 +999,17 @@ select.rt-per option{color:#222}
 .bfx.slap i{position:absolute;font-style:normal;font-size:calc(var(--u)*22);animation:bhit 1.7s ease-out both}
 @keyframes bslap{0%{transform:translateX(160%) rotate(35deg) scale(.6);opacity:0}22%{transform:translateX(0) rotate(-12deg) scale(1.1);opacity:1}35%{transform:translateX(-6%) rotate(-4deg)}100%{transform:translateY(8%) scale(1.05);opacity:0}}
 @keyframes bhit{0%,18%{transform:scale(0);opacity:0}28%{transform:scale(1.2);opacity:1}100%{transform:scale(1.5);opacity:0}}
+
+/* themed medals */
+.md-g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px;margin:8px 0 14px}
+.md-i{background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0}
+.md-i small{font-weight:800;font-size:12px;line-height:1.15;text-align:center}.md-i em{font-style:normal;font-size:11px;color:#999;font-weight:700}
+.mdl{position:relative;display:inline-block;padding-top:16px}
+.mdl-stars{position:absolute;left:0;right:0;top:0;text-align:center;font-size:13px;letter-spacing:1px;line-height:1}
+.mdl-stars i{font-style:normal;color:#cfd2d7}.mdl-stars i.on{color:#f6b81c;text-shadow:0 1px 1px rgba(120,70,0,.4)}
+.mdl-c{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-size:34px;border:4px solid var(--rim,#9aa0a8);background:radial-gradient(circle at 35% 30%,#fff,var(--face,#e9ebee));box-shadow:0 2px 5px rgba(0,0,0,.28),inset 0 -4px 8px rgba(0,0,0,.12)}
+.mdl-c svg{width:64%;height:64%}
+.mdl.t0 .mdl-c{filter:grayscale(1);opacity:.55}
+.mdl.t1{--rim:#b9722f;--face:#f1d3b0}.mdl.t2{--rim:#9aa6b4;--face:#e3e9f0}.mdl.t3{--rim:#e0a21a;--face:#ffe9a6}
+.ach-sub{margin:10px 0 4px;font-size:14px;color:#999;text-align:center}
+.modal.ach{max-height:calc(var(--vh)*88)}

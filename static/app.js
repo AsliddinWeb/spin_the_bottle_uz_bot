@@ -362,6 +362,7 @@ function handle(m) {
     case "court": openCourtPop(m); break;
     case "compliment": showCompliment(m); sfx.gift(); break;
     case "ach": showAch(m.id); break;
+    case "medals": showMedals(m.list); break;
     case "weekly": toast(t("weekly_won", { p: m.place, h: m.hearts }), 5000); sfx.ach(); break;
     case "left":
       T = null; closeGifts();
@@ -1282,16 +1283,43 @@ function openBoosters() {
 }
 
 const ACH_ICON = { kisses: "💋", spins: "🍾", gifts_sent: "🎁", gifts_received: "🌟", msgs: "💬", streak: "🔥", tracks: "🎵" };
+const medalArt = md => md.art ? giftIcon(md.art) : md.emoji;
+const medalBadge = (md, tier) => `<div class="mdl t${tier}"><span class="mdl-stars">${[1, 2, 3].map(i => `<i class="${i <= tier ? "on" : ""}">★</i>`).join("")}</span><div class="mdl-c"><span>${medalArt(md)}</span></div></div>`;
+const medalState = md => { const p = (ME.medals || {})[md.id] || [0, 0]; return { v: p[0], tier: p[1], next: md.tiers[Math.min(p[1], 2)] }; };
+function openMedal(md) {   // like the original: "Выполни условие, чтобы получить:" + medal + name + condition
+  const s = medalState(md);
+  openModal(`<h2>${esc(t("ach_title"))}</h2><p class="center sub">${esc(t("ach_cond"))}</p><div class="center">${medalBadge(md, s.tier)}</div>
+    <h3 class="center" style="margin:6px 0">${esc(t("md_" + md.id))}</h3>
+    <div class="card2"><b>${esc(t("mdd_" + md.id, { n: s.next }))}</b><span>${Math.min(s.v, s.next)}/${s.next}</span></div>
+    <div class="dt-bar"><i style="width:${Math.min(100, Math.round(s.v / s.next * 100))}%"></i></div>
+    <small class="sub center" style="display:block">${md.tiers.map((n, i) => `${i < s.tier ? "★" : "☆"} ${n} (+❤${md.rewards[i]})`).join(" · ")}</small>`);
+}
+function showMedals(list) {
+  if (!list || !list.length) return;
+  const x = list[list.length - 1], md = CFG.medals.find(q => q.id === x.id); if (!md) return;
+  const total = list.reduce((a, q) => a + q.reward, 0);
+  const m = openModal(`<h2>${esc(t("ach_congrats"))}</h2><div class="sub">${esc(t("ach_medal_got"))}</div>
+    <div class="center" style="margin:6px 0">${medalBadge(md, x.tier)}</div>
+    <h3 class="center" style="margin:4px 0">${esc(t("md_" + md.id))}</h3>
+    <div class="req">${esc(t("mdd_" + md.id, { n: md.tiers[x.tier - 1] }))}</div>
+    ${list.length > 1 ? `<p class="center sub">+${list.length - 1}</p>` : ""}
+    <button class="btn cta-ok" style="width:100%">${esc(t("ach_continue"))} +❤${total}</button>`, { cls: "achm", closable: false });
+  $(".cta-ok", m.el).onclick = m.close; sfx.ach();
+}
 function openAchievements() {
   const m = openModal("", { cls: "ach" }); let doneFirst = true;
   const render = () => {
-    const tier = {}, list = CFG.achievements.map(a => { tier[a.stat] = (tier[a.stat] || 0) + 1; return { ...a, tier: tier[a.stat], max: CFG.achievements.filter(x => x.stat === a.stat).length, got: ME.ach.includes(a.id) }; });
-    list.sort((a, b) => (doneFirst ? b.got - a.got : a.got - b.got));
-    m.set(`<h2>${t("my_ach")} <span class="ach-n">★ ${ME.ach.length}/${list.length}</span></h2>
+    const list = CFG.medals.map(md => ({ md, ...medalState(md) }));
+    list.sort((a, b) => (doneFirst ? b.tier - a.tier : a.tier - b.tier));
+    const stars = list.reduce((a, q) => a + q.tier, 0), tier = {}, old = CFG.achievements.map(a => { tier[a.stat] = (tier[a.stat] || 0) + 1; return { ...a, tier: tier[a.stat], max: CFG.achievements.filter(x => x.stat === a.stat).length, got: ME.ach.includes(a.id) }; });
+    m.set(`<h2>${t("my_ach")} <span class="ach-n">★ ${stars}/${list.length * 3}</span></h2>
       <div class="ach-f"><span>${t("first")}</span><div class="segp"><button data-df="1" class="${doneFirst ? "on" : ""}">${t("done_f")}</button><button data-df="0" class="${doneFirst ? "" : "on"}">${t("undone_f")}</button></div></div>
-      <div class="ach-g">${list.map(a => `<div class="ach-c ${a.got ? "got" : ""}"><div class="ach-st">${"★".repeat(Math.min(5, 1 + Math.ceil(a.tier * 5 / a.max)))}</div><div class="ach-m">${ACH_ICON[a.stat] || "🏅"}</div>
+      <div class="md-g">${list.map(q => `<button class="md-i" data-md="${q.md.id}">${medalBadge(q.md, q.tier)}<small>${esc(t("md_" + q.md.id))}</small><em>${Math.min(q.v, q.next)}/${q.next}</em></button>`).join("")}</div>
+      <h3 class="ach-sub">${esc(t("ach_basic"))} · ★ ${ME.ach.length}/${old.length}</h3>
+      <div class="ach-g">${old.map(a => `<div class="ach-c ${a.got ? "got" : ""}"><div class="ach-st">${"★".repeat(Math.min(5, 1 + Math.ceil(a.tier * 5 / a.max)))}</div><div class="ach-m">${ACH_ICON[a.stat] || "🏅"}</div>
         <small>${esc(t("achs_" + a.stat, { n: a.need }))}</small><em>${Math.min(ME[a.stat] || 0, a.need)}/${a.need}</em></div>`).join("")}</div>`);
     $$("[data-df]", m.el).forEach(b => b.onclick = () => { doneFirst = b.dataset.df === "1"; render(); });
+    $$("[data-md]", m.el).forEach(b => b.onclick = () => openMedal(CFG.medals.find(q => q.id === b.dataset.md)));
   };
   render();
 }

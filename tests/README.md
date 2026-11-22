@@ -19,3 +19,4 @@ Eslatma: qa_game.py da 4 ta "xato" ko'rinishi mumkin, bu yutuq mukofoti yurakcha
     ADMIN_IDS=1 DB_PATH=/tmp/ev.db (server)   .venv/bin/python tests/qa_events.py   # fasl tadbirlari (12 tekshiruv)
     DB_PATH=/tmp/md.db .venv/bin/python tests/qa_media.py   # musiqa/video alohida (8 tekshiruv; yangi baza kerak)
     ADMIN_IDS=204 KICK_DELAY=6 DB_PATH=/tmp/lg.db (server)   .venv/bin/python tests/qa_league.py   # ligalar va boosterlar (27 tekshiruv; modul qismi vaqtinchalik bazada)
+    .venv/bin/python tests/qa_medals.py   # mavzuli medallar (18 tekshiruv; modul qismi vaqtinchalik bazada)

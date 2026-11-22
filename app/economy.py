@@ -3,7 +3,7 @@ import random
 import time
 from datetime import date, timedelta
 
-from . import config, db, events, league
+from . import config, db, events, league, medals
 from .catalog import (CHANCE_PACKS, CHANCE_PRICE, DAILY, ITEMS, PACKS, TAG_TASK_NEED, TAG_TASK_REWARD, TAGS, rank_of, VIP_DAYS, VIP_SMILES, WHEEL, dj_level)
 
 
@@ -60,7 +60,7 @@ def me_payload(uid: int) -> dict:
         "gifts_sent": u["gifts_sent"], "gifts_received": u["gifts_received"], "spins": u["spins"],
         "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "rank": rank_of(u["kisses"]), "vip_until": u["vip_until"],
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
-        "daily": daily_info(u), "starter": starter_info(u), "dtasks": daily_tasks_info(uid), "league": league.info(uid), "event": events.public(u["lang"]), "claimed": db.claimed(u), "notify": bool(u["notify"]),
+        "daily": daily_info(u), "starter": starter_info(u), "dtasks": daily_tasks_info(uid), "league": league.info(uid), "medals": medals.progress(uid, u), "event": events.public(u["lang"]), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
         "server_time": int(time.time()), "kick_free_in": max(0, (u["kick_free_ts"] or 0) - int(time.time())),
     }
@@ -93,6 +93,7 @@ def spin_wheel(uid: int) -> dict | None:
         db.x("UPDATE users SET smiles=smiles+? WHERE id=?", amount, uid)
     else:
         db.inc(uid, "chances", amount)
+    medals.inc(uid, "wheel")
     if kind == "hearts" and amount >= 25:
         u = db.get_user(uid)
         db.x("INSERT INTO wheel_log(user_id,name,kind,amount,ts) VALUES(?,?,?,?,?)",
@@ -143,6 +144,8 @@ def arm(uid: int, item: str) -> bool:
     if not it or it["kind"] != "booster":
         return False
     cur = db.x("UPDATE inventory SET qty=qty-1, armed=armed+1 WHERE user_id=? AND item=? AND qty>0", uid, item)
+    if cur.rowcount == 1:
+        medals.inc(uid, "boosters")
     return cur.rowcount == 1
 
 
@@ -235,6 +238,7 @@ def tag_vote(uid: int, target: int, tag: str) -> str:
     cur = db.x("INSERT OR IGNORE INTO tag_votes VALUES(?,?,?,?)", uid, target, tag, int(time.time()))
     if cur.rowcount != 1:
         return "already"
+    medals.inc(uid, "tags")
     done = db.q1("SELECT COUNT(*) c FROM tag_votes WHERE voter=?", uid)["c"]
     if done >= TAG_TASK_NEED and "tagtask" not in db.claimed(db.get_user(uid)):
         db.add_claimed(uid, "tagtask")

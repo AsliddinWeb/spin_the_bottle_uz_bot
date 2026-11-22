@@ -4,7 +4,7 @@ Top 3 at the end of the week get booster prizes. Everything is idempotent / rest
 import time
 from datetime import date, timedelta
 
-from . import config, db, moderation
+from . import config, db, medals, moderation
 
 db._db.execute("CREATE TABLE IF NOT EXISTS league_points(week TEXT, uid INTEGER, pts INTEGER DEFAULT 0, PRIMARY KEY(week, uid))")
 db._db.execute("CREATE INDEX IF NOT EXISTS league_points_top ON league_points(week, pts DESC)")
@@ -57,6 +57,7 @@ def add_points(uid: int, n: int = 1, *, boost: bool = True, ignore_limit: bool =
         n = max(0, min(n, config.LEAGUE_LIMIT + st["extra"] - have))
     if n:
         db.x("INSERT INTO league_points(week,uid,pts) VALUES(?,?,?) ON CONFLICT(week,uid) DO UPDATE SET pts=pts+?", week, uid, n, n)
+        medals.inc(uid, "league_pts", n)
     return n
 
 
@@ -66,6 +67,7 @@ def use(uid: int, item: str) -> bool:
         return False
     if db.x("UPDATE inventory SET qty=qty-1 WHERE user_id=? AND item=? AND qty>0", uid, item).rowcount != 1:
         return False
+    medals.inc(uid, "boosters")
     week = week_key(); st = _state(uid, week)
     if item == "league_x2":
         _save(uid, week, max(int(time.time()), st["x2_until"]) + config.LEAGUE_X2_SEC, st["extra"])
