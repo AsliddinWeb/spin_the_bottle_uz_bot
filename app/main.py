@@ -445,6 +445,13 @@ async def tasks(u=Depends(auth.current_user)):
     }
 
 
+@app.post("/api/starter/claim")
+async def claim_starter(b: TaskReq, u=Depends(auth.current_user)):
+    if not economy.claim_starter(u["id"], b.id):
+        raise HTTPException(400, "not_ready")
+    return economy.me_payload(u["id"])
+
+
 @app.post("/api/tasks/claim")
 async def claim_task(b: TaskReq, u=Depends(auth.current_user)):
     uid, done = u["id"], db.claimed(u)

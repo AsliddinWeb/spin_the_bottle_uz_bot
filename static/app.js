@@ -226,6 +226,23 @@ function applyStatic() {
 function renderMe() {
   $("#hearts").textContent = ME.hearts;
   $("#btn-daily").classList.toggle("hidden", !ME.daily.available);
+  const st = ME.starter || [], chip = $("#btn-starter"), n = st.filter(x => x.claimed).length, ready = st.filter(x => x.done && !x.claimed).length;
+  chip.classList.toggle("hidden", !st.length); chip.classList.toggle("ready", ready > 0); $("b", chip).textContent = n + "/" + st.length;
+  if (ready > (renderMe.ready || 0)) { toast(t("st_ready"), 3500); sfx.ach(); }
+  renderMe.ready = ready;
+}
+function openStarter() {
+  const names = { st_spin: "st_spin", st_kiss: "st_kiss", st_gift: "st_gift" }, m = openModal("");
+  const render = () => {
+    const st = ME.starter || [];
+    if (!st.length) return m.close();
+    m.set(`<h2>🎯 ${esc(t("st_title"))}</h2><p class="sub center">${esc(t("st_sub"))}</p>
+      ${st.map(x => `<div class="card2"><b>${x.done ? "✅" : "⬜"} ${esc(t(names[x.id]))}</b>${x.claimed ? "✔" : `<button class="btn" data-c="${x.id}" ${x.done ? "" : "disabled"}>+❤${x.reward}</button>`}</div>`).join("")}`);
+    $$("[data-c]", m.el).forEach(b => b.onclick = async () => {
+      try { ME = await api("/api/starter/claim", "POST", { id: b.dataset.c }); renderMe(); sfx.win(); render(); } catch { toast(t("not_yet")); }
+    });
+  };
+  render();
 }
 
 function bindUi() {
@@ -236,6 +253,7 @@ function bindUi() {
   $("#btn-settings").onclick = openSettings;
   $("#btn-table").onclick = openTables;
   $("#btn-daily").onclick = openDaily;
+  $("#btn-starter").onclick = openStarter;
   $("#gp-plus").onclick = openShop;
   $("#gp-close").onclick = closeGifts;
   $("#chat-form").onsubmit = e => {

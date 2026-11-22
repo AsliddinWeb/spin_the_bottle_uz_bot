@@ -17,6 +17,23 @@ def daily_info(u) -> dict:
     return {"available": available, "day": day, "streak": streak}
 
 
+def starter_info(u) -> list:
+    """First-session tasks (spin, kiss, gift): done when the stat is >= 1; the list disappears once everything is claimed."""
+    cl = db.claimed(u)
+    items = [{"id": k, "done": u[stat] >= 1, "claimed": k in cl, "reward": r} for k, stat, r in config.STARTER]
+    return [] if all(i["claimed"] for i in items) else items
+
+
+def claim_starter(uid: int, key: str) -> bool:
+    u = db.get_user(uid)
+    row = next((x for x in config.STARTER if x[0] == key), None)
+    if not row or key in db.claimed(u) or u[row[1]] < 1:
+        return False
+    db.add_claimed(uid, key)
+    db.add_hearts(uid, row[2])
+    return True
+
+
 def me_payload(uid: int) -> dict:
     u = db.get_user(uid)
     return {
@@ -25,7 +42,7 @@ def me_payload(uid: int) -> dict:
         "gifts_sent": u["gifts_sent"], "gifts_received": u["gifts_received"], "spins": u["spins"],
         "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "vip_until": u["vip_until"],
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
-        "daily": daily_info(u), "claimed": db.claimed(u), "notify": bool(u["notify"]),
+        "daily": daily_info(u), "starter": starter_info(u), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
         "server_time": int(time.time()), "kick_free_in": max(0, (u["kick_free_ts"] or 0) - int(time.time())),
     }

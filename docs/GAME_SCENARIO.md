@@ -63,7 +63,7 @@ Quyida hozirgi holat tahlili, undagi bo'shliqlar ("o'yindan mano yo'q bo'lib qol
 |---------|------|-------|
 | A | Jins qoidasi, TOP belgisi, haftalik top, juft cheklovi | ✅ tayyor |
 | B | Sovg'a ovozlari/effektlari, musiqa/video alohida | ✅ tayyor |
-| C | Boshlang'ich vazifalar paneli (3 qadam) | ⏳ mijoz tasdig'i kerak |
+| C | Boshlang'ich vazifalar paneli (3 qadam) | ✅ tayyor |
 | D | Kunlik vazifalar (3 ta tasodifiy) + mukofot | ⏳ |
 | E | Unvonlar (daraja yo'li) | ⏳ |
 | F | Fasl tadbirlari (admin paneldan) | ⏳ |

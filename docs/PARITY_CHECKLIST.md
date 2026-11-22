@@ -105,3 +105,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (38) Per-gift sounds (42 gifts, GS table in sfx.js), head gifts land top-left, drinks bottom-right with pour effect, tomato/egg splat, frog hop.
 
 - (39) Music and Video are separate modes in one picker (Musiqa/Video, Hozir/Almashtirish/Navbatga); fab stays available while playing, tapping the player replaces the track; video shows in a closable card; small-phone profile popup scrolls and shrinks.
+- (40) Starter tasks: first spin / first kiss / first gift, +3 hearts each (config.STARTER, /api/starter/claim, chip in HUD). Test: tests/qa_starter.py (9).
