@@ -78,7 +78,7 @@ const sfx = (() => {
     turn: () => { if (!ready() || throttle("turn", 800)) return; haptic("light"); arp([659, 880], .11, { d: .3, v: .8 }); },
     tick: () => { if (!ready() || throttle("tick", 300)) return; tone(1200, .04, { type: "square", v: .25, lp: 3000 }); },
     // gifts: category by emoji
-    giftSend: e => { if (!ready()) return; noise(.2, { f0: 600, f1: 3000, q: .7, v: .4 }); tone(500, .12, { to: 900, v: .4, type: "triangle", at: .02 }); api.giftHit(e, .12); },
+    giftSend: e => { if (!ready()) return; noise(.5, { f0: 500, f1: 3200, q: .7, v: .35, a: .08 }); tone(500, .3, { to: 1100, v: .35, type: "triangle", at: .02 }); },
     giftHit: (e, at = 0) => {
       if (!ready()) return; const k = giftKind(e);
       if (k === "splat") { noise(.22, { f0: 700, f1: 160, q: .7, v: .9, at, type: "lowpass" }); tone(130, .18, { to: 60, v: .9, at }); }

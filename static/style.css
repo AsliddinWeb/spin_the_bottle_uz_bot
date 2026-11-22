@@ -740,3 +740,11 @@ html.top #actions{left:var(--cx);top:calc(var(--cy) + calc(var(--u)*16));bottom:
 @keyframes medalin{from{transform:scale(.2) rotate(-40deg);opacity:0}}
 .achm .req{background:#fff8d9;border:1.5px solid #f0d78a;border-radius:12px;padding:8px 10px;font-size:14px;font-weight:600;color:#6a5a1a;margin:6px 0 12px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* gift flight */
+.gfly{position:absolute;left:0;top:0;z-index:12;pointer-events:none;line-height:1;filter:drop-shadow(0 6px 5px rgba(60,25,0,.4));will-change:transform}
+.seat.gwait .gf,.seat.gwait .gh{opacity:0;animation:none}
+.seat.gland .gf,.seat.gland .gh{animation:gland .55s cubic-bezier(.2,1.7,.4,1)}
+@keyframes gland{from{transform:scale(1.7)}}
+.seat.gland .gh{animation-name:glandh}
+@keyframes glandh{from{transform:translateX(-62%) rotate(-10deg) scale(1.7)}}

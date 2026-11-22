@@ -336,7 +336,7 @@ function renderSeats() {
     const isTurn = p.uid === T.turn, isTarget = p.uid === T.target && T.target;
     const inP = pair && (isTurn || isTarget);
     el.className = "seat" + (p.uid === ME.id ? " me" : "") + (isTurn && T.phase !== "waiting" ? " turn" : "") +
-      (isTarget ? " target" : "") + (inP ? " pair" : "") + (target === p.uid ? " sel" : "");
+      (isTarget ? " target" : "") + (inP ? " pair" : "") + (target === p.uid ? " sel" : "") + ((gwaitUntil[p.uid] || 0) > performance.now() ? " gwait" : "");
     const pos = inP ? PAIR[isTurn ? 0 : 1] : [x, y];
     el.style.left = pos[0] + "%"; el.style.top = pos[1] + "%";
   });
@@ -451,9 +451,33 @@ function addPm(m) {
   box.appendChild(d); box.scrollTop = box.scrollHeight; sfx.pm();
 }
 function seatPhoto(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.photo : ""; }
+// A sent gift flies in an arc from the sender's seat to the receiver's hand slot, then lands with a bounce.
+const FLY_MS = 1700, gwaitUntil = {};  // gwaitUntil: receiver keeps its new gift hidden until the flying one lands
 function giftSound(m) {
   if (m.blocked) return sfx.no();
-  if (m.uid === ME.id) sfx.giftSend(m.gift); else if (m.to_uid === ME.id) sfx.giftGot(m.gift); else sfx.giftHit(m.gift);
+  sfx.giftSend(m.gift);
+  setTimeout(() => (m.to_uid === ME.id ? sfx.giftGot(m.gift) : sfx.giftHit(m.gift)), FLY_MS - 120);
+  flyGift(m);
+}
+function flyGift(m) {
+  if (!T || document.hidden) return;
+  const ia = seatOf(m.uid), ib = seatOf(m.to_uid); if (ia < 0 || ib < 0 || ia === ib) return;
+  const felt = $("#felt").getBoundingClientRect(), A = $("#seat" + ia).getBoundingClientRect(), eb = $("#seat" + ib), B = eb.getBoundingClientRect();
+  const sx = A.left - felt.left + A.width / 2, sy = A.top - felt.top + A.height / 2;
+  const ex = B.left - felt.left + B.width * .86, ey = B.top - felt.top + B.height * .72;
+  const mx = (sx + ex) / 2, my = Math.min(sy, ey) - Math.abs(ex - sx) * .16 - 16;
+  const el = document.createElement("div"); el.className = "gfly"; el.textContent = m.gift; el.style.fontSize = A.width * .55 + "px";
+  $("#felt").appendChild(el); eb.classList.add("gwait"); gwaitUntil[m.to_uid] = performance.now() + FLY_MS;
+  const at = (x, y, s, r) => `translate(${x}px,${y}px) translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+  const an = el.animate([
+    { transform: at(sx, sy, .4, -25), opacity: 0 },
+    { transform: at(sx + (mx - sx) * .25, sy + (my - sy) * .35, .9, -12), opacity: 1, offset: .14 },
+    { transform: at(mx, my, 1.55, 12), offset: .52 },
+    { transform: at(ex, ey, 1, 0), opacity: 1 },
+  ], { duration: FLY_MS, easing: "cubic-bezier(.32,.1,.25,1)", fill: "forwards" });
+  an.onfinish = an.oncancel = () => {
+    el.remove(); delete gwaitUntil[m.to_uid]; eb.classList.remove("gwait"); eb.classList.add("gland"); setTimeout(() => eb.classList.remove("gland"), 560);
+  };
 }
 function addChat(m) {
   const box = $("#chat"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
