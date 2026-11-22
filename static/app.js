@@ -406,16 +406,41 @@ function renderCenter() {
   }
 }
 
+// Kiss effect: pink glow + light rays, a glossy lips stamp that pops in, a burst of hearts and sparkles, "+❤N" over both players.
+const LIPS_SVG = `<svg class="kl" viewBox="0 0 64 44" xmlns="http://www.w3.org/2000/svg"><g filter="url(#gloss)"><path d="M5 24C13 8 25 8 32 15C39 8 51 8 59 24C51 38 42 41 32 41C22 41 13 38 5 24Z" fill="url(#gRed)" stroke="#7a0f1e" stroke-opacity=".5" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 24C18 29 46 29 57 24" fill="none" stroke="#6a0a18" stroke-width="2.2" stroke-linecap="round"/><path d="M15 17C20 13 25 13 29 16C24 16 19 17 15 17Z" fill="#fff" fill-opacity=".6"/></g></svg>`;
+const heartMini = c => `<svg viewBox="-12 -11 24 22"><path d="M0 9C-12 0-9-9-4.5-9C-2-9 0-7 0-5C0-7 2-9 4.5-9C9-9 12 0 0 9Z" fill="${c}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M-6-6C-4-7-2-6-1.5-4" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const sparkMini = `<svg viewBox="-10 -10 20 20"><path d="M0-9L2.4-2.4L9 0L2.4 2.4L0 9L-2.4 2.4L-9 0L-2.4-2.4Z" fill="#fff6c8" stroke="#ffd34d" stroke-width="1"/></svg>`;
 function kissFx() {
-  const f = $("#kiss-fx"); f.classList.remove("hidden"); f.style.animation = "none"; void f.offsetWidth; f.style.animation = "";
-  sfx.kiss();
-  for (let i = 0; i < 8; i++) {
-    const h = document.createElement("div"); h.textContent = ["❤️", "💖", "💋", "💕"][i % 4];
-    h.style.cssText = `position:absolute;left:${40 + Math.random() * 25}%;top:55%;font-size:${18 + Math.random() * 18}px;z-index:11;pointer-events:none;transition:all 1.6s ease-out;opacity:1`;
-    $("#felt").appendChild(h);
-    requestAnimationFrame(() => { h.style.transform = `translate(${(Math.random() - .5) * 120}px,${-80 - Math.random() * 120}px)`; h.style.opacity = 0; });
-    setTimeout(() => h.remove(), 1700);
+  const felt = $("#felt"); if (!felt) return;
+  felt.querySelectorAll(".kfx").forEach(e => e.remove());
+  const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 4, rnd = (a, b) => a + Math.random() * (b - a);
+  const root = document.createElement("div"); root.className = "kfx";
+  root.innerHTML = `<div class="kg"></div><div class="kr"></div>${LIPS_SVG}`;
+  felt.appendChild(root); sfx.kiss();
+  const cols = ["#ff4d6d", "#ff2e63", "#ff7fa8", "#ffb3c8", "#e5374a"];
+  for (let i = 0; i < 18; i++) {
+    const s = rnd(2.4, 5.4) * u, h = document.createElement("div"); h.className = "kh";
+    h.style.cssText = `width:${s}px;height:${s}px;left:${-s / 2}px;top:${-s / 2}px`; h.innerHTML = heartMini(cols[i % cols.length]); root.appendChild(h);
+    const ang = -Math.PI / 2 + rnd(-1.15, 1.15), dist = rnd(9, 26) * u, dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - rnd(3, 9) * u;
+    h.animate([{ transform: "translate(0,0) scale(.2) rotate(0deg)", opacity: 0 },
+      { offset: .18, opacity: 1, transform: `translate(${dx * .3}px,${dy * .3}px) scale(1) rotate(${rnd(-25, 25)}deg)` },
+      { transform: `translate(${dx}px,${dy}px) scale(.85) rotate(${rnd(-55, 55)}deg)`, opacity: 0 }],
+      { duration: rnd(1300, 2200), delay: rnd(60, 420), easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" });
   }
+  for (let i = 0; i < 9; i++) {
+    const s = rnd(1.6, 3.2) * u, e = document.createElement("div"); e.className = "kh"; e.style.cssText = `width:${s}px;height:${s}px;left:${rnd(-14, 14) * u - s / 2}px;top:${rnd(-9, 9) * u - s / 2}px`;
+    e.innerHTML = sparkMini; root.appendChild(e);
+    e.animate([{ transform: "scale(0) rotate(0deg)", opacity: 0 }, { offset: .4, transform: "scale(1.2) rotate(45deg)", opacity: 1 }, { transform: "scale(0) rotate(90deg)", opacity: 0 }], { duration: rnd(700, 1100), delay: rnd(100, 900), fill: "both" });
+  }
+  const K = (CFG.kiss || { reward: 1, vip_bonus: 1 }), fr = felt.getBoundingClientRect(), c0 = root.getBoundingClientRect();
+  [T && T.turn, T && T.target].forEach(uid => {
+    const i = uid ? seatOf(uid) : -1; if (i < 0) return;
+    const el = $("#seat" + i), p = T.seats.find(s => s.uid === uid), r = el.getBoundingClientRect();
+    el.classList.add("kissing"); setTimeout(() => el.classList.remove("kissing"), 1200);
+    const f = document.createElement("div"); f.className = "kf"; f.textContent = "+❤" + (K.reward + (p && p.vip ? K.vip_bonus : 0));
+    f.style.left = (r.left + r.width / 2 - c0.left) + "px"; f.style.top = (r.top - c0.top) + "px"; root.appendChild(f);
+  });
+  setTimeout(() => root.remove(), 2800);
 }
 
 function renderActions() {
