@@ -353,7 +353,7 @@ function renderSeats() {
           (p.kisses ? `<span class="kb"><i>💋</i><b>${p.kisses}</b></span>` : "") +
           (p.gifts && p.gifts.hand ? `<span class="gf">${giftIcon(p.gifts.hand)}</span>` : "") +
           (p.gifts && p.gifts.head ? `<span class="gh">${giftIcon(p.gifts.head)}</span>` : "") +
-          (p.vip ? `<span class="vipmark">👑</span>` : "") +
+          (p.top ? `<span class="topmark">TOP</span>` : p.vip ? `<span class="vipmark">👑</span>` : "") +
           (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
           `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
       }
@@ -538,7 +538,7 @@ function addChat(m) {
   if (m.k === "msg") {
     if (m.uid !== ME.id) sfx.chat();
     d.className = "msg";
-    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
+    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.top ? ' <b class="tpb">TOP</b>' : m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
     const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
     $(".who", d).onclick = reply; $(".av-mini", d).onclick = reply;
     const tr = $(".tr", d);
@@ -723,8 +723,8 @@ async function openProfile(uid) {
   const render = () => {
     const fr = c.frame ? "fr-" + c.frame.replace("frame_", "") : "";
     const sp = c.suitor;
-    m.set(`<div class="ph ${fr}">${c.vip ? `<span class="vrib">VIP</span>` : ""}${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span class="big">${esc(initials(c.name))}</span>
-        <div class="pn">${esc(c.name)}${c.age ? ", " + c.age : ""}${c.vip ? " 👑" : ""}</div>${me ? "" : `<button class="rep" id="pf-rep">!</button>`}</div>
+    m.set(`<div class="ph ${fr}">${c.top ? `<span class="vrib top">TOP</span>` : c.vip ? `<span class="vrib">VIP</span>` : ""}${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span class="big">${esc(initials(c.name))}</span>
+        <div class="pn">${esc(c.name)}${c.age ? ", " + c.age : ""}${c.top ? " 🏆" : c.vip ? " 👑" : ""}</div>${me ? "" : `<button class="rep" id="pf-rep">!</button>`}</div>
       <div class="pb">
         ${trophyChips(c.trophies)}
         <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>

@@ -7,7 +7,7 @@ from collections import deque
 
 import httpx
 
-from . import chatfilter, config, db, moderation
+from . import chatfilter, config, db, economy, moderation
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
 SPIN_T = 20      # seconds the spinner has to press SPIN
@@ -62,7 +62,7 @@ class Player:
         return {
             "seat": self.seat, "uid": self.uid, "name": self.name, "age": self.age,
             "gender": self.gender, "photo": self.photo, "frame": self.frame,
-            "vip": self.vip, "kisses": self.tkiss, "gifts": gifts,
+            "vip": self.vip, "top": self.uid in economy.top10_ids(), "kisses": self.tkiss, "gifts": gifts,
             "gesture": self.gesture[0] if self.gesture and time.time() - self.gesture[1] < GESTURE_TTL else "",
         }
 
@@ -402,7 +402,7 @@ class Table:
             return
         client.last_chat = time.time()
         db.inc(p.uid, "msgs")
-        await self.say("msg", uid=p.uid, name=p.name, photo=p.photo, vip=p.vip, text=text)
+        await self.say("msg", uid=p.uid, name=p.name, photo=p.photo, vip=p.vip, top=p.uid in economy.top10_ids(), text=text)
         await self.notify_achievements(p.uid)
 
     async def handle_gift(self, client: Client, to_uid: int, gift_id: str, url: str = "") -> None:

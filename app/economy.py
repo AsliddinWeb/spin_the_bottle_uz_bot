@@ -23,7 +23,7 @@ def me_payload(uid: int) -> dict:
         "id": uid, "name": u["name"], "age": u["age"], "birth": u["birth"], "gender": u["gender"], "photo": u["photo"],
         "lang": u["lang"], "hearts": u["hearts"], "smiles": u["smiles"], "chances": u["chances"], "kisses": u["kisses"],
         "gifts_sent": u["gifts_sent"], "gifts_received": u["gifts_received"], "spins": u["spins"],
-        "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "vip_until": u["vip_until"],
+        "msgs": u["msgs"], "streak": u["streak"], "vip": db.is_vip(u), "top": uid in top10_ids(), "vip_until": u["vip_until"],
         "frame": u["frame"], "bottle": u["bottle"], "inv": db.inv(uid),
         "daily": daily_info(u), "claimed": db.claimed(u), "notify": bool(u["notify"]),
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
@@ -151,7 +151,7 @@ def user_card(uid: int) -> dict | None:
     return {
         "id": uid, "name": u["name"], "age": u["age"], "gender": u["gender"], "photo": u["photo"],
         "gifts": gifts, "recent": recent, "gifts_sent": u["gifts_sent"],
-        "vip": db.is_vip(u), "frame": u["frame"], "kisses": u["kisses"], "tracks": u["tracks"], "dj": dj_level(u["tracks"]),
+        "vip": db.is_vip(u), "top": uid in top10_ids(), "frame": u["frame"], "kisses": u["kisses"], "tracks": u["tracks"], "dj": dj_level(u["tracks"]),
         "gifts_received": u["gifts_received"],
         "trophies": {str(r["place"]): r["c"] for r in db.q("SELECT place, COUNT(*) c FROM weekly_awards WHERE uid=? AND place>0 GROUP BY place", uid)},
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
@@ -260,6 +260,17 @@ def age_from_birth(birth: str) -> int:
         return 0
     t = date.today()
     return t.year - b.year - ((t.month, t.day) < (b.month, b.day))
+
+
+_TOP10: tuple[float, frozenset] = (0.0, frozenset())
+
+
+def top10_ids() -> frozenset:
+    """Players in the top 10 by kisses (at least one kiss); they get the TOP badge instead of VIP. Cached for TOP_TTL seconds."""
+    global _TOP10
+    if time.time() - _TOP10[0] > TOP_TTL * 3:
+        _TOP10 = (time.time(), frozenset(r["id"] for r in db.q("SELECT id FROM users WHERE kisses>0 ORDER BY kisses DESC, id LIMIT 10")))
+    return _TOP10[1]
 
 
 _TOP: dict[str, tuple[float, list]] = {}

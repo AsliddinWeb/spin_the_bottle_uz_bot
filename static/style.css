@@ -872,3 +872,8 @@ select.rt-per option{color:#222}
 /* weekly-top medals in the profile */
 .tro{display:flex;align-items:center;gap:10px;margin:2px 0 8px;font-size:22px;font-weight:800}
 .tro small{font-size:13px;color:#a97b2c;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+
+/* TOP badge (top-10 players) replaces the VIP crown / ribbon */
+.topmark{position:absolute;right:-6%;top:-8%;z-index:4;background:linear-gradient(#ff7a3a,#e5371e);color:#fff;font:900 calc(var(--u)*2.7)/1 system-ui,sans-serif;letter-spacing:.04em;padding:calc(var(--u)*.55) calc(var(--u)*1.3);border-radius:calc(var(--u)*1.2);border:1.5px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35);transform:rotate(8deg)}
+.vrib.top{background:linear-gradient(#ff8a3f,#e5371e);color:#fff}
+.tpb{background:linear-gradient(#ff7a3a,#e5371e);color:#fff;font-size:.7em;padding:1px 6px;border-radius:7px;letter-spacing:.04em}
