@@ -153,6 +153,7 @@ def user_card(uid: int) -> dict | None:
         "gifts": gifts, "recent": recent, "gifts_sent": u["gifts_sent"],
         "vip": db.is_vip(u), "frame": u["frame"], "kisses": u["kisses"], "tracks": u["tracks"], "dj": dj_level(u["tracks"]),
         "gifts_received": u["gifts_received"],
+        "trophies": {str(r["place"]): r["c"] for r in db.q("SELECT place, COUNT(*) c FROM weekly_awards WHERE uid=? AND place>0 GROUP BY place", uid)},
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
         "suitor": dict(id=court["suitor"], name=court["name"], photo=court["photo"], price=court["price"]) if court else None,
     }

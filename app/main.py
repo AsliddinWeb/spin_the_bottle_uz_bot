@@ -20,10 +20,12 @@ async def lifespan(app: FastAPI):
     reminder = asyncio.create_task(botmod.reminder_loop()) if botmod.bot else None
     from . import backup
     backups = asyncio.create_task(backup.backup_loop())
+    from . import weekly
+    weekly_task = asyncio.create_task(weekly.weekly_loop())
     if not botmod.bot:
         print("BOT_TOKEN not set: running web-only in DEV mode (open http://localhost:%d/?dev=1)" % config.PORT)
     yield
-    for tk in (task, reminder, backups):
+    for tk in (task, reminder, backups, weekly_task):
         if tk:
             tk.cancel()
 
@@ -104,6 +106,7 @@ async def get_config():
         "items": [{"id": k, **v} for k, v in ITEMS.items()],
         "daily": DAILY, "chance_price": CHANCE_PRICE, "chance_packs": [{"n": n, "price": p} for n, p in CHANCE_PACKS.items()],
         "kiss": {"reward": KISS_REWARD, "vip_bonus": TABLE_VIP_KISS_BONUS},
+        "weekly": {"rewards": config.WEEKLY_REWARDS, "min": config.WEEKLY_MIN, "pair_cap": config.PAIR_DAILY_CAP},
         "kick": {"delay": config.KICK_DELAY, "ban_min": config.KICK_BAN_MIN, "free_every": config.KICK_FREE_EVERY, "price": config.KICK_PRICE, "rescue": config.RESCUE_PRICE, "min_players": config.KICK_MIN_PLAYERS},
         "wheel": [{"kind": w[0], "amount": w[1]} for w in WHEEL],
         "achievements": [{"id": a[0], "stat": a[1], "need": a[2], "reward": a[3]} for a in ACHIEVEMENTS],

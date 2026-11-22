@@ -53,3 +53,9 @@ KICK_FREE_EVERY = int(os.getenv("KICK_FREE_EVERY", "1800"))  # one free kick per
 KICK_PRICE = 10          # hearts for a kick when the free one is not ready
 RESCUE_PRICE = 3         # hearts the rescuer pays
 KICK_MIN_PLAYERS = 3     # nobody can be kicked from a table with fewer players
+
+# Weekly top: the best kissers of the last calendar week (Mon-Sun) get hearts. Kisses count at most PAIR_DAILY_CAP times
+# per pair per day in the day/week/month lists, so two accounts cannot farm the top by kissing each other.
+WEEKLY_REWARDS = [100, 50, 25]
+WEEKLY_MIN = 5
+PAIR_DAILY_CAP = 3

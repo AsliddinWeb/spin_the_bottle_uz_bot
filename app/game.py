@@ -288,12 +288,13 @@ class Table:
         await asyncio.sleep(pause)
 
     async def kiss(self, a: Player, b: Player) -> None:
+        counted = db.pair_kiss(a.uid, b.uid) <= config.PAIR_DAILY_CAP   # beyond the cap the kiss still pays, but stays out of the day/week/month lists
         for p in (a, b):
             reward = KISS_REWARD + (TABLE_VIP_KISS_BONUS if p.vip else 0)
             if db.consume_armed(p.uid, "double"):
                 reward *= 2
             db.add_hearts(p.uid, reward)
-            db.inc(p.uid, "kisses")
+            db.inc(p.uid, "kisses", daily=counted)
             p.tkiss += 1
         await self.say("kiss", uid=a.uid, name=a.name, to_uid=b.uid, to_name=b.name)
         for p in (a, b):

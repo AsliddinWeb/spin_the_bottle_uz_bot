@@ -115,3 +115,9 @@ uploaded photos, chat filter words, audit log, broadcast (admin+) and backups (o
 functions as the bot commands, so rank rules and the audit log are identical; the bot commands keep working.
 Access = valid Telegram initData of a staff account (403 otherwise). In DEV_MODE only: `/admin?dev=<id>`.
 Test: `tests/qa_admin.py` (67 checks, dev server on 8001 with `ADMIN_IDS=1`).
+
+## Weekly top and rating periods
+- Rating lists have day / week / month / all-time views (kisses, tracks, gifts), fed by the per-day counters in `stats_daily`.
+- **Weekly awards:** every Monday the 3 best kissers of the previous Mon-Sun week receive ❤100 / ❤50 / ❤25 (minimum 5 kisses; `WEEKLY_REWARDS`, `WEEKLY_MIN` in `app/config.py`). Paid once per week (`weekly_awards`), with a bot message and an in-game toast; medals show in the profile.
+- **Anti-farming:** the same pair counts at most `PAIR_DAILY_CAP` (3) kisses per day in the day/week/month lists and in the weekly top (lifetime counters and hearts are unchanged).
+- Tests: `tests/qa_ratings.py` (server) and `tests/qa_weekly.py` (direct).

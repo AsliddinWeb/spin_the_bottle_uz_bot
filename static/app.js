@@ -310,6 +310,7 @@ function handle(m) {
     case "court": openCourtPop(m); break;
     case "compliment": showCompliment(m); sfx.gift(); break;
     case "ach": showAch(m.id); break;
+    case "weekly": toast(t("weekly_won", { p: m.place, h: m.hearts }), 5000); sfx.ach(); break;
     case "left":
       T = null; closeGifts();
       if (m.reason === "afk") toast(t("left_afk"), 4000);
@@ -711,6 +712,10 @@ function openMusicPicker(kind) {
 }
 
 // ------------------------------------------------------------ modals
+function trophyChips(tr) {   // weekly-top medals earned (1st/2nd/3rd place counts)
+  const med = { 1: "🥇", 2: "🥈", 3: "🥉" }, items = [1, 2, 3].filter(p => tr && tr[p]).map(p => `<span>${med[p]}${tr[p] > 1 ? " ×" + tr[p] : ""}</span>`);
+  return items.length ? `<div class="tro">${items.join("")}<small>${esc(t("weekly_top"))}</small></div>` : "";
+}
 async function openProfile(uid) {
   let c; try { c = await api("/api/user/" + uid); } catch { return toast(t("err")); }
   const me = uid === ME.id, m = openModal("", { cls: "prof" });
@@ -721,6 +726,7 @@ async function openProfile(uid) {
     m.set(`<div class="ph ${fr}">${c.vip ? `<span class="vrib">VIP</span>` : ""}${c.photo ? `<img src="${esc(c.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span class="big">${esc(initials(c.name))}</span>
         <div class="pn">${esc(c.name)}${c.age ? ", " + c.age : ""}${c.vip ? " 👑" : ""}</div>${me ? "" : `<button class="rep" id="pf-rep">!</button>`}</div>
       <div class="pb">
+        ${trophyChips(c.trophies)}
         <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>
         <div class="stat m"><i>🎵</i>${c.tracks.toLocaleString("ru")}${c.dj ? ` <small class="djb">DJ ${c.dj}</small>` : ""}</div>
         <div class="stat s"><i>😊</i>${c.gifts_received.toLocaleString("ru")}</div>
@@ -1136,7 +1142,7 @@ async function openRatings() {
       <div class="rt2-row me"><div class="rt2-ph">${ME.photo ? `<img src="${esc(ME.photo)}" referrerpolicy="no-referrer">` : ""}</div><b><em>${r.rank}.</em> ${esc(ME.name)}</b><span>${cur[1]} ${(r.mine || 0).toLocaleString("ru")}</span></div>`);
     $$("[data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; load(); });
     const ps = $("#rt-per", m.el); if (ps) ps.onchange = () => { period = ps.value; load(); };
-    $("#rt-q", m.el).onclick = () => toast(t(cur[2]));
+    $("#rt-q", m.el).onclick = () => toast(t(cur[2]) + (kind === "kisses" && CFG.weekly ? " · " + t("weekly_hint", { a: CFG.weekly.rewards[0], b: CFG.weekly.rewards[1], c: CFG.weekly.rewards[2], n: CFG.weekly.min }) : ""), 6000);
   };
   load();
 }
