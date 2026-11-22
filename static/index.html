@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Spin the Bottle</title>
-<link rel="stylesheet" href="/static/style.css?v=83">
+<link rel="stylesheet" href="/static/style.css?v=86">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -25,23 +25,36 @@
       <button id="btn-daily" class="gift-badge hidden">🎁</button>
     </div>
     <div id="felt">
-      <svg id="ornament" viewBox="-100 -100 200 200" aria-hidden="true">
+      <svg id="ornament" viewBox="-104 -104 208 208" aria-hidden="true">
         <defs>
-          <linearGradient id="og" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6b06a"/><stop offset="1" stop-color="#c58c48"/></linearGradient>
-          <path id="lobe" d="M0 -22C-14 -34 -44 -44 -39 -72C-35 -92 -8 -96 0 -82C8 -96 35 -92 39 -72C44 -44 14 -34 0 -22Z"/>
-          <path id="inner" d="M0 -34C-8 -42 -27 -48 -24 -64C-21 -76 -5 -78 0 -68C5 -78 21 -76 24 -64C27 -48 8 -42 0 -34Z"/>
+          <linearGradient id="og" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9a74a"/><stop offset=".55" stop-color="#dc9840"/><stop offset="1" stop-color="#cf8836"/></linearGradient>
+          <linearGradient id="og2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3a041"/><stop offset="1" stop-color="#d28c37"/></linearGradient>
+          <path id="arm" d="M-15 -20C-15 -42 -27 -56 -23 -76C-18 -90 -6 -94 0 -101C6 -94 18 -90 23 -76C27 -56 15 -42 15 -20Z"/>
+          <path id="lobe" d="M0 -24C-28 -40 -50 -62 -36 -86C-26 -98 -6 -92 0 -76C6 -92 26 -98 36 -86C50 -62 28 -40 0 -24Z"/>
         </defs>
-        <g fill="rgba(90,45,5,.35)" transform="translate(2.4 3.2)">
-          <use href="#lobe"/><use href="#lobe" transform="rotate(90)"/><use href="#lobe" transform="rotate(180)"/><use href="#lobe" transform="rotate(270)"/>
+        <g fill="rgba(110,50,0,.32)" transform="translate(2.4 3.4)">
+          <use href="#arm"/><use href="#arm" transform="rotate(90)"/><use href="#arm" transform="rotate(180)"/><use href="#arm" transform="rotate(270)"/>
+          <use href="#lobe" transform="rotate(45)"/><use href="#lobe" transform="rotate(135)"/><use href="#lobe" transform="rotate(225)"/><use href="#lobe" transform="rotate(315)"/>
         </g>
-        <g fill="url(#og)" stroke="rgba(110,60,15,.75)" stroke-width="1.6">
-          <use href="#lobe"/><use href="#lobe" transform="rotate(90)"/><use href="#lobe" transform="rotate(180)"/><use href="#lobe" transform="rotate(270)"/>
-          <g transform="rotate(45) scale(.6)"><use href="#lobe"/><use href="#lobe" transform="rotate(90)"/><use href="#lobe" transform="rotate(180)"/><use href="#lobe" transform="rotate(270)"/></g>
+        <g filter="url(#bevel)">
+          <g fill="#bf7424" stroke="#8a4d0c" stroke-opacity=".45" stroke-width="1.6" stroke-linejoin="round" transform="scale(1.035)">
+            <use href="#arm"/><use href="#arm" transform="rotate(90)"/><use href="#arm" transform="rotate(180)"/><use href="#arm" transform="rotate(270)"/>
+          </g>
+          <g fill="url(#og2)" stroke="#9a5a14" stroke-opacity=".7" stroke-width="1.5" stroke-linejoin="round">
+            <use href="#arm"/><use href="#arm" transform="rotate(90)"/><use href="#arm" transform="rotate(180)"/><use href="#arm" transform="rotate(270)"/>
+          </g>
+          <g fill="url(#og)" stroke="#9a5a14" stroke-opacity=".75" stroke-width="1.6" stroke-linejoin="round">
+            <use href="#lobe" transform="rotate(45)"/><use href="#lobe" transform="rotate(135)"/><use href="#lobe" transform="rotate(225)"/><use href="#lobe" transform="rotate(315)"/>
+          </g>
+          <g fill="none" stroke="#b9691a" stroke-opacity=".38" stroke-width="1.2" stroke-linecap="round">
+            <path d="M-8 -34C-4 -52 4 -60 0 -88M8 -34C4 -52 -4 -60 0 -88" transform="rotate(0)"/><path d="M-8 -34C-4 -52 4 -60 0 -88M8 -34C4 -52 -4 -60 0 -88" transform="rotate(90)"/><path d="M-8 -34C-4 -52 4 -60 0 -88M8 -34C4 -52 -4 -60 0 -88" transform="rotate(180)"/><path d="M-8 -34C-4 -52 4 -60 0 -88M8 -34C4 -52 -4 -60 0 -88" transform="rotate(270)"/>
+            <path d="M-10 -36C-24 -52 -34 -64 -30 -82M10 -40C22 -56 28 -68 24 -84" transform="rotate(45)"/><path d="M-10 -36C-24 -52 -34 -64 -30 -82M10 -40C22 -56 28 -68 24 -84" transform="rotate(135)"/><path d="M-10 -36C-24 -52 -34 -64 -30 -82M10 -40C22 -56 28 -68 24 -84" transform="rotate(225)"/><path d="M-10 -36C-24 -52 -34 -64 -30 -82M10 -40C22 -56 28 -68 24 -84" transform="rotate(315)"/>
+          </g>
+          <g fill="none" stroke="#ffd990" stroke-opacity=".38" stroke-width="1" stroke-linejoin="round">
+            <use href="#lobe" transform="rotate(45) scale(.88)"/><use href="#lobe" transform="rotate(135) scale(.88)"/><use href="#lobe" transform="rotate(225) scale(.88)"/><use href="#lobe" transform="rotate(315) scale(.88)"/>
+          </g>
+          <circle r="21" fill="#cf8a35" stroke="#8a4d0c" stroke-opacity=".6" stroke-width="1.6"/><circle r="14" fill="url(#og)" stroke="#ffe0a0" stroke-opacity=".6" stroke-width="1.2"/>
         </g>
-        <g fill="rgba(120,65,15,.22)" stroke="rgba(255,235,200,.85)" stroke-width="1.3">
-          <use href="#inner"/><use href="#inner" transform="rotate(90)"/><use href="#inner" transform="rotate(180)"/><use href="#inner" transform="rotate(270)"/>
-        </g>
-        <circle r="20" fill="rgba(120,65,15,.3)" stroke="rgba(255,235,200,.8)" stroke-width="1.5"/>
       </svg>
       <div id="bottle-wrap"><div id="bottle"></div></div>
       <div id="hint" class="hidden"></div>
@@ -99,6 +112,12 @@
   <linearGradient id="gPurple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6b8ff"/><stop offset=".55" stop-color="#8e4fe0"/><stop offset="1" stop-color="#5a24a8"/></linearGradient>
   <linearGradient id="gWine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8325e"/><stop offset="1" stop-color="#5a0f2e"/></linearGradient>
   <linearGradient id="gAmber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6b44a"/><stop offset="1" stop-color="#b8650f"/></linearGradient>
+  <filter id="bevel" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="b"/>
+    <feSpecularLighting in="b" surfaceScale="2.2" specularConstant=".32" specularExponent="16" lighting-color="#fff2d0" result="s"><feDistantLight azimuth="235" elevation="55"/></feSpecularLighting>
+    <feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/>
+    <feComposite in="SourceGraphic" in2="s2" operator="arithmetic" k1="0" k2="1" k3=".7" k4="0"/>
+  </filter>
   <filter id="gloss" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
     <feGaussianBlur in="SourceAlpha" stdDeviation="1.7" result="b"/>
     <feSpecularLighting in="b" surfaceScale="4" specularConstant=".75" specularExponent="26" lighting-color="#fff" result="s"><feDistantLight azimuth="235" elevation="52"/></feSpecularLighting>
@@ -112,9 +131,9 @@
 <div id="boot" class="load"><div class="bbar"><i></i></div><h1 class="btitle"><span class="b1"></span><small class="b2"></small><span class="b3"></span></h1><p id="boot-msg"></p></div>
 <div id="yt-holder"><div id="yt"></div></div>
 
-<script src="/static/i18n.js?v=83"></script>
-<script src="/static/art.js?v=83"></script>
-<script src="/static/sfx.js?v=83"></script>
-<script src="/static/app.js?v=83"></script>
+<script src="/static/i18n.js?v=86"></script>
+<script src="/static/art.js?v=86"></script>
+<script src="/static/sfx.js?v=86"></script>
+<script src="/static/app.js?v=86"></script>
 </body>
 </html>

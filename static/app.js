@@ -115,26 +115,31 @@ const BOTTLES = {
 };
 let bsvg = 0;
 function bottleSvg(id) {
+  // a stout wine/beer bottle lying along the Y axis (cap at the top): ribbed lip, short shoulder, wide body, notched base
   const b = BOTTLES[id] || BOTTLES.bottle_green, k = "bt" + (++bsvg);
-  const body = "M26 11H36C36.4 34 37 58 38.5 74C41 88 60 94 60 114V176C60 184 54 189 46 189H16C8 189 2 184 2 176V114C2 94 21 88 23.5 74C25 58 25.6 34 26 11Z";
-  return `<svg viewBox="0 0 62 192" xmlns="http://www.w3.org/2000/svg">
+  const body = "M26 14H38C38.4 30 38.4 46 39.6 58C41 72 62 78 62 100V160C62 168 58 173 52 175Q44 168 32 168Q20 168 12 175C6 173 2 168 2 160V100C2 78 23 72 24.4 58C25.6 46 25.6 30 26 14Z";
+  return `<svg viewBox="0 0 64 180" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="${k}g" x1="0" x2="1"><stop offset="0" stop-color="${b.c0}"/><stop offset=".14" stop-color="${b.c1}"/><stop offset=".34" stop-color="${b.c2}"/><stop offset=".58" stop-color="${b.c1}"/><stop offset=".9" stop-color="${b.c0}"/><stop offset="1" stop-color="${b.c0}"/></linearGradient>
-    <linearGradient id="${k}d" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="${b.c0}" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${k}g" x1="0" x2="1"><stop offset="0" stop-color="${b.c0}"/><stop offset=".12" stop-color="${b.c1}"/><stop offset=".36" stop-color="${b.c2}"/><stop offset=".62" stop-color="${b.c1}"/><stop offset=".92" stop-color="${b.c0}"/><stop offset="1" stop-color="${b.c0}"/></linearGradient>
+    <linearGradient id="${k}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>
     <clipPath id="${k}c"><path d="${body}"/></clipPath>
   </defs>
-  <path d="${body}" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.5"/>
-  <g clip-path="url(#${k}c)">
-    <path d="M15 96C18 110 18 168 15 184L47 184C44 168 44 110 47 96Z" fill="url(#${k}d)" opacity=".75"/>
-    <ellipse cx="31" cy="182" rx="20" ry="4.5" fill="#000" opacity=".28"/>
-    <path d="M10 118V168" stroke="#fff" stroke-opacity=".55" stroke-width="4.4" stroke-linecap="round"/>
-    <path d="M14 100C17 92 23 86 28 80" stroke="#fff" stroke-opacity=".5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-    <path d="M52 122V166" stroke="#fff" stroke-opacity=".22" stroke-width="2.6" stroke-linecap="round"/>
-    <path d="M29.5 17V66" stroke="#fff" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"/>
+  <g filter="url(#gloss)">
+    <path d="${body}" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.6" stroke-linejoin="round"/>
+    <g clip-path="url(#${k}c)">
+      <rect x="0" y="60" width="64" height="120" fill="url(#${k}v)"/>
+      <ellipse cx="32" cy="164" rx="26" ry="9" fill="#000" opacity=".26"/>
+      <path d="M9 104V158" stroke="#fff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>
+      <path d="M13 92C16 84 22 78 28 72" stroke="#fff" stroke-opacity=".55" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M54 108V156" stroke="#fff" stroke-opacity=".22" stroke-width="3" stroke-linecap="round"/>
+      <path d="M30 20V54" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse cx="32" cy="128" rx="14" ry="26" fill="${b.c3}" opacity=".16"/>
+    </g>
+    <rect x="23.4" y="3" width="17.2" height="12" rx="3.6" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.5"/>
+    <path d="M24 7.6H40M24 11H40" stroke="${b.c0}" stroke-opacity=".5" stroke-width="1.2"/>
+    <ellipse cx="32" cy="4.4" rx="6.8" ry="2.1" fill="${b.c0}" opacity=".85"/>
+    <rect x="26" y="7" width="12" height="1.8" rx=".9" fill="#fff" opacity=".5"/>
   </g>
-  <rect x="24.3" y="2" width="15.4" height="10" rx="3.6" fill="url(#${k}g)" stroke="${b.c0}" stroke-width="1.4"/>
-  <ellipse cx="32" cy="3.6" rx="6.2" ry="2" fill="${b.c0}" opacity=".85"/>
-  <rect x="26" y="6.4" width="11" height="1.8" rx=".9" fill="#fff" opacity=".45"/>
 </svg>`;
 }
 const chatHue = n => { let h = 0; for (const c of String(n)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
