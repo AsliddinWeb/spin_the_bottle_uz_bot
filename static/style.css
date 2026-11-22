@@ -877,3 +877,21 @@ select.rt-per option{color:#222}
 .topmark{position:absolute;right:-6%;top:-8%;z-index:4;background:linear-gradient(#ff7a3a,#e5371e);color:#fff;font:900 calc(var(--u)*2.7)/1 system-ui,sans-serif;letter-spacing:.04em;padding:calc(var(--u)*.55) calc(var(--u)*1.3);border-radius:calc(var(--u)*1.2);border:1.5px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35);transform:rotate(8deg)}
 .vrib.top{background:linear-gradient(#ff8a3f,#e5371e);color:#fff}
 .tpb{background:linear-gradient(#ff7a3a,#e5371e);color:#fff;font-size:.7em;padding:1px 6px;border-radius:7px;letter-spacing:.04em}
+
+/* gift placement and landing effects */
+.gh{left:-16%;top:calc(var(--av)*-.34);transform:rotate(-20deg);transform-origin:70% 90%;font-size:calc(var(--av)*.7)}
+@keyframes glandh{from{transform:rotate(-20deg) scale(1.7)}}
+.gf{right:calc(var(--av)*-.14);bottom:calc(var(--av)*.1);font-size:calc(var(--av)*.52)}
+/* drinks: the glass fills up while a thin stream falls into it */
+.gf.pour .gart{animation:fillup 1.3s ease-out}
+@keyframes fillup{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+.gf.pour::before{content:"";position:absolute;left:46%;bottom:55%;width:calc(var(--av)*.07);height:calc(var(--av)*.9);border-radius:99px;background:linear-gradient(var(--liq,#c8842e),var(--liq,#c8842e));transform-origin:50% 0;animation:stream 1.1s ease-in both;z-index:-1;opacity:.9}
+@keyframes stream{0%{transform:scaleY(0)}25%{transform:scaleY(1)}75%{transform:scaleY(1);opacity:.9}100%{transform:scaleY(1);opacity:0}}
+.gf.hop{animation:hop .5s ease-out 2}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-35%) scale(1.15,.9)}70%{transform:translateY(0) scale(.9,1.12)}}
+/* tomato / egg burst on the avatar, then slowly slide off */
+.av .splat{position:absolute;left:-6%;top:-6%;width:112%;height:112%;pointer-events:none;z-index:6;animation:splatin .24s cubic-bezier(.2,1.8,.4,1) both,splatout 6s 1.3s ease-in forwards;filter:drop-shadow(0 2px 3px rgba(60,0,0,.35))}
+.av .splat svg{width:100%;height:100%;display:block}
+@keyframes splatin{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:.95}}
+@keyframes splatout{from{transform:translateY(0);opacity:.95}to{transform:translateY(22%);opacity:0}}
+.av .drop{position:absolute;left:50%;top:50%;border-radius:50%;pointer-events:none;z-index:7}

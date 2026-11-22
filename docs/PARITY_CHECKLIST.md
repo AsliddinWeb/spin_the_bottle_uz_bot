@@ -99,3 +99,7 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (33) UI parity pass from the user's recording: board colours measured (centre #d58d36, edges #aa662f), carved ornament redrawn (4 diagonal heart lobes + 4 arms with soft bevel, 47u wide), stouter bottle (26u x 10u, own art), entry title in Nunito 1000 italic (OFL, self-hosted) with gradient + bevel outline.
 - (34) Ratings periods (day/week/month/all) for kisses, tracks and gifts via the per-day counters table stats_daily; dropdown pill like the original; tests/qa_ratings.py 10/10.
 - (35) Weekly top: ❤100/50/25 for the 3 best kissers of the last Mon-Sun week (min 5 kisses), paid once (weekly_awards), bot message + toast + profile medals; pair cap 3 kisses/day in the lists. tests/qa_weekly.py 11/11. Numbers are our own proposal.
+
+- (36) Gender rule: only boy-girl pairs (pick_target opposite gender, table waits for the missing gender, random table prefers the opposite gender). Test: tests/qa_gender.py (9).
+- (37) TOP badge for top-10 by kisses replaces VIP (seat, chat, profile). Test: tests/qa_top.py (5).
+- (38) Per-gift sounds (42 gifts, GS table in sfx.js), head gifts land top-left, drinks bottom-right with pour effect, tomato/egg splat, frog hop.

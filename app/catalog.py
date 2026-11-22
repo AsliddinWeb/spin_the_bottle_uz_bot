@@ -32,6 +32,8 @@ GIFTS = [
     ("icecream", "🍦", 1, "gift", False),
     ("cake", "🍰", 1, "gift", False),
     ("milk", "🥛", 1, "gift", False),
+    ("tea", "🍵", 1, "gift", False),
+    ("cola", "🥫", 1, "gift", False),
     ("wine", "🍷", 1, "gift", False),
     ("whisky", "🥃", 1, "gift", False),
     ("blackrose", "🥀", 1, "gift", False),

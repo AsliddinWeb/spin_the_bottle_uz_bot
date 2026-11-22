@@ -505,6 +505,25 @@ function addPm(m) {
 }
 function seatPhoto(uid) { const p = T && T.seats.find(s => s.uid === uid); return p ? p.photo : ""; }
 // A sent gift flies in an arc from the sender's seat to the receiver's hand slot, then lands with a bounce.
+const DRINK = { tea: "#c8842e", cola: "#3b1d0c", milk: "#ffffff", wine: "#8a1a3a", whisky: "#d98c2b", cocktail: "#ff8a1f", martini: "#cfeff0", champagne: "#f4dc7a", smoothie: "#ff7fb2" };
+const SPLAT = { tomato: ["#e5371e", "#9a1408"], egg: ["#ffd23d", "#c8920a"] };
+const splatSvg = (c, d) => `<svg viewBox="0 0 100 100"><g fill="${c}" stroke="${d}" stroke-width="1.6" stroke-linejoin="round"><path d="M50 14C60 10 70 20 74 28C84 26 92 36 86 46C94 54 90 66 80 68C82 78 72 86 62 82C56 92 42 90 38 82C28 86 16 78 20 68C10 64 8 52 16 46C10 36 18 26 28 28C32 18 42 10 50 14Z"/><circle cx="12" cy="20" r="4"/><circle cx="90" cy="14" r="3"/><circle cx="8" cy="80" r="3.5"/><circle cx="94" cy="84" r="4"/><path d="M42 80c-1 10 2 16 6 16s6-6 4-16zM64 76c0 8 2 12 5 12s4-5 3-12z"/></g><ellipse cx="38" cy="34" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-20 38 34)"/></svg>`;
+function landFx(seatEl, emoji) {   // what happens when a gift lands: drinks are poured into the glass, tomatoes and eggs burst, the frog hops
+  const id = GIFT_BY_EMOJI[emoji]; if (!id) return;
+  const gf = seatEl.querySelector(".gf");
+  if (DRINK[id] && gf) { gf.style.setProperty("--liq", DRINK[id]); gf.classList.add("pour"); setTimeout(() => gf.classList.remove("pour"), 1700); }
+  if (id === "frog" && gf) { gf.classList.add("hop"); setTimeout(() => gf.classList.remove("hop"), 1300); }
+  const sp = SPLAT[id], av = seatEl.querySelector(".av");
+  if (sp && av) {
+    const s = document.createElement("div"); s.className = "splat"; s.innerHTML = splatSvg(sp[0], sp[1]); av.appendChild(s); setTimeout(() => s.remove(), 7500);
+    const r = av.getBoundingClientRect();
+    for (let i = 0; i < 9; i++) {   // droplets fly off the impact point
+      const d = document.createElement("i"); d.className = "drop"; d.style.background = sp[0]; const sz = 3 + Math.random() * 5; d.style.cssText += `;width:${sz}px;height:${sz}px;background:${sp[0]}`; av.appendChild(d);
+      const a = Math.random() * Math.PI * 2, dist = r.width * (.35 + Math.random() * .5);
+      d.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(a) * dist}px,${Math.sin(a) * dist + 8}px) scale(.4)`, opacity: 0 }], { duration: 500 + Math.random() * 350, easing: "cubic-bezier(.2,.7,.4,1)" }).onfinish = () => d.remove();
+    }
+  }
+}
 const FLY_MS = 1700, gwaitUntil = {};  // gwaitUntil: receiver keeps its new gift hidden until the flying one lands
 function giftSound(m) {
   if (m.blocked) return sfx.no();
@@ -517,7 +536,8 @@ function flyGift(m) {
   const ia = seatOf(m.uid), ib = seatOf(m.to_uid); if (ia < 0 || ib < 0 || ia === ib) return;
   const felt = $("#felt").getBoundingClientRect(), A = $("#seat" + ia).getBoundingClientRect(), eb = $("#seat" + ib), B = eb.getBoundingClientRect();
   const sx = A.left - felt.left + A.width / 2, sy = A.top - felt.top + A.height / 2;
-  const ex = B.left - felt.left + B.width * .86, ey = B.top - felt.top + B.height * .72;
+  const head = (CFG.head_gifts || []).includes(GIFT_BY_EMOJI[m.gift]);   // hats and crowns land on the top-left corner, everything else bottom-right
+  const ex = B.left - felt.left + B.width * (head ? .1 : .86), ey = B.top - felt.top + B.height * (head ? .04 : .72);
   const mx = (sx + ex) / 2, my = Math.min(sy, ey) - Math.abs(ex - sx) * .16 - 16;
   const el = document.createElement("div"); el.className = "gfly"; el.innerHTML = giftIcon(m.gift); el.style.fontSize = A.width * .55 + "px";
   $("#felt").appendChild(el); eb.classList.add("gwait"); gwaitUntil[m.to_uid] = performance.now() + FLY_MS;
@@ -529,7 +549,7 @@ function flyGift(m) {
     { transform: at(ex, ey, 1, 0), opacity: 1 },
   ], { duration: FLY_MS, easing: "cubic-bezier(.32,.1,.25,1)", fill: "forwards" });
   an.onfinish = an.oncancel = () => {
-    el.remove(); delete gwaitUntil[m.to_uid]; eb.classList.remove("gwait"); eb.classList.add("gland"); setTimeout(() => eb.classList.remove("gland"), 560);
+    el.remove(); delete gwaitUntil[m.to_uid]; eb.classList.remove("gwait"); eb.classList.add("gland"); landFx(eb, m.gift); setTimeout(() => eb.classList.remove("gland"), 560);
   };
 }
 function addChat(m) {
