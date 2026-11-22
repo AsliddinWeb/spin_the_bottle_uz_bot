@@ -59,16 +59,21 @@ const sfx = (() => {
     // bottle spin: air whoosh + wooden ratchet ticks that slow down exactly like the bottle (dur seconds, rotated deg)
     spin: (dur = 5, deg = 1800 + 180) => {
       if (!ready()) return; haptic("medium");
-      noise(Math.min(dur, 2.2), { f0: 300, f1: 1800, q: .6, v: .5, a: .12 }); noise(dur, { f0: 1800, f1: 250, q: .5, v: .22, a: .5 });
+      noise(Math.min(dur, 2.2), { f0: 300, f1: 1800, q: .6, v: .3, a: .12 }); noise(dur, { f0: 1800, f1: 250, q: .5, v: .12, a: .5 });
       const per = 36, n = Math.floor(deg / per);   // one tick every 36 degrees
       for (let i = 1; i <= n; i++) {
         const frac = i * per / deg, tt = (() => { let lo = 0, hi = 1; for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; ease(m) < frac ? lo = m : hi = m; } return (lo + hi) / 2 * dur; })();
-        const slow = tt / dur; tone(900 - slow * 380, .035, { type: "square", v: .22 + (1 - slow) * .1, at: tt, lp: 2600 });
-        tone(190, .05, { type: "sine", v: .35, at: tt, to: 110 });
+        const slow = tt / dur; tone(900 - slow * 380, .035, { type: "square", v: .13 + (1 - slow) * .07, at: tt, lp: 2600 });
+        tone(190, .05, { type: "sine", v: .2, at: tt, to: 110 });
       }
-      setTimeout(api.settle, dur * 1000 - 40);
+      setTimeout(api.settle, dur * 820);
     },
-    settle: () => { if (!ready()) return; tone(150, .22, { type: "sine", v: .9, to: 70 }); noise(.08, { f0: 1200, type: "lowpass", v: .5 }); haptic("heavy"); },
+    // measured on the original: one bright 1.8-2.7 kHz tick (~0.25 s) ~4.1 s into the spin
+    settle: () => { if (!ready()) return; tone(1830, .1, { v: .9 }); tone(2153, .2, { at: .03, to: 1100, v: .7 }); noise(.07, { f0: 2800, q: 2, v: .5 }); tone(150, .16, { v: .35, to: 80 }); haptic("heavy"); },
+    // measured: rising 1.6-2.3 kHz shimmer (~0.4 s) when the pair has met in the middle
+    pair: () => { if (!ready()) return; arp([1637, 1830, 1981, 2196, 2261], .07, { d: .2, v: .55, type: "sine" }); noise(.2, { f0: 8000, type: "highpass", v: .18, at: .2, a: .05 }); haptic("light"); },
+    // measured: two partials (861 + 1507 Hz) decaying over ~2.7 s; used as the "sound is on" confirmation
+    bell: () => { if (!ready()) return; tone(861, 2.6, { v: .55, a: .004 }); tone(1507, 2.2, { v: .38, a: .004 }); tone(517, 1.4, { v: .15, a: .004 }); },
     kiss: () => {
       if (!ready()) return; haptic("ok");
       noise(.07, { f0: 2600, f1: 900, q: 2, v: .8 }); tone(1400, .09, { to: 520, v: .7, type: "sine" }); noise(.05, { f0: 3500, q: 3, v: .5, at: .09 });

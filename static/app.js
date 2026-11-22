@@ -317,6 +317,7 @@ function onState(s) {
   const key = mine ? s.phase + ":" + (s.spin ? s.spin.id : 0) + ":" + s.turn : "";
   if (key && key !== myTurnKey) sfx.turn();
   myTurnKey = key;
+  if (s.phase === "ask_spinner" && (!prev || prev.phase !== "ask_spinner")) setTimeout(sfx.pair, 900);
   if (prev && prev.seats.length < s.seats.length) sfx.join(); else if (prev && prev.seats.length > s.seats.length) sfx.leave();
   renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic();
   if (target && !s.seats.find(p => p.uid === target)) closeGifts();
@@ -1071,7 +1072,7 @@ function openSettings() {
   $("#st-lang", m.el).onchange = async e => {
     try { ME = await api("/api/profile", "POST", { name: ME.name, birth: ME.birth || "", age: ME.age, gender: ME.gender, lang: e.target.value }); lang = ME.lang; applyStatic(); m.close(); toast("✓"); } catch { toast(t("err")); }
   };
-  $("#st-snd", m.el).onclick = () => { const r = $("#st-sfx", m.el); r.value = parseFloat(r.value) ? 0 : 0.7; r.oninput({ target: r }); };
+  $("#st-snd", m.el).onclick = () => { const r = $("#st-sfx", m.el); r.value = parseFloat(r.value) ? 0 : 0.7; r.oninput({ target: r }); if (+r.value) sfx.bell(); };
   $("#st-sfx", m.el).oninput = e => { ls.set("sfx", e.target.value); sfx.click(); };
   $("#st-mus", m.el).oninput = e => { ls.set("musicVol", e.target.value); $("#pl-range").value = e.target.value; applyVolume(); };
   $$("[data-s]", m.el).forEach(b => b.onclick = () => {
