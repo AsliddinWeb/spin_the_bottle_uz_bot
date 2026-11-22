@@ -255,7 +255,12 @@ function bindUi() {
     };
     seats.appendChild(d);
   });
-  $("#bottle").onclick = () => { if (T && T.phase === "spin_wait" && T.turn === ME.id) { $("#bottle").classList.remove("tap"); send({ t: "spin" }); } };
+  let lastWaitToast = 0;
+  $("#bottle").onclick = () => {
+    if (!T || T.phase !== "spin_wait") return;
+    if (T.turn === ME.id) { $("#bottle").classList.remove("tap"); send({ t: "spin" }); return; }
+    if (Date.now() - lastWaitToast > 2200) { lastWaitToast = Date.now(); toast(t("not_your_turn", { n: nameOf(T.turn) })); }   // "X is spinning right now, wait for your turn"
+  };
   $("#dj-fab").onclick = e => { const b = e.target.closest("[data-k]"); if (b) openMusicPicker(b.dataset.k); };
   const range = $("#pl-range"); range.value = ls.get("musicVol", "0");
   range.oninput = () => { ls.set("musicVol", range.value); applyVolume(); };
