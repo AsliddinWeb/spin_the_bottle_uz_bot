@@ -58,3 +58,20 @@ Kadrlar 1 soniya oralig'ida olindi (faqat kuzatish, qaror tugmalari bosilmadi).
 
 Ko'rilmaganlar: spin kutishning aniq vaqti (taxminan 8–10 s), natija matnlari rad etilganda, kutish holatidagi ("Ждем игроков…") qo'shimcha matnlar.
 Test: `tests/qa_cycle.py` (5).
+
+## 6. Chat va sovg'alar: o'zim o'ynab ko'rdim (2026-11-23, original, stol 193)
+Foydalanuvchi ruxsati bilan: chatga xabar yozdim, sovg'a yubordim (qulupnay, ❤1; HUD ❤50 → ❤49 darhol).
+
+**Chat**
+- O'z xabarim boshqalarniki kabi: chapda kichik kvadrat avatar, oq pufakda **ko'k qalin ism** ("Asliddin:") + matn, tagida kulrang "Показать перевод". Yuborilgach maydon tozalanadi, chat pastga suriladi.
+- O'pish qatori: matnsiz — [avatar] 💋 » [avatar] (qizil lab, yashil »). Sovg'a qatori: [yuboruvchi avatari] [sovg'a rasmi] » [oluvchi avatari], pufaksiz.
+- Ism oldida daraja/rol belgilari (▲, rangli nishon), ismlar rangi rolga qarab (ko'k, qizil qalin, qora kursiv).
+
+**Sovg'a paneli**
+- Avatarga bosilgach panel darhol ochiladi: sarlavha "Отправить подарок <ism>", o'ngda yashil **+**, pastda yashil ✕. 7 ustun (kompyuterda).
+- Tartib: video (❤9), musiqa (❤5), 4 ta toj (❤3), barg, gulchambar (❤2), savat, lab, tosh, qulupnay, pomidor, baqa (❤2), atirgul, konfet, o'rdak, begemot, pingvin, lola, guldasta, gul, kaktus, muzqaymoq, tort, sut, vino, viski (hammasi ❤1), keyin VIP (qulf).
+- Yuborilganda: sovg'a **yuboruvchi avatari burchagidan** ~2 s ichida oluvchi avatari yoniga uchib boradi; HUD yurakchasi darhol kamayadi; panel ochiq qoladi (ketma-ket yuborish mumkin); chatga qator qo'shiladi.
+- Qo'ngan sovg'a oluvchi avatarining chetida (ko'rilgan: pastki qatordagi o'rindiqda chap-o'rta, o'ng ustundagilarda o'ng-o'rta) turadi.
+
+**Bizda o'zgargani:** sovg'alar paneli tartibi originalniki bilan bir xil qilindi (qo'shimcha sovg'alar — medal, shapka, tuxum, smuzi, pirog, bomba, shippak, chelak, VIP — oxirida); paneldagi 1-element (❤9) endi **video**, 2-si (❤5) **musiqa** oynasini ochadi.
+**Ko'rilmagan:** o'z navbatimda aylantirish va o'pish javobi (navbat uzoq kelmadi), sovg'a qo'ngan joyning aniq qoidasi, jestlar paneli (😊 sarflanadi).

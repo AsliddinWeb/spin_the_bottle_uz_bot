@@ -58,6 +58,11 @@ GIFTS = [
 ]
 GIFT_MAP = {g[0]: g for g in GIFTS}
 # gifts worn on the head; everything else sits in the avatar's corner ("hand")
+# Panel order = the original's: its rows come first (music, crowns, leaf ... whisky), our extra gifts follow, VIP-only ones go last.
+_ORIGINAL_ORDER = ["music_now", "music_queue", "crown1", "crown2", "king", "queen", "leaf", "wreath", "basket", "lips", "gem", "strawberry", "tomato", "frog",
+                   "rose", "candy", "duck", "pig", "penguin", "tulip", "bouquet", "plant", "cactus", "icecream", "cake", "milk", "wine", "whisky"]
+GIFTS.sort(key=lambda g: (_ORIGINAL_ORDER.index(g[0]) if g[0] in _ORIGINAL_ORDER else (len(_ORIGINAL_ORDER) + (1000 if g[4] else 0))))
+
 HEAD_IDS = {"crown1", "crown2", "propeller", "king", "queen", "batcrown", "joker", "viking", "pirate", "tophat", "sombrero", "wreath"}
 
 # Telegram Stars packs: id -> (stars, hearts, bonus%)

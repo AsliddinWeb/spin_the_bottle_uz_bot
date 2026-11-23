@@ -783,7 +783,7 @@ function giveGift(g) {
   if (!target && !g.kind.startsWith("music")) return toast(t("pick_player"));
   if (g.vip && !ME.vip) { toast(t("need_vip")); return openVip(); }
   if (ME.hearts < g.price) { toast(t("no_hearts")); return openShop(); }
-  if (g.kind.startsWith("music")) return openMusicPicker(g.id);
+  if (g.kind.startsWith("music")) return openMusicPicker(g.id, g.id === "music_now" ? "video" : "audio");   // original panel: first item = video (❤9), second = music (❤5)
   send({ t: "gift", to: target, gift: g.id });
 }
 
