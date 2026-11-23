@@ -471,7 +471,8 @@ async def tasks(u=Depends(auth.current_user)):
     refs = db.q1("SELECT COUNT(*) AS c FROM referrals WHERE inviter=?", u["id"])["c"]
     done = db.claimed(u)
     return {
-        "invited": refs, "subscribe_done": "subscribe" in done,
+        "invited": refs, "ref_paid": db.q1("SELECT COUNT(*) AS c FROM referrals WHERE inviter=? AND paid=1", u["id"])["c"],
+        "ref_need": config.REF_KISSES, "subscribe_done": "subscribe" in done,
         "compliments_done": "compliments" in done, "compliments_progress": u["gifts_received"],
         "link": f"https://t.me/{botmod.bot_username}?start=ref_{u['id']}" if botmod.bot_username else "",
     }

@@ -343,6 +343,14 @@ class Table:
     async def notify_achievements(self, uid: int) -> None:
         new = db.check_achievements(uid)
         got = medals.check(uid)
+        paid = economy.check_referral(uid)
+        if paid:
+            await self.hub.push_me(paid["friend"])
+            ic = self.hub.clients.get(paid["inviter"])
+            if ic:
+                await ic.send({"t": "ref_paid", "hearts": paid["hearts"], "name": paid["name"]})
+                await self.hub.push_me(paid["inviter"])
+            await self.hub.notify_referral(paid)
         c = self.hub.clients.get(uid)
         if c:
             for aid in new:
@@ -635,6 +643,17 @@ class Hub:
             await c.table.kick(uid, reason)
             return True
         return False
+
+    async def notify_referral(self, paid: dict) -> None:
+        """Bot message to the inviter (if they started the bot): the friend reached the milestone."""
+        from . import bot as botmod
+        u = db.get_user(paid["inviter"])
+        if botmod.bot and u and u["bot_started"] and u["notify"]:
+            txt = {"uz": "🎁 Do'sting {n} 💋50 ga yetdi: +{h} ❤️", "ru": "🎁 Твой друг {n} набрал 💋50: +{h} ❤️", "en": "🎁 Your friend {n} reached 💋50: +{h} ❤️"}
+            try:
+                await botmod.bot.send_message(paid["inviter"], txt.get(u["lang"], txt["en"]).format(n=paid["name"], h=paid["hearts"]))
+            except Exception:
+                pass
 
     async def push_me(self, uid: int) -> None:
         from .economy import me_payload

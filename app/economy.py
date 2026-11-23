@@ -35,6 +35,32 @@ def claim_daily_task(uid: int, key: str) -> bool:
     return True
 
 
+def check_referral(uid: int) -> dict | None:
+    """Pays the inviter (and the friend) once the invited player has REF_KISSES kisses with at least REF_MIN_PARTNERS different people.
+    Idempotent (paid flag), capped per inviter per day. Returns the payout or None."""
+    r = db.q1("SELECT inviter FROM referrals WHERE invited=? AND paid=0", uid)
+    if not r:
+        return None
+    u = db.get_user(uid)
+    if not u or u["kisses"] < config.REF_KISSES:
+        return None
+    partners = db.q1("SELECT COUNT(*) c FROM (SELECT hi AS p FROM pair_kisses WHERE lo=? UNION SELECT lo FROM pair_kisses WHERE hi=?)", uid, uid)["c"]
+    if partners < config.REF_MIN_PARTNERS:
+        return None
+    inviter = r["inviter"]
+    midnight = int(time.mktime(date.today().timetuple()))
+    if db.q1("SELECT COUNT(*) c FROM referrals WHERE inviter=? AND paid=1 AND ts>=?", inviter, midnight)["c"] >= config.REF_DAILY_CAP:
+        return None
+    if db.x("UPDATE referrals SET paid=1, ts=? WHERE invited=? AND paid=0", int(time.time()), uid).rowcount != 1:
+        return None
+    hearts = config.REF_REWARD_PREMIUM if u["premium"] else config.REF_REWARD
+    db.add_hearts(inviter, hearts)
+    db.add_hearts(uid, config.REF_FRIEND_BONUS)
+    from . import moderation
+    moderation.audit(0, "ref_paid", inviter, f"friend #{uid} +{hearts} (premium={bool(u['premium'])})")
+    return {"inviter": inviter, "friend": uid, "name": u["name"], "hearts": hearts, "friend_bonus": config.REF_FRIEND_BONUS}
+
+
 def starter_info(u) -> list:
     """First-session tasks (spin, kiss, gift): done when the stat is >= 1; the list disappears once everything is claimed."""
     cl = db.claimed(u)

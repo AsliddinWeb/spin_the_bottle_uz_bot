@@ -363,6 +363,7 @@ function handle(m) {
     case "compliment": showCompliment(m); sfx.gift(); break;
     case "ach": showAch(m.id); break;
     case "medals": showMedals(m.list); break;
+    case "ref_paid": toast(t("ref_paid", { n: m.name, h: m.hearts }), 6000); sfx.win(); break;
     case "weekly": toast(t("weekly_won", { p: m.place, h: m.hearts }), 5000); sfx.ach(); break;
     case "left":
       T = null; closeGifts();
@@ -1148,7 +1149,9 @@ function openPromo() {
   const m = openModal(`<h2>${t("promo_title")}</h2>
     <div class="promo-av"><div><span class="pa a1">🧑</span><b>+❤20</b></div><div><span class="pa a2">👩<i>★</i></span><b>+❤50</b></div></div>
     <p class="center" style="font-size:17px;line-height:1.3;margin:10px 4px">${esc(t("promo_text"))}</p>
+    <p class="center sub" id="pr-stat"></p>
     <div class="center" style="margin-top:14px"><button class="btn" id="pr-inv">${t("promo_invite")}</button></div>`, { cls: "promo" });
+  api("/api/tasks").then(tk => { const e = $("#pr-stat", m.el); if (e) e.textContent = t("ref_stats", { n: tk.invited, p: tk.ref_paid, k: tk.ref_need }); }).catch(() => { });
   $("#pr-inv", m.el).onclick = async () => {
     let tk = {}; try { tk = await api("/api/tasks"); } catch {}
     openTg(`https://t.me/share/url?url=${encodeURIComponent(tk.link || location.origin)}&text=${encodeURIComponent("🍾 Spin the Bottle")}`);

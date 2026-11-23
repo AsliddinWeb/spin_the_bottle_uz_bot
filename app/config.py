@@ -58,6 +58,12 @@ KICK_MIN_PLAYERS = 3     # nobody can be kicked from a table with fewer players
 # per pair per day in the day/week/month lists, so two accounts cannot farm the top by kissing each other.
 WEEKLY_REWARDS = [100, 50, 25]
 WEEKLY_MIN = 5
+REF_KISSES = 50            # the invited friend must reach this many kisses
+REF_REWARD = 20            # hearts for the inviter
+REF_REWARD_PREMIUM = 50    # ... if the friend has Telegram Premium
+REF_FRIEND_BONUS = 20      # hearts for the friend at the same moment
+REF_MIN_PARTNERS = 3       # kisses with at least this many different people (a pair of fake accounts cannot farm it)
+REF_DAILY_CAP = 10         # rewards one inviter can collect per day (the rest waits for the next day)
 LEAGUE_LIMIT = 30          # league points per week that incoming kisses can bring ("лимит на входящие поцелуи")
 LEAGUE_X2_SEC = 300        # x2 booster lasts 5 minutes
 LEAGUE_LIMIT_PLUS = 10     # "Расширение лимита": +10 to this week's limit

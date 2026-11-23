@@ -40,7 +40,7 @@ def authenticate(init_data: str):
     if not tg:
         return None
     name = (tg.get("first_name") or "") or tg.get("username") or "Player"
-    row, _ = db.ensure_user(tg["id"], name, tg.get("photo_url", ""), _lang(tg.get("language_code")), username=tg.get("username") or "")
+    row, _ = db.ensure_user(tg["id"], name, tg.get("photo_url", ""), _lang(tg.get("language_code")), username=tg.get("username") or "", premium=bool(tg.get("is_premium")))
     return row
 
 

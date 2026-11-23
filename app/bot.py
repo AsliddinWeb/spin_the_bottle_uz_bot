@@ -61,19 +61,13 @@ dp = Dispatcher()
 async def on_start(m: Message, command: CommandObject):
     tg = m.from_user
     lang = lang_of(tg.language_code)
-    u, created = db.ensure_user(tg.id, tg.first_name or tg.username or "Player", lang=lang, username=tg.username or "")
+    u, created = db.ensure_user(tg.id, tg.first_name or tg.username or "Player", lang=lang, username=tg.username or "", premium=bool(tg.is_premium))
     if created and command.args and command.args.startswith("ref_"):
         inviter = command.args[4:]
         if inviter.isdigit() and int(inviter) != tg.id and db.get_user(int(inviter)):
             inviter = int(inviter)
-            db.x("INSERT OR IGNORE INTO referrals VALUES(?,?)", inviter, tg.id)
-            db.x("UPDATE users SET ref_by=? WHERE id=?", inviter, tg.id)
-            db.add_hearts(inviter, 50 if tg.is_premium else 20)  # friend with Telegram Premium pays more
-            db.add_hearts(tg.id, 20)
-            try:
-                await bot.send_message(inviter, TEXT[db.get_user(inviter)["lang"]]["bonus"])
-            except Exception:
-                pass
+            db.x("INSERT OR IGNORE INTO referrals(inviter,invited,paid,ts) VALUES(?,?,0,?)", inviter, tg.id, int(time.time()))
+            db.x("UPDATE users SET ref_by=? WHERE id=?", inviter, tg.id)   # paid later: economy.check_referral at REF_KISSES kisses
     db.x("UPDATE users SET bot_started=1, last_seen=? WHERE id=?", int(time.time()), tg.id)
     t = TEXT[lang]
     kb = InlineKeyboardMarkup(inline_keyboard=[[

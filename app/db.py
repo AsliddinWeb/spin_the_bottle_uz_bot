@@ -55,6 +55,16 @@ except sqlite3.OperationalError:
     pass
 _db.execute("CREATE TABLE IF NOT EXISTS stats_daily(day TEXT, uid INTEGER, kisses INTEGER DEFAULT 0, tracks INTEGER DEFAULT 0, gifts INTEGER DEFAULT 0, PRIMARY KEY(day, uid))")
 _db.execute("CREATE INDEX IF NOT EXISTS stats_daily_uid ON stats_daily(uid, day)")
+try:   # referrals used to be paid at sign-up: those rows count as paid so nobody is paid twice
+    _db.execute("ALTER TABLE referrals ADD COLUMN paid INTEGER DEFAULT 0")
+    _db.execute("ALTER TABLE referrals ADD COLUMN ts INTEGER DEFAULT 0")
+    _db.execute("UPDATE referrals SET paid=1")
+except sqlite3.OperationalError:
+    pass
+try:
+    _db.execute("ALTER TABLE users ADD COLUMN premium INTEGER DEFAULT 0")
+except sqlite3.OperationalError:
+    pass
 for _col in ("spins INTEGER DEFAULT 0", "msgs INTEGER DEFAULT 0", "gifts_sent INTEGER DEFAULT 0"):
     try:
         _db.execute(f"ALTER TABLE stats_daily ADD COLUMN {_col}")
@@ -118,10 +128,12 @@ def get_user(uid: int):
     return q1("SELECT * FROM users WHERE id=?", uid)
 
 
-def ensure_user(uid: int, name: str, photo: str = "", lang: str = "uz", ref_by: int = 0, username: str = ""):
+def ensure_user(uid: int, name: str, photo: str = "", lang: str = "uz", ref_by: int = 0, username: str = "", premium: bool | None = None):
     """Create the user if new. Returns (row, created)."""
     u = get_user(uid)
     if u:
+        if premium is not None and int(premium) != (u["premium"] or 0):
+            x("UPDATE users SET premium=? WHERE id=?", int(premium), uid)
         if username and username != u["username"]:
             x("UPDATE users SET username=? WHERE id=?", username, uid)
         if photo and photo != u["photo"] and not u["photo"].startswith("/uploads/"):  # keep a custom upload
@@ -132,6 +144,8 @@ def ensure_user(uid: int, name: str, photo: str = "", lang: str = "uz", ref_by: 
         uid, name[:24] or "Player", photo, lang, config.START_HEARTS, DEFAULT_BOTTLE, int(time.time()), username,
     )
     x("INSERT OR IGNORE INTO inventory(user_id,item,qty) VALUES(?,?,1)", uid, DEFAULT_BOTTLE)
+    if premium:
+        x("UPDATE users SET premium=1 WHERE id=?", uid)
     return get_user(uid), True
 
 
