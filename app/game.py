@@ -10,7 +10,7 @@ import httpx
 from . import chatfilter, config, db, economy, events, league, medals, moderation, tgmusic
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
-SPIN_T = 10      # seconds the spinner has to press SPIN; then the bottle spins by itself (seen in the original)
+SPIN_T = 20      # seconds the spinner has to press SPIN; an idle turn is skipped (what the original does with idle spinners is not verified)
 DEC_T = 10       # ONE countdown for both answers (original: 9..0 shown in the table centre, it keeps running when the spinner answers)
 SPIN_DUR = 5.0   # bottle animation
 NEXT_GAP = 1.0   # pause between turns
@@ -250,10 +250,8 @@ class Table:
             spinner.strikes += 1
             if spinner.strikes >= 3:
                 await self.kick(spinner.uid, "afk")
-                return
-            # otherwise the bottle spins by itself, like in the original
-        else:
-            spinner.strikes = 0
+            return
+        spinner.strikes = 0
 
         target = self.pick_target(spinner)
         if not target:

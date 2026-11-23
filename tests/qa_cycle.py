@@ -1,4 +1,4 @@
-"""Tur sikli originaldagidek: (1) spin qilmagan o'yinchi uchun shisha ~10 s dan keyin o'zi aylanadi, (2) qaror sanog'i bitta umumiy:
+"""Tur sikli: (1) spin qilmagan o'yinchi turi ~20 s dan keyin o'tkaziladi (original xatti-harakati tasdiqlanmagan), (2) qaror sanog'i bitta umumiy (original kuzatuvi):
 spinner javob bergach ikkinchi bosqichda deadline o'zgarmaydi. Dev server :8001 kerak (yangi baza tavsiya)."""
 import asyncio, json, time, urllib.request
 import websockets
@@ -30,20 +30,24 @@ async def main():
                     if uid == 401: seen.append((time.time(), m["phase"], m["deadline"], m["now"], m["turn"]))
         asyncio.create_task(rd()); await ws.send(json.dumps({"t": "join", "table": 31})); return ws
     w = {401: await player(401), 402: await player(402)}
-    # 1) hech kim spin qilmaydi: spin_wait -> ~10 s -> spinning (o'zi aylanadi)
-    t_wait = t_spin = None
+    # 1) hech kim spin qilmaydi: spin_wait ~20 s, keyin tur o'tkazib yuboriladi (shisha aylanmaydi)
+    t_wait = t_end = None; first = None; spun = False
     for _ in range(200):
         await asyncio.sleep(.25)
-        ph = st.get(401, {}).get("phase")
-        if ph == "spin_wait" and t_wait is None: t_wait = time.time()
-        if ph == "spinning" and t_wait: t_spin = time.time(); break
-    ok("shisha o'zi aylandi", t_spin is not None)
-    ok("kutish ~10 s (8-13)", t_spin and 8 <= t_spin - t_wait <= 13, t_spin and round(t_spin - t_wait, 1))
+        s = st.get(401, {}); ph = s.get("phase")
+        if ph == "spinning": spun = True
+        if ph == "spin_wait" and t_wait is None: t_wait, first = time.time(), s["turn"]
+        if t_wait and (ph != "spin_wait" or s.get("turn") != first): t_end = time.time(); break
+    ok("kutish ~20 s (18-23)", t_end and 18 <= t_end - t_wait <= 23, t_end and round(t_end - t_wait, 1))
+    ok("idle o'yinchi uchun shisha aylanmadi (tur o'tkazildi)", not spun)
     # 2) birinchi javob 2 s dan keyin: ikkinchi bosqich deadline i bir xil
-    spinner = st[401]["turn"]; target = 402 if spinner == 401 else 401
-    for _ in range(80):
+    sent = False
+    for _ in range(160):
         await asyncio.sleep(.25)
-        if st[401]["phase"] == "ask_spinner": break
+        ph = st[401]["phase"]
+        if ph == "spin_wait" and not sent: await w[st[401]["turn"]].send(json.dumps({"t": "spin"})); sent = True
+        if ph == "ask_spinner": break
+    spinner = st[401]["turn"]
     d1 = st[401]["deadline"]; await asyncio.sleep(2)
     await w[spinner].send(json.dumps({"t": "decide", "v": True}))
     for _ in range(40):

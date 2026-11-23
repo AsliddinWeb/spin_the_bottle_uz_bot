@@ -47,7 +47,7 @@ Kadrlar 1 soniya oralig'ida olindi (faqat kuzatish, qaror tugmalari bosilmadi).
 
 | Bosqich | Originalda ko'rilgani | Bizda (oldin → hozir) |
 |---------|----------------------|------------------------|
-| Spin kutish | Spinner uchun "Крути бутылочку!" (o'q bilan), boshqalar uchun "Крутит бутылочку" + o'q spinner avatariga. **Aylantirmasa shisha o'zi aylanadi — TASDIQLANMAGAN** (kuzatuv paytida foydalanuvchi o'zi bosgan bo'lishi mumkin; hozirgi 10 s + avto-aylanish taxmin) | 20 s kutib turni o'tkazardi → **10 s, keyin o'zi aylanadi** (3 marta ketma-ket bo'lsa AFK chiqarish saqlandi) |
+| Spin kutish | Spinner uchun "Крути бутылочку!" (o'q bilan), boshqalar uchun "Крутит бутылочку" + o'q spinner avatariga. **Aylantirmasa nima bo'lishi — TASDIQLANMAGAN** (kuzatuv paytida foydalanuvchi o'zi bosgan bo'lishi mumkin) | 20 s kutib turni o'tkazadi (3 marta ketma-ket bo'lsa AFK chiqarish) — **eski holat qaytarildi**, chunki avto-aylanish tasdiqlanmadi |
 | Aylanish | ~5 s, sekin to'xtaydi | 5 s ✅ |
 | Qaror sanog'i | Juft markazga o'tadi, markazda raqam **9 dan** kamayadi; spinner uchun "Твой выбор" + [Отказаться][Поцеловать], boshqalarga "Поцелуются или нет?" | 12 s ✅ yozuvlar, **sanoq bitta: 10 s** |
 | Ikkinchi javob | Spinner "ha" desa yashil o'q chiqadi, "Поцелует ли в ответ?", **sanoq to'xtamaydi va qayta boshlanmaydi** (9, 8, 7 → 6, 5, 4) | alohida 12 s → **umumiy sanoq (kamida 2 s qoladi)** |
