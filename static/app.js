@@ -211,6 +211,7 @@ function showAch(id) {
   const m = openModal(`<h2>${esc(t("ach_congrats"))}</h2><div class="sub">${esc(t("ach_unlocked"))}</div>
     <div class="stars">${"★".repeat(n)}<i>${"★".repeat(3 - n)}</i></div>
     <div class="rays"><div class="medal">${ACH_ICON[x.stat] || "🏅"}</div></div>
+    <h3 class="center" style="margin:6px 0 2px">${esc(t("md_" + ({ kisses: "kisser", spins: "spinner", gifts_sent: "generous", gifts_received: "favorite", msgs: "talker", streak: "streak", tracks: "dj" }[x.stat] || "kisser")))}</h3>
     <div class="req">${esc(t("achs_" + x.stat, { n: x.need }))}</div>
     <button class="btn cta-ok" style="width:100%">${esc(t("ach_continue"))} +❤${x.reward}</button>`, { cls: "achm", closable: false });
   $(".cta-ok", m.el).onclick = m.close; sfx.ach();
@@ -277,7 +278,11 @@ function openStarter() {
   render();
 }
 
+function fillFab() {   // the two floating buttons use the same art as the first two gift panel items
+  const b = $$("#dj-fab button"); if (b[0]) b[0].innerHTML = giftIcon("music_now"); if (b[1]) b[1].innerHTML = giftIcon("music_queue");
+}
 function bindUi() {
+  fillFab();
   $("#btn-hearts").onclick = openShop;
   $("#btn-wheel").onclick = openWheel;
   $("#btn-rating").onclick = openLeague;
@@ -429,8 +434,9 @@ function renderHint() {
   $("#bottle").classList.toggle("tap", mine);
   h.classList.toggle("mine", mine);
   if (mine) {  // "Крути бутылочку!" with a hand-drawn arrow pointing at the bottle
-    h.style.left = CENTER[0] + 16 + "%"; h.style.top = CENTER[1] - 9 + "%";
-    h.innerHTML = `<span>${esc(t("spin_hint"))}</span><svg viewBox="0 0 64 34" width="56"><path d="M60 5C42 2 24 8 9 26" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M8 27l11-1.5M8 27l1.5-11" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+    h.style.left = CENTER[0] + 22 + "%"; h.style.top = CENTER[1] - 3 + "%";
+    // original: the arrow sits between the bottle and a two-line text, pointing at the bottle
+    h.innerHTML = `<svg viewBox="0 0 44 40" width="44"><path d="M40 6C26 4 14 12 6 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M5 29l10-3M5 29l1.500-10.500" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg><span>${esc(t("spin_hint"))}</span>`;
     return h.classList.remove("hidden");
   }
   const i = T.phase === "spin_wait" ? seatOf(T.turn) : -1;
@@ -694,7 +700,7 @@ function addChat(m) {
     sfx.win();
   } else if (m.k === "medal") {
     d.className = "msg ev";
-    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">✔️</span><div><b style="color:#f0a24a">${esc(t("md_" + m.medal))}</b> ${esc(t("medal_level", { n: m.tier }))}</div>`;
+    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico mck"><svg viewBox="0 0 32 32"><path d="M16 2l4 2.500 4.700-.3 1.900 4.300 3.900 2.700-1 4.600 1 4.600-3.900 2.700-1.900 4.300-4.700-.3L16 30l-4-2.500-4.700.3-1.900-4.300L1.500 20.800l1-4.600-1-4.600 3.900-2.700 1.900-4.300L12 4.500z" fill="none" stroke="#f0a24a" stroke-width="2.200" stroke-linejoin="round"/><path d="M10 16.500l4 4 8-9" fill="none" stroke="#f0a24a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><b style="color:#f0a24a">${esc(t("md_" + m.medal))}</b> ${esc(t("medal_level", { n: m.tier }))}</div>`;
   } else if (m.k === "boost") {
     boostFx(m.boost);
     d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;

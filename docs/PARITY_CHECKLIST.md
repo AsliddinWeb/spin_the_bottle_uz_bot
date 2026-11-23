@@ -121,3 +121,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (53) Yutuq mukofoti originaldagidek ❤1/2/3 (birinchi daraja ❤1), medal olinganda stol chatiga "<medal> N-daraja" qatori. Ehtiyot: avto-aylanish va AFK xulosalari tasdiqlanmagan (docs/ORIGINAL_SCENARIO.md §7).
 - (54) Avto-aylanish bekor qilindi (tasdiqlanmagan): SPIN_T=20 s, idle tur o'tkaziladi, 3 marta bo'lsa AFK chiqarish. Umumiy qaror sanog'i va tezroq keyingi tur saqlandi. tests/qa_cycle.py yangilandi.
 - (55) Toza kuzatuv: javob bermagan o'yinchi uchun o'pish bo'lmaydi (bizdagi mantiq to'g'ri), originalda ham faqat yigitlar stolida "Ждем девушек", qo'l sovg'asi pastki o'ngda — hammasi bizda mos. docs/ORIGINAL_SCENARIO.md §8.
+- (56) Bizning o'yinni o'zim o'ynab tekshirdim (docs/ORIGINAL_SCENARIO.md §9): aylantirish yozuvi/o'qi, yutuq oynasi (nom, mukofot), medal chat belgisi, musiqa/video ikonlari originalga moslandi; tur oqimi, sanoq, sovg'a va chat mos.

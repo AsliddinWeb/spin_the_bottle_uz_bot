@@ -92,3 +92,23 @@ Aniqlanishi kerak (foydalanuvchi sichqonchaga tegmagan holda): aylantirmagan o'y
 - Spinner spin qilishi uchun odamlar odatda 7–12 s sarflaydi (kuzatuv); keyingi tur oldingisi tugagach 1–4 s ichida.
 
 **Hali noma'lum:** spinner umuman aylantirmasa nima bo'lishi (o'tkazib yuboriladimi, o'zi aylanadimi, AFK uchun chiqarilishi). Bu faqat o'z navbatimda hech narsa qilmay kuzatib aniqlanadi; 10–12 o'yinchili stolda navbat 3–4 daqiqada keladi.
+
+## 9. O'zimizning o'yinni o'zim o'ynab tekshirdim (2026-11-23)
+Mahalliy server, 2 ta bot qiz + men (yigit), telefon o'lchami (390×760), brauzerda. Natijalar:
+
+| Tekshiruv | Natija |
+|-----------|--------|
+| Kirish: yashil ekran → sarlavha → kunlik bonus (5 kun, "Получить") | ✅ original kabi |
+| Tur: "Крути бутылочку!" (o'q + matn) | 🔧 tuzatildi: o'q endi shisha tomonga, matn ikki qatorda |
+| Aylantirish → "Твой выбор" + [Отказаться][Поцеловать], juft markazda, raqam o'rtada | ✅ |
+| Sanoq: spinner javob bergach 2-bosqichda davom etadi (10 → 8 → 8…) | ✅ |
+| "Поцелует ли в ответ?" + yashil o'q; o'pishdan keyin ikkala o'q va lab izlari | ✅ |
+| Sovg'a paneli: tartib (kasseta, quloqchin, 4 toj, barg, gulchambar, savat, lab, tosh, qulupnay, pomidor, baqa...) | ✅ |
+| Sovg'a: HUD ❤ darhol kamaydi, avatarning pastki o'ng burchagiga qo'ndi, chatga [avatar] 🍓 » [avatar] | ✅ |
+| Chat o'pish qatori [avatar] 💋 xN » [avatar] | ✅ |
+| Stol almashtirish: "Случайный стол!" + oxirgi stollar (👦 N 👧 N) | ✅ |
+| Yutuq oynasi | 🔧 tuzatildi: medal nomi qo'shildi, mukofot ❤1/2/3… (oldin ❤6) |
+| Medal chat qatori: to'q sariq belgi + "Нома уровня N" | 🔧 katta qora ✔ o'rniga to'q sariq belgi |
+| Fab tugmalari va panelning 1-2 elementi: kinolenta+nota (video), disk+nota (musiqa) | 🔧 original ikonlariga o'xshash chizildi |
+
+**Tekshirilmagan / noaniq:** 🔄 tugmasidagi raqam (originalda ma'nosi noma'lum, bizda sanoq ko'rsatadi), o'pishdan keyingi "поцеловались!" matni (originalda bor-yo'qligi ko'rilmagan), ovozlar (quloq bilan eshitilmagan), idle spinner.

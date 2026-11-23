@@ -140,7 +140,7 @@ _TIERS = {
     "streak": [2, 3, 5, 7, 10, 14, 21, 30, 50, 100],
     "tracks": [1, 5, 10, 25, 50, 100, 250, 500, 1000],
 }
-ACHIEVEMENTS = [(f"{stat}_{n}", stat, n, 5 + int(n ** 0.6)) for stat, ns in _TIERS.items() for n in ns]
+ACHIEVEMENTS = [(f"{stat}_{n}", stat, n, 1 + len(str(n)) - 1) for stat, ns in _TIERS.items() for n in ns]   # ❤1 for n=1..9, ❤2 for 10..99, ... (the original pays ❤1 for a first tier)
 # ids used before the generator existed -> new ids (migrated in db.py)
 OLD_ACH_IDS = {"first_kiss": "kisses_1", "kisses10": "kisses_10", "kisses50": "kisses_50", "kisses200": "kisses_200",
                "spins10": "spins_10", "spins100": "spins_100", "gifts5": "gifts_sent_5", "gifts50": "gifts_sent_50",

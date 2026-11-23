@@ -1018,3 +1018,12 @@ select.rt-per option{color:#222}
 #player.isvideo{width:calc(var(--u)*60)}
 #player.isvideo .boombox{display:none}
 #player.isvideo .pl-vslot{display:block}
+
+#dj-fab button svg{width:calc(var(--u)*7.4);height:calc(var(--u)*7.4);display:block}
+.gi .e svg{filter:none}
+
+.msg .ico.mck{width:34px;height:34px;display:inline-grid;place-items:center}.msg .ico.mck svg{width:100%;height:100%}
+
+/* own-turn hint like the original: arrow left, text in two lines */
+#hint.mine{transform:translate(-50%,-50%);gap:4px;align-items:center}
+#hint.mine span{white-space:normal;max-width:calc(var(--u)*19);text-align:left;line-height:1.05}
