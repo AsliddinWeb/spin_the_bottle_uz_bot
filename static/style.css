@@ -909,10 +909,8 @@ select.rt-per option{color:#222}
 /* music / video: fab stays available while playing, player is tappable, video card floats above the chat */
 #dj-fab.off{display:flex}
 #player{cursor:pointer}
-#yt-holder.video{left:8px;right:auto;top:auto;bottom:calc(var(--u)*17);width:min(58vw,260px);height:min(32.6vw,146px);opacity:1;pointer-events:auto;z-index:20;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.45);background:#000}
 #yt-holder iframe,#yt-holder #yt{width:100%;height:100%;border:0}
-#yt-x{position:absolute;right:4px;top:4px;z-index:2;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:14px;display:none}
-#yt-holder.video #yt-x{display:block}
+
 .mp-seg{display:flex;gap:6px;background:#eef0f3;border-radius:14px;padding:4px;margin:0 0 8px}
 .mp-seg button{flex:1;padding:9px 6px;border-radius:11px;background:none;font-weight:800;font-size:15px;color:#777}
 .mp-seg button.on{background:#fff;color:#2b8a3e;box-shadow:0 1px 4px rgba(0,0,0,.18)}
@@ -1013,3 +1011,10 @@ select.rt-per option{color:#222}
 .mdl.t1{--rim:#b9722f;--face:#f1d3b0}.mdl.t2{--rim:#9aa6b4;--face:#e3e9f0}.mdl.t3{--rim:#e0a21a;--face:#ffe9a6}
 .ach-sub{margin:10px 0 4px;font-size:14px;color:#999;text-align:center}
 .modal.ach{max-height:calc(var(--vh)*88)}
+
+/* video inside the player card (original: the boombox is replaced by a small video) */
+#yt-holder.video{opacity:1;pointer-events:none;z-index:6;border-radius:calc(var(--u)*1.6);overflow:hidden;background:#000;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#player .pl-vslot{display:none;grid-column:2;grid-row:1/3;width:100%;aspect-ratio:16/9;border-radius:calc(var(--u)*1.6);background:#111}
+#player.isvideo{width:calc(var(--u)*60)}
+#player.isvideo .boombox{display:none}
+#player.isvideo .pl-vslot{display:block}

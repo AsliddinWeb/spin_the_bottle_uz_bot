@@ -704,11 +704,18 @@ function addChat(m) {
 }
 
 // ------------------------------------------------------------ music (YouTube)
-let yt, ytReady = false, curTid = "", ytHidden = false;
+let yt, ytReady = false, curTid = "";
 const yth = $("#yt-holder");
-yth.insertAdjacentHTML("beforeend", '<button id="yt-x" aria-label="hide">✕</button>');
-$("#yt-x").onclick = () => { ytHidden = true; yth.classList.remove("video"); };
-$("#player").onclick = e => { if (e.target.closest("#pl-icon,#pl-range")) return; if (T && T.music && T.music.mode === "video" && ytHidden) { ytHidden = false; yth.classList.add("video"); return; } openMusicPicker("music_now", T && T.music && T.music.mode === "video" ? "video" : "audio"); };
+function placeVideo() {   // a video sits inside the player card in the boombox's place, small, like the original
+  const on = !!(T && T.music && T.music.mode === "video" && !T.music.fid), box = $("#player"), slot = $("#player .pl-vslot");
+  box.classList.toggle("isvideo", on); yth.classList.toggle("video", on);
+  if (!on || !slot || box.classList.contains("hidden")) { yth.style.left = yth.style.top = yth.style.width = yth.style.height = ""; return; }
+  const r = slot.getBoundingClientRect(); if (!r.width) return;
+  Object.assign(yth.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+}
+window.addEventListener("resize", placeVideo);
+new ResizeObserver(placeVideo).observe($("#player"));
+$("#player").onclick = e => { if (e.target.closest("#pl-icon,#pl-range")) return; openMusicPicker("music_now", T && T.music && T.music.mode === "video" ? "video" : "audio"); };
 const tga = new Audio(); tga.preload = "auto";
 tga.onended = () => send({ t: "music_ended", tid: curTid });
 function applyVolume() {
@@ -726,14 +733,13 @@ function loadYT(cb) {
 }
 function handleMusic() {
   const m = T.music, box = $("#player");
-  yth.classList.toggle("video", !!m && m.mode === "video" && !ytHidden);
-  if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } tga.pause(); curTid = ""; return; }
-  box.classList.remove("hidden");
+  if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } tga.pause(); curTid = ""; placeVideo(); return; }
+  box.classList.remove("hidden"); placeVideo();
   $("#pl-title").textContent = m.title; $("#pl-by").textContent = m.by + (T.queue ? ` · +${T.queue}` : "");
   const who = T.seats.find(p => p.name === m.by);
   $("#pl-cover").innerHTML = who && who.photo ? `<img src="${esc(who.photo)}">` : esc(initials(m.by));
   if (m.tid === curTid) return;
-  curTid = m.tid; ytHidden = false; yth.classList.toggle("video", m.mode === "video" && !m.fid);
+  curTid = m.tid; placeVideo(); requestAnimationFrame(placeVideo); setTimeout(placeVideo, 400);
   if (m.fid) {   // Telegram profile track: plain audio element, no YouTube
     if (yt && ytReady) { try { yt.stopVideo(); } catch { } }
     tga.src = `/api/tgaudio/${encodeURIComponent(m.fid)}?init=${encodeURIComponent(initData)}`; applyVolume();
