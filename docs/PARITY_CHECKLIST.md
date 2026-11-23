@@ -120,3 +120,4 @@ Rollar: owner (ADMIN_IDS) > admin > mod. Bot ichida: /admin /user /reports /warn
 - (52) Sovg'alar paneli tartibi originalga moslandi (video ❤9 → musiqa ❤5 → 4 toj → barg ... viski), qo'shimcha sovg'alar oxirida; ❤9 element video, ❤5 musiqa oynasini ochadi. Chat va sovg'a oqimi o'zim o'ynab kuzatildi (docs/ORIGINAL_SCENARIO.md §6).
 - (53) Yutuq mukofoti originaldagidek ❤1/2/3 (birinchi daraja ❤1), medal olinganda stol chatiga "<medal> N-daraja" qatori. Ehtiyot: avto-aylanish va AFK xulosalari tasdiqlanmagan (docs/ORIGINAL_SCENARIO.md §7).
 - (54) Avto-aylanish bekor qilindi (tasdiqlanmagan): SPIN_T=20 s, idle tur o'tkaziladi, 3 marta bo'lsa AFK chiqarish. Umumiy qaror sanog'i va tezroq keyingi tur saqlandi. tests/qa_cycle.py yangilandi.
+- (55) Toza kuzatuv: javob bermagan o'yinchi uchun o'pish bo'lmaydi (bizdagi mantiq to'g'ri), originalda ham faqat yigitlar stolida "Ждем девушек", qo'l sovg'asi pastki o'ngda — hammasi bizda mos. docs/ORIGINAL_SCENARIO.md §8.

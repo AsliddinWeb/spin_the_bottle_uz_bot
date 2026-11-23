@@ -80,3 +80,15 @@ Foydalanuvchi ruxsati bilan: chatga xabar yozdim, sovg'a yubordim (qulupnay, ❤
 Kuzatuv paytida foydalanuvchi ham o'sha oynada bosgan ("men bosdim seni joyingdan"). Shuning uchun **mening akkauntimdagi** hodisalarga ishonmaslik kerak: o'pish nishonim oshishi, javob o'qlari, rasm ko'rish oynasining ochilishi, ehtimol avto-aylanish ham o'z-o'zidan bo'lmagan.
 Ishonchli kuzatuvlar — boshqa o'yinchilar navbatlari: aylanish ~5 s, bitta umumiy sanoq (9 dan, ikkinchi javobda davom etadi), rad etilgach keyingi tur ~1 s.
 Aniqlanishi kerak (foydalanuvchi sichqonchaga tegmagan holda): aylantirmagan o'yinchiga nima bo'ladi; javob bermagan o'yinchi uchun vaqt tugasa o'pish bo'ladimi; AFK uchun chiqarish bormi.
+
+## 8. Toza kuzatuv (2026-11-23): foydalanuvchi sichqonchaga tegmadi
+**Tasdiqlangan (ishonchli):**
+- **Javob bermagan o'yinchi → o'pish BO'LMAYDI.** "Твой выбор" (tugmalar bilan) sanog'i 6 → 2 gacha tushdi, men bosmadim; o'pish nishonim o'zgarmadi, keyingi tur ≤4 s ichida "Крутит бутылочку" bilan boshlandi. Bizdagi mantiq (vaqt tugasa "yo'q") **to'g'ri**.
+- **Yigit–qiz qoidasi originalniki:** faqat yigitlar o'tirgan stolda markazda **"Ждем девушек для начала игры"** chiqadi (bizda ham shu matn).
+- Qo'l sovg'asi (ichimlik, qulupnay) avatarning **pastki o'ng burchagida** turadi (bir necha o'rindiqda ko'rildi) — bizdagi joylashuv bilan mos.
+- Chatda xushtorlik qatori: [xushtor avatari] 🔒❤ "стал ухаживать ❤N" [oluvchi avatari].
+- Jest avatar ustida emoji bo'lib ko'rinadi (✌️ ko'rildi) — bizda ham shunday.
+- Stol almashtirish oynasida oxirgi stollar yigit/qiz soni bilan (masalan #168: 7+5), tugmada raqam (stoldagi o'yinchi soni deb taxmin).
+- Spinner spin qilishi uchun odamlar odatda 7–12 s sarflaydi (kuzatuv); keyingi tur oldingisi tugagach 1–4 s ichida.
+
+**Hali noma'lum:** spinner umuman aylantirmasa nima bo'lishi (o'tkazib yuboriladimi, o'zi aylanadimi, AFK uchun chiqarilishi). Bu faqat o'z navbatimda hech narsa qilmay kuzatib aniqlanadi; 10–12 o'yinchili stolda navbat 3–4 daqiqada keladi.
