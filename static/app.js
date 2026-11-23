@@ -692,6 +692,9 @@ function addChat(m) {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">🏅</span><div><b style="color:#f0a24a">DJ</b> ${esc(t("dj_level", { n: m.level }))}</div>`;
     sfx.win();
+  } else if (m.k === "medal") {
+    d.className = "msg ev";
+    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">✔️</span><div><b style="color:#f0a24a">${esc(t("md_" + m.medal))}</b> ${esc(t("medal_level", { n: m.tier }))}</div>`;
   } else if (m.k === "boost") {
     boostFx(m.boost);
     d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;

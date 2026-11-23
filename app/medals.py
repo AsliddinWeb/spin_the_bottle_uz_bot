@@ -8,7 +8,7 @@ db._db.execute("CREATE TABLE IF NOT EXISTS counters(uid INTEGER, key TEXT, n INT
 db._db.execute("CREATE TABLE IF NOT EXISTS medal_tiers(uid INTEGER, medal TEXT, tier INTEGER, ts INTEGER, PRIMARY KEY(uid, medal, tier))")
 
 USER_STATS = {"kisses", "spins", "gifts_sent", "gifts_received", "msgs", "streak", "tracks"}
-REWARDS = (5, 10, 20)   # hearts for tier 1 / 2 / 3
+REWARDS = (1, 2, 3)   # hearts for tier 1 / 2 / 3 (the original pays ❤1 for the first tier)
 
 # id, counter or users column, three thresholds, emoji, own gift art id ("" = emoji)
 MEDALS = [

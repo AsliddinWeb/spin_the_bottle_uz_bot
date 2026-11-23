@@ -47,7 +47,7 @@ Kadrlar 1 soniya oralig'ida olindi (faqat kuzatish, qaror tugmalari bosilmadi).
 
 | Bosqich | Originalda ko'rilgani | Bizda (oldin → hozir) |
 |---------|----------------------|------------------------|
-| Spin kutish | Spinner uchun "Крути бутылочку!" (o'q bilan), boshqalar uchun "Крутит бутылочку" + o'q spinner avatariga. Aylantirmasa shisha o'zi aylanadi (~10 s ichida) | 20 s kutib turni o'tkazardi → **10 s, keyin o'zi aylanadi** (3 marta ketma-ket bo'lsa AFK chiqarish saqlandi) |
+| Spin kutish | Spinner uchun "Крути бутылочку!" (o'q bilan), boshqalar uchun "Крутит бутылочку" + o'q spinner avatariga. **Aylantirmasa shisha o'zi aylanadi — TASDIQLANMAGAN** (kuzatuv paytida foydalanuvchi o'zi bosgan bo'lishi mumkin; hozirgi 10 s + avto-aylanish taxmin) | 20 s kutib turni o'tkazardi → **10 s, keyin o'zi aylanadi** (3 marta ketma-ket bo'lsa AFK chiqarish saqlandi) |
 | Aylanish | ~5 s, sekin to'xtaydi | 5 s ✅ |
 | Qaror sanog'i | Juft markazga o'tadi, markazda raqam **9 dan** kamayadi; spinner uchun "Твой выбор" + [Отказаться][Поцеловать], boshqalarga "Поцелуются или нет?" | 12 s ✅ yozuvlar, **sanoq bitta: 10 s** |
 | Ikkinchi javob | Spinner "ha" desa yashil o'q chiqadi, "Поцелует ли в ответ?", **sanoq to'xtamaydi va qayta boshlanmaydi** (9, 8, 7 → 6, 5, 4) | alohida 12 s → **umumiy sanoq (kamida 2 s qoladi)** |
@@ -75,3 +75,8 @@ Foydalanuvchi ruxsati bilan: chatga xabar yozdim, sovg'a yubordim (qulupnay, ❤
 
 **Bizda o'zgargani:** sovg'alar paneli tartibi originalniki bilan bir xil qilindi (qo'shimcha sovg'alar — medal, shapka, tuxum, smuzi, pirog, bomba, shippak, chelak, VIP — oxirida); paneldagi 1-element (❤9) endi **video**, 2-si (❤5) **musiqa** oynasini ochadi.
 **Ko'rilmagan:** o'z navbatimda aylantirish va o'pish javobi (navbat uzoq kelmadi), sovg'a qo'ngan joyning aniq qoidasi, jestlar paneli (😊 sarflanadi).
+
+## 7. Ehtiyotkorlik eslatmasi (2026-11-23)
+Kuzatuv paytida foydalanuvchi ham o'sha oynada bosgan ("men bosdim seni joyingdan"). Shuning uchun **mening akkauntimdagi** hodisalarga ishonmaslik kerak: o'pish nishonim oshishi, javob o'qlari, rasm ko'rish oynasining ochilishi, ehtimol avto-aylanish ham o'z-o'zidan bo'lmagan.
+Ishonchli kuzatuvlar — boshqa o'yinchilar navbatlari: aylanish ~5 s, bitta umumiy sanoq (9 dan, ikkinchi javobda davom etadi), rad etilgach keyingi tur ~1 s.
+Aniqlanishi kerak (foydalanuvchi sichqonchaga tegmagan holda): aylantirmagan o'yinchiga nima bo'ladi; javob bermagan o'yinchi uchun vaqt tugasa o'pish bo'ladimi; AFK uchun chiqarish bormi.

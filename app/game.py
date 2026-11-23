@@ -362,6 +362,10 @@ class Table:
                 await c.send({"t": "ach", "id": aid})
             if got:
                 await c.send({"t": "medals", "list": got})
+        if got and uid in self.players:
+            p = self.players[uid]
+            for x in got:
+                await self.say("medal", uid=uid, name=p.name, medal=x["id"], tier=x["tier"])
             await self.hub.push_me(uid)
 
     async def kick(self, uid: int, reason: str) -> None:
