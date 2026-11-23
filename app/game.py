@@ -10,10 +10,10 @@ import httpx
 from . import chatfilter, config, db, economy, events, league, medals, moderation, tgmusic
 from .catalog import (GESTURE_MAP, GESTURE_TTL, GIFT_MAP, GIFTS, HEAD_IDS, KISS_REWARD, TABLE_VIP_KISS_BONUS, dj_level)
 
-SPIN_T = 20      # seconds the spinner has to press SPIN
-DEC_T = 12       # seconds to answer the kiss prompt
+SPIN_T = 10      # seconds the spinner has to press SPIN; then the bottle spins by itself (seen in the original)
+DEC_T = 10       # ONE countdown for both answers (original: 9..0 shown in the table centre, it keeps running when the spinner answers)
 SPIN_DUR = 5.0   # bottle animation
-NEXT_GAP = 1.5   # pause between turns
+NEXT_GAP = 1.0   # pause between turns
 GIFT_TTL = 86400  # seconds a gift stays on an avatar (it is stored, so it survives leaving / restarts)
 LEFT = object()
 
@@ -250,8 +250,10 @@ class Table:
             spinner.strikes += 1
             if spinner.strikes >= 3:
                 await self.kick(spinner.uid, "afk")
-            return
-        spinner.strikes = 0
+                return
+            # otherwise the bottle spins by itself, like in the original
+        else:
+            spinner.strikes = 0
 
         target = self.pick_target(spinner)
         if not target:
@@ -278,19 +280,22 @@ class Table:
         if ans is not True:
             if ans is False:
                 medals.inc(spinner.uid, "declines")
-            await self.finish("no")
+            await self.finish("no", 1.2)
             return
 
         self.phase = "ask_target"
-        self.set_deadline(DEC_T)
+        rem = (self.deadline - now_ms()) / 1000      # the countdown keeps running (at least 2 s are left for the second answer)
+        if rem < 2:
+            self.set_deadline(2)
+            rem = 2.0
         await self.broadcast()
-        ans = await self.wait(target.uid, "decide", DEC_T)
+        ans = await self.wait(target.uid, "decide", rem)
         if ans is LEFT or spinner.uid not in self.players or target.uid not in self.players:
             return
         if ans is not True:
             if ans is False:
                 medals.inc(target.uid, "declines")
-            await self.finish("no")
+            await self.finish("no", 1.2)
             return
 
         await self.kiss(spinner, target)

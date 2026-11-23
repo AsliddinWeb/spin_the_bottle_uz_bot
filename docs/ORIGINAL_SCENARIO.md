@@ -41,3 +41,20 @@ Belgilar: ✅ bizda bor · ⚠️ qisman · ❌ yo'q
 4. **Videoni pleyer ichida ko'rsatish** (hozir alohida suzuvchi karta).
 5. Liga bo'limlari (original jadvalda "Соревнование Лиг" ishtirokchilari — bir nechta liga/divizion bo'lishi mumkin; faqat bitta umumiy jadval qilindi).
 6. Ramka/medal/booster rasmlari original 3D, bizniki o'z vektor rasmlari (nusxalanmaydi).
+
+## 5. Tur sikli: jonli kuzatuv (2026-11-23, originalda stol 193, ~12 o'yinchi)
+Kadrlar 1 soniya oralig'ida olindi (faqat kuzatish, qaror tugmalari bosilmadi).
+
+| Bosqich | Originalda ko'rilgani | Bizda (oldin → hozir) |
+|---------|----------------------|------------------------|
+| Spin kutish | Spinner uchun "Крути бутылочку!" (o'q bilan), boshqalar uchun "Крутит бутылочку" + o'q spinner avatariga. Aylantirmasa shisha o'zi aylanadi (~10 s ichida) | 20 s kutib turni o'tkazardi → **10 s, keyin o'zi aylanadi** (3 marta ketma-ket bo'lsa AFK chiqarish saqlandi) |
+| Aylanish | ~5 s, sekin to'xtaydi | 5 s ✅ |
+| Qaror sanog'i | Juft markazga o'tadi, markazda raqam **9 dan** kamayadi; spinner uchun "Твой выбор" + [Отказаться][Поцеловать], boshqalarga "Поцелуются или нет?" | 12 s ✅ yozuvlar, **sanoq bitta: 10 s** |
+| Ikkinchi javob | Spinner "ha" desa yashil o'q chiqadi, "Поцелует ли в ответ?", **sanoq to'xtamaydi va qayta boshlanmaydi** (9, 8, 7 → 6, 5, 4) | alohida 12 s → **umumiy sanoq (kamida 2 s qoladi)** |
+| Rad / vaqt tugashi | Natija yozuvi kutilmaydi, keyingi tur ~1 s ichida boshlanadi | 2.4 s natija → **1.2 s**, tur oralig'i 1.5 → **1.0 s** |
+| O'pish | Ikkala avatarga "1" nishon ortadi, shisha darhol yana aylanadi | 3.6 s (videodan o'lchangan) ✅ |
+| Spinner avatari | Kutayotgan spinner ostida o'q va yozuv | ✅ |
+| Tasodifiy | Stol to'la (12), o'yinchilar kirib-chiqib turadi, o'tirgan o'rin bo'sh qolsa keyingi o'tirganlar ketma-ket spin qiladi | ✅ |
+
+Ko'rilmaganlar: spin kutishning aniq vaqti (taxminan 8–10 s), natija matnlari rad etilganda, kutish holatidagi ("Ждем игроков…") qo'shimcha matnlar.
+Test: `tests/qa_cycle.py` (5).

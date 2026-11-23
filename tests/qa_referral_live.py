@@ -32,7 +32,7 @@ async def main():
                 m = json.loads(raw)
                 if m.get("t") == "state": st[uid] = m
                 if m.get("t") == "ref_paid": got.append(m)
-        asyncio.create_task(rd()); await ws.send(json.dumps({"t": "join", "table": 21})); return ws
+        asyncio.create_task(rd()); await ws.send(json.dumps({"t": "join", "table": 21})) if uid != 300 else None; return ws   # the inviter only listens, he is not at the table
     inviter = await player(300)
     w1, w2 = await player(301), await player(302)
     ws = {301: w1, 302: w2}
