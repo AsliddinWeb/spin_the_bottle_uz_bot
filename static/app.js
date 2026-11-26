@@ -901,7 +901,7 @@ async function openProfile(uid) {
         <div class="suit">
           <div class="sa">${sp ? (sp.photo ? `<img src="${esc(sp.photo)}" referrerpolicy="no-referrer">` : esc(initials(sp.name))) : "♡"}</div>
           <div class="si">${sp ? `<div class="l">${esc(t("courting"))} <b>${esc(sp.name)}</b></div><div class="h">❤ ${sp.price}</div>` : `<div class="l">${t("court_none")}</div>`}
-            ${me ? (sp ? `<button class="btn out" id="pf-decl">${t("court_decline")}</button>` : "") : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
+            ${me ? (sp ? `<button class="btn out" id="pf-decl">${t("court_decline")}</button>` : "") : sp && sp.id === ME.id ? `<button class="btn" disabled>${t("court_mine")}</button>` : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
         </div>
         <div class="acts">
           ${me ? `<button class="a4" id="pf-edit" style="width:100%;border-radius:36px">${t("profile_settings")}</button>` :
@@ -1344,7 +1344,7 @@ function openAchievements() {
 
 async function openRatings() {
   const m = openModal("", { cls: "rate" }); let kind = "kisses", period = "all";
-  const tabs = [["kisses", "💋", "most_kissed"], ["tracks", "🎵", "most_music"], ["hearts", "❤️", "most_hearts"], ["court", "💞", "most_court"], ["gifts", "😊", "most_gifts"]];
+  const tabs = [["kisses", "💋", "most_kissed"], ["tracks", "🎵", "most_music"], ["court", "💞", "most_court"], ["gifts", "😊", "most_gifts"]];
   const load = async () => {
     let r; const pOK = ["kisses", "tracks", "gifts"].includes(kind); if (!pOK) period = "all";
     try { r = await api(`/api/ratings/${kind}?period=${period}`); } catch { return; }

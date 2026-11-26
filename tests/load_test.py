@@ -67,7 +67,7 @@ async def heavy_probe(stop, uids):
     loop = asyncio.get_running_loop()
     while not stop.is_set() and RATE:
         await asyncio.sleep(1 / RATE)
-        uid = random.choice(uids); path = random.choice(["/api/ratings/kisses", "/api/ratings/hearts", "/api/tagtask"]); t = time.perf_counter()
+        uid = random.choice(uids); path = random.choice(["/api/ratings/kisses", "/api/ratings/court", "/api/tagtask"]); t = time.perf_counter()
         async def one():
             try:
                 await loop.run_in_executor(None, get, path, uid); lat_heavy.append((time.perf_counter() - t) * 1000)

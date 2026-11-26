@@ -374,7 +374,7 @@ def top(field: str, uid: int, limit: int = 20, period: str = "all") -> dict:
                 "rank": rank, "mine": mine["price"] if mine else 0}
     if period in PERIOD_DAYS and field in ("kisses", "gifts", "tracks"):
         return _top_period(field, uid, period, limit)
-    col = {"kisses": "kisses", "gifts": "gifts_received", "hearts": "hearts", "tracks": "tracks"}[field]
+    col = {"kisses": "kisses", "gifts": "gifts_received", "tracks": "tracks"}[field]
     hit = _TOP.get(field)
     if hit and time.time() - hit[0] < TOP_TTL:   # the top list is shared by everybody: compute it at most once per TTL
         rows = hit[1]

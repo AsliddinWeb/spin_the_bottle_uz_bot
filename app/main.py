@@ -351,7 +351,7 @@ async def vip_collect(u=Depends(auth.current_user)):
 
 @app.get("/api/ratings/{kind}")
 async def ratings(kind: str, period: str = "all", u=Depends(auth.current_user)):
-    if kind not in ("kisses", "gifts", "hearts", "tracks", "court") or period not in ("all", "day", "week", "month"):
+    if kind not in ("kisses", "gifts", "tracks", "court") or period not in ("all", "day", "week", "month"):
         raise HTTPException(404)
     return economy.top(kind, u["id"], period=period)
 
