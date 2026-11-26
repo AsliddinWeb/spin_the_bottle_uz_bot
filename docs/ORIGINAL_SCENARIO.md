@@ -112,3 +112,12 @@ Mahalliy server, 2 ta bot qiz + men (yigit), telefon o'lchami (390×760), brauze
 | Fab tugmalari va panelning 1-2 elementi: kinolenta+nota (video), disk+nota (musiqa) | 🔧 original ikonlariga o'xshash chizildi |
 
 **Tekshirilmagan / noaniq:** 🔄 tugmasidagi raqam (originalda ma'nosi noma'lum, bizda sanoq ko'rsatadi), o'pishdan keyingi "поцеловались!" matni (originalda bor-yo'qligi ko'rilmagan), ovozlar (quloq bilan eshitilmagan), idle spinner.
+
+## 10. Avatardagi sovg'alar qancha turadi (2026-11-26, iPhone'da kuzatuv)
+- Sovg'a yuborilganda chatga qator qo'shiladi va u oluvchi avatariga qo'nadi.
+- Bir avatarda bir nechta sovg'a birga turadi: toj chap tepada, ichimlik o'ng pastda, qulupnay / ayiqcha / yurak pastda yoki chapda.
+- O'yinchi stolda o'tirgan paytda sovg'alar turadi (kamida ~10 daqiqa kuzatildi).
+- **Stoldan chiqib qaytsa yo'qoladi:** toj + ichimlik + qulupnayi bor o'yinchi boshqa o'rindiqqa qayta kirganda sovg'asiz va o'pish soni nolda edi (bitta holat kuzatildi).
+- Bo'sh o'rinlar originalda umuman chizilmaydi (3 o'yinchili stolda ko'rildi).
+- Stol to'la bo'lsa: "Все места уже заняты… Ты первый в очереди", tugma "Выбрать другой стол".
+

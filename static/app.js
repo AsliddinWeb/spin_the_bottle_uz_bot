@@ -408,6 +408,7 @@ function renderSeats() {
           (p.kisses ? `<span class="kb"><i>💋</i><b>${p.kisses}</b></span>` : "") +
           (p.gifts && p.gifts.hand ? `<span class="gf">${giftIcon(p.gifts.hand)}</span>` : "") +
           (p.gifts && p.gifts.head ? `<span class="gh">${giftIcon(p.gifts.head)}</span>` : "") +
+          (p.gifts && p.gifts.side ? `<span class="gx">${giftIcon(p.gifts.side)}</span>` : "") +
           (p.vip ? `<span class="vipmark">👑</span>` : "") +
           (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
           `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
@@ -602,7 +603,7 @@ const SPLAT = { tomato: ["#e5371e", "#9a1408"], egg: ["#ffd23d", "#c8920a"], pie
 const splatSvg = (c, d) => `<svg viewBox="0 0 100 100"><g fill="${c}" stroke="${d}" stroke-width="1.6" stroke-linejoin="round"><path d="M50 14C60 10 70 20 74 28C84 26 92 36 86 46C94 54 90 66 80 68C82 78 72 86 62 82C56 92 42 90 38 82C28 86 16 78 20 68C10 64 8 52 16 46C10 36 18 26 28 28C32 18 42 10 50 14Z"/><circle cx="12" cy="20" r="4"/><circle cx="90" cy="14" r="3"/><circle cx="8" cy="80" r="3.5"/><circle cx="94" cy="84" r="4"/><path d="M42 80c-1 10 2 16 6 16s6-6 4-16zM64 76c0 8 2 12 5 12s4-5 3-12z"/></g><ellipse cx="38" cy="34" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-20 38 34)"/></svg>`;
 function landFx(seatEl, emoji) {   // what happens when a gift lands: drinks are poured into the glass, tomatoes and eggs burst, the frog hops
   const id = GIFT_BY_EMOJI[emoji]; if (!id) return;
-  const gf = seatEl.querySelector(".gf");
+  const gf = seatEl.querySelector(DRINK[id] ? ".gf" : ".gx");
   if (DRINK[id] && gf) { gf.style.setProperty("--liq", DRINK[id]); gf.classList.add("pour"); setTimeout(() => gf.classList.remove("pour"), 1700); }
   if (id === "frog" && gf) { gf.classList.add("hop"); setTimeout(() => gf.classList.remove("hop"), 1300); }
   if (id === "bomb" || id === "slipper") {   // explosion flash / slap: the whole seat shakes
@@ -633,8 +634,8 @@ function flyGift(m) {
   const ia = seatOf(m.uid), ib = seatOf(m.to_uid); if (ia < 0 || ib < 0 || ia === ib) return;
   const felt = $("#felt").getBoundingClientRect(), A = $("#seat" + ia).getBoundingClientRect(), eb = $("#seat" + ib), B = eb.getBoundingClientRect();
   const sx = A.left - felt.left + A.width / 2, sy = A.top - felt.top + A.height / 2;
-  const head = (CFG.head_gifts || []).includes(GIFT_BY_EMOJI[m.gift]);   // hats and crowns land on the top-left corner, everything else bottom-right
-  const ex = B.left - felt.left + B.width * (head ? .1 : .86), ey = B.top - felt.top + B.height * (head ? .04 : .72);
+  const gid = GIFT_BY_EMOJI[m.gift], head = (CFG.head_gifts || []).includes(gid);   // crowns: top-left, drinks: bottom-right, the rest: bottom-left
+  const ex = B.left - felt.left + B.width * (head ? .1 : DRINK[gid] ? .86 : .14), ey = B.top - felt.top + B.height * (head ? .04 : .72);
   const mx = (sx + ex) / 2, my = Math.min(sy, ey) - Math.abs(ex - sx) * .16 - 16;
   const el = document.createElement("div"); el.className = "gfly"; el.innerHTML = giftIcon(m.gift); el.style.fontSize = A.width * .55 + "px";
   $("#felt").appendChild(el); eb.classList.add("gwait"); gwaitUntil[m.to_uid] = performance.now() + FLY_MS;

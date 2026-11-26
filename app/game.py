@@ -14,7 +14,6 @@ SPIN_T = 20      # seconds the spinner has to press SPIN; an idle turn is skippe
 DEC_T = 10       # ONE countdown for both answers (original: 9..0 shown in the table centre, it keeps running when the spinner answers)
 SPIN_DUR = 5.0   # bottle animation
 NEXT_GAP = 1.0   # pause between turns
-GIFT_TTL = 86400  # seconds a gift stays on an avatar (it is stored, so it survives leaving / restarts)
 LEFT = object()
 
 YT_RE = re.compile(r"(?:youtu\.be/|v=|/embed/|/shorts/)([A-Za-z0-9_-]{11})")
@@ -51,18 +50,15 @@ class Player:
         self.bottle = u["bottle"]
         self.vip = db.is_vip(u)
         self.tkiss = 0
-        self.gifts: dict[str, tuple[str, float]] = {}  # slot -> (emoji, ts), restored from the DB
-        for r in db.q("SELECT slot, emoji, ts FROM worn WHERE user_id=? AND ts>?", u["id"], int(time.time()) - GIFT_TTL):
-            self.gifts[r["slot"]] = (r["emoji"], float(r["ts"]))
+        self.gifts: dict[str, str] = {}  # slot (head / hand / side) -> emoji; worn only while the player keeps this seat
         self.strikes = 0
         self.gesture: tuple[str, float] | None = None  # (emoji, ts)
 
     def public(self) -> dict:
-        gifts = {slot: e for slot, (e, ts) in self.gifts.items() if time.time() - ts < GIFT_TTL}
         return {
             "seat": self.seat, "uid": self.uid, "name": self.name, "age": self.age,
             "gender": self.gender, "photo": self.photo, "frame": self.frame,
-            "vip": self.vip, "top": self.uid in economy.top10_ids(), "kisses": self.tkiss, "gifts": gifts,
+            "vip": self.vip, "top": self.uid in economy.top10_ids(), "kisses": self.tkiss, "gifts": dict(self.gifts),
             "gesture": self.gesture[0] if self.gesture and time.time() - self.gesture[1] < GESTURE_TTL else "",
         }
 
@@ -523,9 +519,8 @@ class Table:
         else:
             if not blocked:
                 medals.gift_received(to_uid, gift_id, kind, gift_id in HEAD_IDS, bool(self.music))
-                slot = "head" if gift_id in HEAD_IDS else "hand"
-                target.gifts[slot] = (emoji, time.time())
-                db.x("INSERT OR REPLACE INTO worn VALUES(?,?,?,?)", to_uid, slot, emoji, int(time.time()))
+                slot = "head" if gift_id in HEAD_IDS else "hand" if gift_id in medals.DRINKS else "side"
+                target.gifts[slot] = emoji
             await self.say("gift", uid=sender.uid, name=sender.name, to_uid=target.uid,
                            to_name=target.name, gift=emoji, blocked=bool(blocked))
         await self.broadcast()

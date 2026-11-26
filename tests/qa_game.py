@@ -63,7 +63,7 @@ async def main():
     h=api("/api/me",a.uid)["hearts"]
     await a.send(t="gift",to=b.uid,gift="rose"); await asyncio.sleep(.8)
     ok("gift costs 1",api("/api/me",a.uid)["hearts"]==h-1)
-    seat=[x for x in b.state["seats"] if x["uid"]==b.uid][0]; ok("gift on avatar (hand)",seat["gifts"].get("hand")=="🌹",seat["gifts"])
+    seat=[x for x in b.state["seats"] if x["uid"]==b.uid][0]; ok("gift on avatar (side)",seat["gifts"].get("side")=="🌹",seat["gifts"])
     await a.send(t="gift",to=b.uid,gift="crown1"); await asyncio.sleep(.8)
     seat=[x for x in b.state["seats"] if x["uid"]==b.uid][0]; ok("head gift slot",seat["gifts"].get("head")=="👑",seat["gifts"])
     ok("gift log in profile",any(g["emoji"]=="🌹" for g in api("/api/user/102",101)["gifts"]))

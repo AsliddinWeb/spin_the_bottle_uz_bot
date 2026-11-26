@@ -1067,3 +1067,11 @@ html.top #dj-fab{top:calc(var(--u)*1.5);gap:calc(var(--u)*1.6)}
 html.top #dj-fab button{width:calc(var(--u)*10.5);height:calc(var(--u)*10.1);border-radius:calc(var(--u)*5.05) 0 0 calc(var(--u)*5.05);padding:0 0 0 calc(var(--u)*.8)}
 html.top #dj-fab button svg{width:calc(var(--u)*8.8);height:calc(var(--u)*8.8)}
 
+/* worn gifts as on the original: crown on the top-left corner, drink bottom-right, everything else bottom-left */
+.seat .gh{left:-11%;top:calc(var(--av)*-.19);font-size:calc(var(--av)*.5)}
+.seat .gf{right:calc(var(--av)*-.13);bottom:calc(var(--av)*.12);font-size:calc(var(--av)*.48)}
+.seat .gx{position:absolute;display:block;left:calc(var(--av)*-.1);bottom:calc(var(--av)*.1);width:1em;height:1em;line-height:1;font-size:calc(var(--av)*.42);z-index:3;animation:gfin .5s}
+.seat.gwait .gx{opacity:0;animation:none}
+.seat.gland .gx{animation:gland .55s cubic-bezier(.2,1.7,.4,1)}
+.seat .gx.hop{animation:hop .5s ease-out 2}
+

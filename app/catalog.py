@@ -57,7 +57,7 @@ GIFTS = [
     ("trophy", "🏆", 5, "gift", True),
 ]
 GIFT_MAP = {g[0]: g for g in GIFTS}
-# gifts worn on the head; everything else sits in the avatar's corner ("hand")
+# gifts worn on the head (top-left of the avatar); drinks sit bottom-right, everything else bottom-left
 # Panel order = the original's: its rows come first (music, crowns, leaf ... whisky), our extra gifts follow, VIP-only ones go last.
 _ORIGINAL_ORDER = ["music_now", "music_queue", "crown1", "crown2", "king", "queen", "leaf", "wreath", "basket", "lips", "gem", "strawberry", "tomato", "frog",
                    "rose", "candy", "duck", "pig", "penguin", "tulip", "bouquet", "plant", "cactus", "icecream", "cake", "milk", "wine", "whisky"]

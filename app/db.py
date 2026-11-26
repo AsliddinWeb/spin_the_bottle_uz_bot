@@ -45,7 +45,6 @@ for _col in ("tracks INTEGER DEFAULT 0", "bot_started INTEGER DEFAULT 0", "notif
 _db.executescript("""
 CREATE TABLE IF NOT EXISTS gifts_log(id INTEGER PRIMARY KEY AUTOINCREMENT, sender INTEGER, target INTEGER, gift TEXT, emoji TEXT, ts INTEGER);
 CREATE INDEX IF NOT EXISTS gifts_log_target ON gifts_log(target, id);
-CREATE TABLE IF NOT EXISTS worn(user_id INTEGER, slot TEXT, emoji TEXT, ts INTEGER, PRIMARY KEY(user_id, slot));
 """)
 _db.execute("CREATE TABLE IF NOT EXISTS tracks_log(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, vid TEXT, title TEXT, ts INTEGER)")
 _db.execute("CREATE INDEX IF NOT EXISTS tracks_log_vid ON tracks_log(vid)")
