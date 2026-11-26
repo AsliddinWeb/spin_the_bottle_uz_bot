@@ -35,7 +35,7 @@ Qo'shimcha: 🔄 tugmasidagi raqam sanab kamayadi (7→6→5→2) — sanoq ekan
 Tayyor mezoni: bir xil o'lchamdagi yonma-yon skrinshotlar va buyurtmachi roziligi.
 
 ## Keyingi bosqichlar (har biri oldingisi tasdiqlangach)
-2. Stol ekrani: taxta, naqsh, shisha, avatarlar, tugmalar — **kompyuter Telegram'i (yon ustun) 2026-11-26 da moslandi** (taxta balandligi 87.8u, tugmalar 7u, yurakcha, ism, lab belgisi, shisha, naqsh, video/musiqa tugmalari; taxta tolasi `tools/make_wood.py`). Telefon ko'rinishi (tugmalar tepada) uchun originalning telefondagi skrinshoti kerak. Bo'sh o'rin originalda qanday ko'rinishi tekshirilmagan
+2. Stol ekrani: taxta, naqsh, shisha, avatarlar, tugmalar — **kompyuter Telegram'i (yon ustun) 2026-11-26 da moslandi** (taxta balandligi 87.8u, tugmalar 7u, yurakcha, ism, lab belgisi, shisha, naqsh, video/musiqa tugmalari; taxta tolasi `tools/make_wood.py`). Telefon ko'rinishi ham 2026-11-26 da originalning iPhone'dagi stolidan (iPhone Mirroring) o'lchab moslandi: tugmalar 6.9u, yurakcha, ismlar, naqsh 42.5u, shisha 27u, musiqa tugmalari; avatar joylari oldindan mos edi. iPhone'da (WebKit) stoldagi sovg'alar xira kvadrat bo'lib chiqayotgan edi — tuzatildi, iOS simulyatorda tekshirildi. Keyingi bosqich uchun: originalda chat avatarlari kichikroq (~7.9u, bizda ~13u). Bo'sh o'rin originalda qanday ko'rinishi tekshirilmagan
 3. Avtomatik oynalar: kunlik bonus va boshqa popup'lar
 4. Chat va pleyer
 5. Sovg'alar va ikonlar (eng katta qism)

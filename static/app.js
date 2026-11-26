@@ -21,7 +21,7 @@ const SEATS_RAW = MOBILE
   ? [[17.6, 26.3], [39.4, 21.8], [60.9, 21.8], [83.1, 26.7], [86.5, 46.2], [86.5, 65.4], [83.1, 85.3], [61.2, 89.5], [38.8, 89.5], [17.5, 85.3], [13.3, 65.4], [13.3, 46.2]]
   : [[27, 18], [46.5, 12.6], [65.5, 12.6], [85, 18], [89, 39.7], [88, 61], [85, 83], [65.5, 88], [46.5, 88], [27, 83], [23.5, 61], [23.5, 39.7]];
 // seat element = avatar + name, centred as one box: shift down so the AVATAR centre sits on the measured point
-const SEATS = SEATS_RAW.map(([x, y]) => [x, y + (MOBILE ? 1.8 : 1.4)]);
+const SEATS = SEATS_RAW.map(([x, y]) => [x, y + 1.4]);
 const PAIR = [[CENTER[0] - 13, CENTER[1] + 3], [CENTER[0] + 13, CENTER[1] + 3]];
 
 let CFG, ME, ws, T = null, lang = "uz", initData = "", skew = 0, target = 0;

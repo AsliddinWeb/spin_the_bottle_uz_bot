@@ -1039,8 +1039,31 @@ html:not(.top) #center-msg{font-size:max(12px,calc(var(--u)*3.5));line-height:1.
 html:not(.top) #hint,html:not(.top) #hint.mine{font-size:max(12px,calc(var(--u)*3.4))}
 html:not(.top) #dj-fab{top:calc(var(--u)*2.2);gap:calc(var(--u)*1.4)}
 html:not(.top) #dj-fab button{width:calc(var(--u)*10.6);height:calc(var(--u)*9.4);border-radius:calc(var(--u)*4.7) 0 0 calc(var(--u)*4.7);padding:0 0 0 calc(var(--u)*1.2)}
-html:not(.top) .round svg{width:68%;height:68%;stroke-width:2.5}
+html:not(.top) .round svg{width:78%;height:78%;stroke-width:2.4}
 html:not(.top) #ornament{opacity:.82}
 /* wood grain: our own drawing (tools/make_wood.py) */
 #felt::before{background:url(/static/wood.svg?v=1) 0 0/100% 100% no-repeat;opacity:1;mix-blend-mode:normal}
+/* iPhone (WebKit) draws a picture with its own SVG filter as a blurry box when it sits on a moved element (a seat, a flying gift):
+   there the SVG filter is off and a plain CSS shadow is used instead */
+.seat .gart>g,.seat .fart>g,.gfly .gart>g{filter:none}
+
+/* ---------------- table on phones (HUD row on top): measured on the original on an iPhone, 2026-11-26 (1u = 1% of the width) */
+html.top #felt{background:radial-gradient(ellipse 78% 72% at var(--cx) 47%,#e2a253 0%,#d59043 40%,#c48042 74%,#b47036 100%)}
+html.top #ornament{width:calc(var(--u)*42.5);opacity:.84}
+html.top #bottle{--bl:calc(var(--u)*27)}
+html.top .round{--d:max(27px,calc(var(--u)*6.9));top:calc(var(--u)*5.6 - var(--d)/2)}
+html.top .round::before{content:"";position:absolute;left:-7px;top:-8px;right:-7px;bottom:-8px;border-radius:50%}   /* small circle, bigger touch area */
+html.top .round svg{width:78%;height:78%;stroke-width:2.4}
+html.top .round.tbl small{top:50%;right:calc(100% + var(--u)*1.2);font-size:max(10px,calc(var(--u)*2.5))}
+html.top #tbl-n{font-size:max(12px,calc(var(--u)*3.2))}
+html.top .hearts-btn{left:calc(var(--u)*2.4);top:calc(var(--u)*2);gap:calc(var(--u)*1.8)}
+html.top .hearts-btn .hs{width:calc(var(--u)*8);min-width:28px}
+html.top .hearts-btn b{font-size:max(13px,calc(var(--u)*3.4))}
+html.top .nm{font-size:max(8.5px,calc(var(--u)*2.3));margin-top:calc(var(--u)*.4);line-height:1.25}
+html.top .kb{width:calc(var(--u)*4.6);right:calc(var(--u)*-1.6);top:calc(var(--u)*.2)}
+html.top .kb i{font-size:calc(var(--u)*4)}
+html.top .kb b{font-size:max(8px,calc(var(--u)*2.1))}
+html.top #dj-fab{top:calc(var(--u)*1.5);gap:calc(var(--u)*1.6)}
+html.top #dj-fab button{width:calc(var(--u)*10.5);height:calc(var(--u)*10.1);border-radius:calc(var(--u)*5.05) 0 0 calc(var(--u)*5.05);padding:0 0 0 calc(var(--u)*.8)}
+html.top #dj-fab button svg{width:calc(var(--u)*8.8);height:calc(var(--u)*8.8)}
 
