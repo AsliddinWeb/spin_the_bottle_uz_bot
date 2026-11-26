@@ -242,12 +242,10 @@ function applyStatic() {
 function renderMe() {
   $("#hearts").textContent = ME.hearts;
   $("#btn-daily").classList.toggle("hidden", !ME.daily.available);
-  const st = ME.starter || [], chip = $("#btn-starter"), n = st.filter(x => x.claimed).length, ready = st.filter(x => x.done && !x.claimed).length;
-  chip.classList.toggle("hidden", !st.length); chip.classList.toggle("ready", ready > 0); $("b", chip).textContent = n + "/" + st.length;
+  const ready = (ME.starter || []).filter(x => x.done && !x.claimed).length, dready = (ME.dtasks || []).filter(x => x.n >= x.goal && !x.claimed).length;
+  $("#hearts-dot").classList.toggle("hidden", !(ready || dready));   // a reward is waiting in the hearts window
   if (ready > (renderMe.ready || 0)) { toast(t("st_ready"), 3500); sfx.ach(); }
   renderMe.ready = ready;
-  const dt = ME.dtasks || [], dc = $("#btn-dtask"), dready = dt.filter(x => x.n >= x.goal && !x.claimed).length;
-  dc.classList.toggle("hidden", !dt.length); dc.classList.toggle("ready", dready > 0); $("b", dc).textContent = dt.filter(x => x.claimed).length + "/" + dt.length;
   if (dready > (renderMe.dready || 0)) { toast(t("dt_ready"), 3500); sfx.ach(); }
   renderMe.dready = dready;
   if (ME.rank > (renderMe.rank ?? ME.rank)) { toast(t("rk_up", { r: RANK_E[ME.rank] + " " + rankName(ME.rank) }), 4500); sfx.win(); }
@@ -305,8 +303,6 @@ function bindUi() {
   $("#btn-settings").onclick = openSettings;
   $("#btn-table").onclick = openTables;
   $("#btn-daily").onclick = openDaily;
-  $("#btn-starter").onclick = openStarter;
-  $("#btn-dtask").onclick = openDailyTasks;
   $("#btn-event").onclick = openEvent;
   $("#gp-plus").onclick = openShop;
   $("#gp-close").onclick = closeGifts;
@@ -427,7 +423,7 @@ function renderSeats() {
           (p.kisses ? `<span class="kb"><i>💋</i><b>${p.kisses}</b></span>` : "") +
           (p.gifts && p.gifts.hand ? `<span class="gf">${giftIcon(p.gifts.hand)}</span>` : "") +
           (p.gifts && p.gifts.head ? `<span class="gh">${giftIcon(p.gifts.head)}</span>` : "") +
-          (p.top ? `<span class="topmark">TOP</span>` : p.vip ? `<span class="vipmark">👑</span>` : "") +
+          (p.vip ? `<span class="vipmark">👑</span>` : "") +
           (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
           `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
       }
@@ -674,7 +670,7 @@ function addChat(m) {
   if (m.k === "msg") {
     if (m.uid !== ME.id) sfx.chat();
     d.className = "msg";
-    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.top ? ' <b class="tpb">TOP</b>' : m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
+    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
     const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
     $(".who", d).onclick = reply; $(".av-mini", d).onclick = reply;
     const tr = $(".tr", d);
@@ -1071,13 +1067,18 @@ function openDaily() {
   const rows = CFG.daily.map((h, i) => `<div class="drow ${i <= day ? "now" : ""}"><span class="dot">${i < day ? "✔" : ""}</span><span class="dl">${t("day", { n: i + 1 })}</span>${heartNum(h * mult)}</div>`).join("");
   // like the original: no close button, the dialog goes away only after claiming
   const m = openModal(`<h2>${t("daily_title")}</h2><p class="dtxt pre">${t("daily_desc")}</p>${rows}
-    <div class="center" style="margin-top:14px"><button class="btn dbtn" id="dl-ok">${t("claim")}</button></div>`, { cls: "green daily", closable: false });
+    <div class="center dfoot"><button class="btn dbtn" id="dl-ok">${t("claim")}</button></div>`, { cls: "green daily", closable: false });
   $("#dl-ok", m.el).onclick = async () => {
     try { const r = await api("/api/daily/claim", "POST"); ME = r.me; renderMe(); toast(t("daily_ok", { n: r.reward })); sfx.win(); m.close(); }
     catch { m.close(); }
   };
 }
 
+function shopTasks() {   // starter and daily tasks: free hearts, so they live in the hearts window
+  const row = (go, icon, title, list, done, ready) => list.length ? `<button class="stask ${list.some(ready) ? "ready" : ""}" data-go="${go}"><i>${icon}</i><span>${esc(t(title))}</span><b>${list.filter(done).length}/${list.length}</b></button>` : "";
+  const html = row("starter", "🎯", "st_title", ME.starter || [], x => x.claimed, x => x.done && !x.claimed) + row("dtask", "📅", "dt_title", ME.dtasks || [], x => x.claimed, x => x.n >= x.goal && !x.claimed);
+  return html && `<div class="shop-tasks">${html}</div>`;
+}
 function openShop() {
   const packs = [...CFG.packs].sort((a, b) => b.stars - a.stars);
   const em = { p5000: "🧰", p2500: "🛢️", p1000: "🏺", p500: "👜", p250: "📦", p50: "💕" };
@@ -1087,13 +1088,14 @@ function openShop() {
       <div class="pack"><div class="txt">${t("get_friend", { n: 20 })}</div><div class="em">🧑‍🤝‍🧑</div><button class="btn blue" data-go="promo">${t("learn")}</button></div>
       <div class="pack"><div class="txt">${t("get_comp", { n: 10 })}</div><div class="em">💌</div><button class="btn blue" data-go="compl">${t("learn")}</button></div>
     </div>
+    ${shopTasks()}
     <div class="grid3">${packs.map(p => `<div class="pack">
       ${p.stars === 5000 ? `<span class="tag">${t("best")}</span>` : p.stars === 1000 ? `<span class="tag hit">${t("hit")}</span>` : ""}
       <div class="big">❤️${p.hearts}</div><div class="bn">${p.bonus ? t("bonus_pct", { n: p.bonus }) : ""}</div>
       <div class="em">${em[p.id]}</div><button class="btn" data-pack="${p.id}">${buyLabel(p.price, "★" + p.stars)}</button></div>`).join("")}</div>
     ${CFG.payments === "manual" ? `<div class="center" style="margin-top:12px"><button class="btn blue" id="my-orders">🧾 ${t("my_orders")}</button></div>` : ""}`, { cls: "pink" });
   const mo = $("#my-orders", m.el); if (mo) mo.onclick = () => { m.close(); openMyOrders(); };
-  $$("[data-go]", m.el).forEach(b => b.onclick = () => { m.close(); ({ vip: openVip, free: openFree, promo: openPromo, compl: openComplTask })[b.dataset.go](); });
+  $$("[data-go]", m.el).forEach(b => b.onclick = () => { m.close(); ({ vip: openVip, free: openFree, promo: openPromo, compl: openComplTask, starter: openStarter, dtask: openDailyTasks })[b.dataset.go](); });
   $$("[data-pack]", m.el).forEach(b => b.onclick = () => buy("pack", b.dataset.pack, m));
 }
 

@@ -44,3 +44,8 @@ Tayyor mezoni: bir xil o'lchamdagi yonma-yon skrinshotlar va buyurtmachi rozilig
 
 ## Yo'l-yo'lakay kuzatilgan (keyingi bosqichlar uchun)
 Original bot chatga xabarnomalar yuboradi: "У тебя новый ухажёр" va kunlik "Скорее заберите ежедневный бонус ❤️ сердечек!", ostida tugmalar: ИГРАТЬ В MAX · ИГРАТЬ · Сообщество.
+
+## Originaldan 2026-11-26 da olingan (2-bosqich uchun)
+- Stol ustida TOP belgisi, vazifa tugmalari va kunlik sovg'a belgisi yo'q.
+- Yurakcha oynasi yuqori qatori: VIP daraja · do'st uchun ❤20 · komplimentlar ❤10 ("Узнать"); pastda 6 ta paket, hammasi aylantirmasdan sig'adi.
+- Yangi o'yinchi kirganda chatda "… впервые в игре! Поприветствуй и обрадуй подарочком!" kartasi va sovg'a tugmasi chiqadi.
