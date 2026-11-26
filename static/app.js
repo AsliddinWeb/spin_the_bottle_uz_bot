@@ -204,8 +204,24 @@ async function boot() {
 
 function tableLabel() { $("#table-no").innerHTML = `${esc(t("table"))}<br>${T.id}`; }
 
+// Celebration windows queue up. They are not shown while the player takes part in the current turn (they would cover the
+// decision buttons and the kiss), and only one is open at a time.
+const cheers = []; let cheer = null;
+const myTurnNow = () => !!(T && ME && ["spin_wait", "spinning", "ask_spinner", "ask_target", "result"].includes(T.phase) && (T.turn === ME.id || T.target === ME.id));
+function celebrate(make) { cheers.push(make); pumpCheers(); }
+function pumpCheers() {
+  if (cheer && (!cheer.m.root.isConnected || cheer.m.root.classList.contains("out"))) cheer = null;
+  if (cheer) {
+    if (myTurnNow()) { cheers.unshift(cheer.make); cheer.m.close(); cheer = null; }   // my turn began: put it aside for later
+    return;
+  }
+  if (!cheers.length || myTurnNow() || $("#modal-root .ov:not(.out)")) return;
+  const make = cheers.shift(); cheer = { make, m: make() };
+}
 function showAch(id) {
-  const x = CFG.achievements.find(q => q.id === id); if (!x) return;
+  const x = CFG.achievements.find(q => q.id === id); if (x) celebrate(() => achWindow(x, id));
+}
+function achWindow(x, id) {
   const tier = CFG.achievements.filter(q => q.stat === x.stat).sort((p, q) => p.need - q.need);
   const n = Math.max(1, Math.ceil((tier.findIndex(q => q.id === id) + 1) / tier.length * 3));
   const m = openModal(`<h2>${esc(t("ach_congrats"))}</h2><div class="sub">${esc(t("ach_unlocked"))}</div>
@@ -215,6 +231,7 @@ function showAch(id) {
     <div class="req">${esc(t("achs_" + x.stat, { n: x.need }))}</div>
     <button class="btn cta-ok" style="width:100%">${esc(t("ach_continue"))} +❤${x.reward}</button>`, { cls: "achm", closable: false });
   $(".cta-ok", m.el).onclick = m.close; sfx.ach();
+  return m;
 }
 function applyStatic() {
   [["btn-wheel", "wheel_title"], ["btn-rating", "league_title"], ["btn-menu", "hud_menu"], ["btn-settings", "settings"], ["btn-table", "hud_table"]].forEach(([id, k]) => { const e = $("#" + id); if (e) e.title = t(k); });
@@ -333,16 +350,33 @@ function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 // leave the table right away when the page is closed so no ghost avatar stays seated
 window.addEventListener("pagehide", () => { try { if (ws) ws.close(1000); } catch {} });
 
+// A phone can lose the socket without any "close" event (app switched, network changed): the screen would stay frozen.
+// So the client pings every few seconds and replaces a connection that has been silent for too long.
+const PING_MS = 8000, STALE_MS = 20000, WAKE_GRACE_MS = 4000;
+let lastRecv = 0, lastPing = 0, lastBeat = 0, beatTimer = 0;
+function showReconnect(msg) { $("#boot").className = "re felt"; $("#boot-msg").textContent = msg; }
 function connect() {
-  ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?init=${encodeURIComponent(initData)}`);
-  ws.onopen = () => { reconnectDelay = 800; };
-  ws.onmessage = ev => handle(JSON.parse(ev.data));
-  ws.onclose = e => {
-    $("#boot").className = "re felt"; $("#boot-msg").textContent = e.code === 4001 ? "Opened in another window" : t("reconnecting");
+  const s = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?init=${encodeURIComponent(initData)}`);
+  ws = s; lastRecv = lastBeat = Date.now();
+  s.onopen = () => { reconnectDelay = 800; lastRecv = Date.now(); };
+  s.onmessage = ev => { lastRecv = Date.now(); handle(JSON.parse(ev.data)); };
+  s.onclose = e => {
+    showReconnect(e.code === 4001 ? "Opened in another window" : t("reconnecting"));
     if (e.code === 4001 || e.code === 4003 || e.code === 4004) return;
-    setTimeout(connect, reconnectDelay); reconnectDelay = Math.min(reconnectDelay * 1.6, 8000);
+    setTimeout(() => { if (ws === s) connect(); }, reconnectDelay); reconnectDelay = Math.min(reconnectDelay * 1.6, 8000);
   };
-  setInterval(() => send({ t: "ping" }), 25000);
+  if (!beatTimer) { beatTimer = setInterval(heartbeat, 2000); document.addEventListener("visibilitychange", heartbeat); }
+}
+function heartbeat() {
+  if (!ws || ws.readyState > 1 || document.hidden) return;   // closed sockets are handled by onclose
+  const now = Date.now();
+  if (now - lastBeat > 10000) { lastRecv = Math.max(lastRecv, now - STALE_MS + WAKE_GRACE_MS); lastPing = 0; }   // just woke up: ask, and wait a moment
+  lastBeat = now;
+  if (now - lastRecv > STALE_MS) {
+    ws.onopen = ws.onmessage = ws.onclose = null; try { ws.close(); } catch {}
+    showReconnect(t("reconnecting")); return connect();
+  }
+  if (now - lastPing >= PING_MS) { lastPing = now; send({ t: "ping" }); }
 }
 
 function handle(m) {
@@ -386,7 +420,7 @@ function onState(s) {
   myTurnKey = key;
   if (s.phase === "ask_spinner" && (!prev || prev.phase !== "ask_spinner")) setTimeout(sfx.pair, 900);
   if (prev && prev.seats.length < s.seats.length) sfx.join(); else if (prev && prev.seats.length > s.seats.length) sfx.leave();
-  renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic(); renderKickBar();
+  renderSeats(); renderCenter(); renderActions(); handleSpin(); handleMusic(); renderKickBar(); pumpCheers();
   if (target && !s.seats.find(p => p.uid === target)) closeGifts();
   if (!$("#gift-panel").classList.contains("hidden")) updateGiftHead();
 }
@@ -444,6 +478,16 @@ function renderHint() {
   h.style.left = hx + "%"; h.style.top = hy + "%";
   h.innerHTML = `<span>${esc(t("turn_short"))}</span><span class="ha" style="transform:rotate(${deg}deg)">➜</span>`;
   h.classList.remove("hidden");
+  keepHintClear(h, sx, sy, felt);
+}
+function keepHintClear(h, sx, sy, felt) {   // slide the hint from the seat toward the bottle until it covers no player
+  const w = h.offsetWidth, ht = h.offsetHeight;
+  const boxes = T.seats.map(p => { const el = $("#seat" + p.seat), [x, y] = SEATS[p.seat]; return [x / 100 * felt.width, y / 100 * felt.height, el.offsetWidth / 2, el.offsetHeight / 2 + 2]; });
+  for (let f = .5; f <= .8001; f += .05) {
+    const x = sx + (CENTER[0] - sx) * f, y = sy + (CENTER[1] - sy) * f, px = x / 100 * felt.width, py = y / 100 * felt.height;
+    h.style.left = x + "%"; h.style.top = y + "%";
+    if (boxes.every(([bx, by, bw, bh]) => Math.abs(px - bx) >= w / 2 + bw || Math.abs(py - by) >= ht / 2 + bh)) return;
+  }
 }
 
 function renderCenter() {
@@ -461,7 +505,8 @@ function renderCenter() {
     case "result": msg = T.result === "kiss" ? t("kissed", { a: nameOf(T.turn), b: nameOf(T.target) }) : t("nokiss"); break;
   }
   box.textContent = msg;
-  box.style.top = (T.phase === "waiting" || T.phase === "between" ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
+  const middle = T.phase === "waiting" || T.phase === "between" || (T.phase === "result" && T.result !== "kiss");
+  box.style.top = (middle ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
   if (T.phase === "result" && T.result === "kiss" && lastKiss !== T.spin.id) {
     lastKiss = T.spin.id; kissFx();
   } else if (T.phase === "result" && T.result !== "kiss" && lastKiss !== -T.spin.id) {
@@ -550,6 +595,7 @@ function renderActions() {
 }
 
 function tick() {
+  pumpCheers();
   if (T && T.kicks && T.kicks.length) renderKickBar();
   const sec = T && T.deadline ? Math.ceil((T.deadline - serverNow()) / 1000) : 0, cnt = sec > 0 && T && ["spin_wait", "ask_spinner", "ask_target"].includes(T.phase);
   $("#tbl-n").classList.toggle("hidden", !cnt); $("#btn-table").classList.toggle("cnt", !!cnt); if (cnt) $("#tbl-n").textContent = sec;
@@ -672,18 +718,18 @@ function addChat(m) {
         x.textContent = "x" + n;
       } else {
         last.dataset.to = [...tos, m.to_uid].join(",");
-        $(".giftline", last).insertAdjacentHTML("beforeend", miniAv(seatPhoto(m.to_uid), m.to_name));
+        $(".giftline", last).insertAdjacentHTML("beforeend", miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name));
       }
       giftSound(m); if (near) box.scrollTop = box.scrollHeight; return;
     }
     d.className = "msg"; d.dataset.gk = key; d.dataset.to = String(m.to_uid);
-    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">››</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
+    d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">››</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
     giftSound(m);
   } else if (m.k === "kiss") {
-    d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="kmark"><i>💋</i> <b>x${m.n || 1}</b> »</span>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;
+    d.className = "msg ev"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="kmark"><i>💋</i> <b>x${m.n || 1}</b> »</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}`;
   } else if (m.k === "court") {
     d.className = "msg ev";
-    d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(seatPhoto(m.to_uid), m.to_name)}`;
+    d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}`;
   } else if (m.k === "kick") {
     d.className = "msg ev"; d.innerHTML = `<span class="ico">👢</span><div>${esc(t("ev_kick", { a: m.name, b: m.to_name }))}</div>`;
     m.to_uid === ME.id ? sfx.error() : sfx.no();
@@ -697,10 +743,10 @@ function addChat(m) {
     sfx.win();
   } else if (m.k === "medal") {
     d.className = "msg ev";
-    d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico mck"><svg viewBox="0 0 32 32"><path d="M16 2l4 2.500 4.700-.3 1.900 4.300 3.900 2.700-1 4.600 1 4.600-3.900 2.700-1.900 4.300-4.700-.3L16 30l-4-2.500-4.700.3-1.900-4.300L1.500 20.800l1-4.600-1-4.600 3.900-2.700 1.900-4.300L12 4.500z" fill="none" stroke="#f0a24a" stroke-width="2.200" stroke-linejoin="round"/><path d="M10 16.500l4 4 8-9" fill="none" stroke="#f0a24a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><b style="color:#f0a24a">${esc(t("md_" + m.medal))}</b> ${esc(t("medal_level", { n: m.tier }))}</div>`;
+    d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="ico mck"><svg viewBox="0 0 32 32"><path d="M16 2l4 2.500 4.700-.3 1.900 4.300 3.900 2.700-1 4.600 1 4.600-3.900 2.700-1.900 4.300-4.700-.3L16 30l-4-2.500-4.700.3-1.900-4.300L1.500 20.800l1-4.600-1-4.600 3.900-2.700 1.900-4.300L12 4.500z" fill="none" stroke="#f0a24a" stroke-width="2.200" stroke-linejoin="round"/><path d="M10 16.500l4 4 8-9" fill="none" stroke="#f0a24a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><b style="color:#f0a24a">${esc(t("md_" + m.medal))}</b> ${esc(t("medal_level", { n: m.tier }))}</div>`;
   } else if (m.k === "boost") {
     boostFx(m.boost);
-    d.className = "msg ev"; d.innerHTML = `${miniAv(seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;
+    d.className = "msg ev"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;
   } else if (m.k === "music") {
     d.className = "msg ev"; d.innerHTML = `<span class="ico">♪</span><div>${esc(m.title)}<small style="display:block;color:#888">${esc(m.name)}</small></div>`;
   } else return;
@@ -1317,7 +1363,9 @@ function openMedal(md) {   // like the original: "Выполни условие,
 }
 function showMedals(list) {
   if (!list || !list.length) return;
-  const x = list[list.length - 1], md = CFG.medals.find(q => q.id === x.id); if (!md) return;
+  const x = list[list.length - 1], md = CFG.medals.find(q => q.id === x.id); if (md) celebrate(() => medalWindow(list, x, md));
+}
+function medalWindow(list, x, md) {
   const total = list.reduce((a, q) => a + q.reward, 0);
   const m = openModal(`<h2>${esc(t("ach_congrats"))}</h2><div class="sub">${esc(t("ach_medal_got"))}</div>
     <div class="center" style="margin:6px 0">${medalBadge(md, x.tier)}</div>
@@ -1326,6 +1374,7 @@ function showMedals(list) {
     ${list.length > 1 ? `<p class="center sub">+${list.length - 1}</p>` : ""}
     <button class="btn cta-ok" style="width:100%">${esc(t("ach_continue"))} +❤${total}</button>`, { cls: "achm", closable: false });
   $(".cta-ok", m.el).onclick = m.close; sfx.ach();
+  return m;
 }
 function openAchievements() {
   const m = openModal("", { cls: "ach" }); let doneFirst = true;

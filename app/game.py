@@ -165,6 +165,10 @@ class Table:
         await asyncio.gather(*(p.client.send(msg) for p in list(self.players.values())))
 
     async def say(self, kind: str, **kw) -> None:
+        for key, out in (("uid", "photo"), ("to_uid", "to_photo")):
+            p = self.players.get(kw.get(key))
+            if p and not kw.get(out):
+                kw[out] = p.photo
         self.chat_id += 1
         m = {"t": "chat", "id": self.chat_id, "k": kind, "ts": int(time.time()), **kw}
         self.chat.append(m)
@@ -334,6 +338,8 @@ class Table:
             if counted:
                 league.add_points(p.uid, 1)   # a received kiss is worth a league point (x2 booster, weekly limit)
             p.tkiss += 1
+        for p in (a, b):
+            await self.push_me_safe(p.uid)   # both just received hearts
         await self.say("kiss", uid=a.uid, name=a.name, to_uid=b.uid, to_name=b.name, n=a.tkiss)
         for p in (a, b):
             await self.notify_achievements(p.uid)
@@ -360,7 +366,8 @@ class Table:
             p = self.players[uid]
             for x in got:
                 await self.say("medal", uid=uid, name=p.name, medal=x["id"], tier=x["tier"])
-            await self.hub.push_me(uid)
+        if new or got:   # achievements pay hearts too
+            await self.push_me_safe(uid)
 
     async def kick(self, uid: int, reason: str) -> None:
         p = self.players.get(uid)
@@ -523,6 +530,7 @@ class Table:
                 target.gifts[slot] = emoji
             await self.say("gift", uid=sender.uid, name=sender.name, to_uid=target.uid,
                            to_name=target.name, gift=emoji, blocked=bool(blocked))
+        await self.push_me_safe(client.uid)   # the sender paid: show the new balance at once
         await self.broadcast()
         for uid in ((client.uid,) if is_music else (client.uid, to_uid)):
             await self.notify_achievements(uid)

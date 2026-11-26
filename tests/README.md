@@ -24,3 +24,4 @@ Eslatma: qa_game.py da 4 ta "xato" ko'rinishi mumkin, bu yutuq mukofoti yurakcha
     DB_PATH=/tmp/rl.db .venv/bin/python tests/qa_referral_live.py   # jonli (3 tekshiruv; yangi baza)
     .venv/bin/python tests/qa_cycle.py   # tur sikli: avto-aylanish va umumiy sanoq (5 tekshiruv; yangi baza)
     DB_PATH=/tmp/wn.db .venv/bin/python tests/qa_worn.py   # avatardagi sovg'alar: uch joy, chiqib qaytsa yo'qoladi (6 tekshiruv; server :8001)
+    DB_PATH=/tmp/bl.db .venv/bin/python tests/qa_balance.py   # balans darhol yangilanishi, chatdagi rasmlar, ping (8 tekshiruv; server :8001)

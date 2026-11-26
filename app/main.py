@@ -530,7 +530,7 @@ async def ws_endpoint(ws: WebSocket, init: str = ""):
     await hub.push_court(u["id"])
     try:
         while True:
-            # clients ping every 25s; a socket silent for 50s is dead (closed app, lost network)
+            # clients ping every 8s; a socket silent for 50s is dead (closed app, lost network)
             raw = await asyncio.wait_for(ws.receive_text(), timeout=50)
             try:
                 msg = json.loads(raw)
