@@ -224,7 +224,8 @@ def user_card(uid: int) -> dict | None:
 
 
 def court(suitor: int, target: int) -> str | int:
-    """Pay to become target's suitor (price = current + 1). Returns new price or an error code."""
+    """Pay to become target's suitor (price = current + 1). The hearts are burnt: nobody receives them, so courting cannot be used
+    to move hearts between accounts. Returns the new price or an error code."""
     if suitor == target or not db.get_user(target):
         return "bad_target"
     cur = db.q1("SELECT * FROM courtship WHERE target=?", target)
@@ -233,13 +234,12 @@ def court(suitor: int, target: int) -> str | int:
     price = (cur["price"] + 1) if cur else 1
     if not db.spend_hearts(suitor, price):
         return "no_hearts"
-    db.add_hearts(target, price)  # the courted player receives the hearts
     db.x("INSERT OR REPLACE INTO courtship(target,suitor,price,ts,seen) VALUES(?,?,?,?,0)", target, suitor, price, int(time.time()))
     return price
 
 
 def decline_court(uid: int) -> bool:
-    """The courted player turns the current suitor away (the hearts they already received stay); the price starts again from 1."""
+    """The courted player turns the current suitor away; the price starts again from 1."""
     return db.x("DELETE FROM courtship WHERE target=?", uid).rowcount == 1
 
 

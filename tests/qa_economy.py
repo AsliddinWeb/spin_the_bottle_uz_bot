@@ -58,7 +58,7 @@ c,_=call("/api/vip/collect",1,{}); ok("vip collect once a day",c==400)
 # courtship
 h1=me(1)["hearts"]; h2=me(2)["hearts"]
 c,r=call("/api/court",1,{"to":2}); ok("court price 1",c==200 and r["price"]==1,r)
-ok("court transfers hearts",me(1)["hearts"]==h1-1 and me(2)["hearts"]==h2+1)
+ok("court hearts are burnt (payer -1, courted unchanged)",me(1)["hearts"]==h1-1 and me(2)["hearts"]==h2)
 c,_=call("/api/court",1,{"to":2}); ok("court same suitor rejected",c==400)
 c,r=call("/api/court",3,{"to":2}); ok("outbid price 2",c==200 and r["price"]==2,r)
 c,_=call("/api/court",1,{"to":1}); ok("court self rejected",c==400)
