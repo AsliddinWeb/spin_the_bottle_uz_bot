@@ -1075,3 +1075,6 @@ html.top #dj-fab button svg{width:calc(var(--u)*8.8);height:calc(var(--u)*8.8)}
 .seat.gland .gx{animation:gland .55s cubic-bezier(.2,1.7,.4,1)}
 .seat .gx.hop{animation:hop .5s ease-out 2}
 
+/* the original draws nothing where a seat is free (seen at a table with three players) */
+.seat.empty{visibility:hidden}
+
