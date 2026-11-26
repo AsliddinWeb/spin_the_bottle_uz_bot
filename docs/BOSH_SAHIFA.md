@@ -30,7 +30,7 @@ O'lchov birligi: `u` = ekran kengligining 1%. Rasmlar o'zimizniki bo'ladi, origi
 
 ## 2. Boshqa sahifalar (keyingi bosqichlar uchun farqlar)
 
-### Reytinglar — muhim farq
+### Reytinglar — ✅ moslandi (2026-11-26)
 Originalda 5 bo'lim; "?" tugmasidagi rasmiy qoidalar:
 
 | Belgi | Nomi | Qoida | Davrlar | Bizda |
@@ -43,7 +43,7 @@ Originalda 5 bo'lim; "?" tugmasidagi rasmiy qoidalar:
 
 TOP lentasi: **istalgan** reytingning butun davrdagi 10 taligi (bizda faqat o'pish). Olib tashlangan "eng ko'p yurakcha" bo'limi originalda yo'q — to'g'ri olib tashlangan.
 
-### Profil
+### Profil — ✅ ko'rsatkichlar va o'lcham moslandi (burj, ramka belgisi va bio yo'q)
 - Rasm pastida burj belgisi (chapda), shikoyat "!" (o'ngda).
 - 5 ta ko'rsatkich (💋 🎵 ❤ 💕 😄), har birining yonida "N в рейтинге" (o'rni). Yig'ilgan holatda 3 tasi (💋 🎵 😄).
 - Xushtorlik kartasida narx va reyting o'rni, "Ухаживать" / o'zingnikida "Отказаться".

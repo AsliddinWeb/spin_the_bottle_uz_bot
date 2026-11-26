@@ -497,6 +497,8 @@ class Table:
             gift_id, emoji, _, kind, _ = random.choice(pool)
 
         db.inc(client.uid, "gifts_sent")
+        if is_music:
+            db.inc(client.uid, "dj", price)   # DJ rating: one point per heart spent on music
         if not is_music:
             medals.gift_sent(client.uid, gift_id, kind)
         blocked = False
@@ -527,6 +529,8 @@ class Table:
                 await self.say("dj", uid=sender.uid, name=sender.name, photo=sender.photo, level=level_up)
         else:
             if not blocked:
+                if self.music and self.music.get("by_uid") == to_uid:
+                    db.inc(to_uid, "dj")   # ... and one more for every gift received while one's own song is playing
                 medals.gift_received(to_uid, gift_id, kind, gift_id in HEAD_IDS, bool(self.music))
                 slot = "head" if gift_id in HEAD_IDS else "hand" if gift_id in medals.DRINKS else "side"
                 target.gifts[slot] = emoji
@@ -550,6 +554,8 @@ class Table:
         if cur.rowcount != 1:
             await client.send({"t": "toast", "key": "no_smiles"})
             return
+        if price > 0:
+            db.inc(client.uid, "emo", price)   # emotion rating: tokens spent on gestures
         p.gesture = (emoji, time.time())
         await self.broadcast()
         await self.hub.push_me(client.uid)

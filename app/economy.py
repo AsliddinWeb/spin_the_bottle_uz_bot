@@ -1,4 +1,5 @@
 """Hearts economy: profile payload, daily bonus, wheel, shop, purchases."""
+import bisect
 import random
 import time
 from datetime import date, timedelta
@@ -207,6 +208,7 @@ def user_card(uid: int) -> dict | None:
     if not u:
         return None
     court = db.q1("SELECT c.price, c.suitor, s.name, s.photo FROM courtship c JOIN users s ON s.id=c.suitor WHERE c.target=?", uid)
+    stats = rating_values(uid, u)
     gifts = [{"emoji": r["emoji"], "n": r["c"]} for r in db.q(
         "SELECT emoji, COUNT(*) c FROM gifts_log WHERE target=? GROUP BY emoji ORDER BY c DESC, MAX(id) DESC LIMIT 40", uid)]
     recent = [{"emoji": r["emoji"], "name": r["name"], "photo": r["photo"]} for r in db.q(
@@ -220,6 +222,8 @@ def user_card(uid: int) -> dict | None:
         "trophies": {str(r["place"]): r["c"] for r in db.q("SELECT place, COUNT(*) c FROM weekly_awards WHERE uid=? AND place>0 GROUP BY place", uid)},
         "ach": [r["ach"] for r in db.q("SELECT ach FROM achievements WHERE user_id=?", uid)],
         "suitor": dict(id=court["suitor"], name=court["name"], photo=court["photo"], price=court["price"]) if court else None,
+        "stats": stats, "ranks": {k: rating_rank(k, v) for k, v in stats.items()},
+        "court_next": stats["dear"] + 1,   # what it costs to take over (or, for the courted player, to refuse)
     }
 
 
@@ -235,12 +239,22 @@ def court(suitor: int, target: int) -> str | int:
     if not db.spend_hearts(suitor, price):
         return "no_hearts"
     db.x("INSERT OR REPLACE INTO courtship(target,suitor,price,ts,seen) VALUES(?,?,?,?,0)", target, suitor, price, int(time.time()))
+    courtship_changed()
     return price
 
 
-def decline_court(uid: int) -> bool:
-    """The courted player turns the current suitor away; the price starts again from 1."""
-    return db.x("DELETE FROM courtship WHERE target=?", uid).rowcount == 1
+def decline_court(uid: int) -> int | str:
+    """The courted player turns the suitor away by paying one heart more than the suitor did (as on the original). The paid hearts are
+    burnt, the player's price becomes that amount and the next courtship costs one more. Returns the amount paid or an error code."""
+    cur = db.q1("SELECT * FROM courtship WHERE target=? AND suitor>0", uid)
+    if not cur:
+        return "no_suitor"
+    cost = cur["price"] + 1
+    if not db.spend_hearts(uid, cost):
+        return "no_hearts"
+    db.x("UPDATE courtship SET suitor=0, price=?, ts=?, seen=1 WHERE target=?", cost, int(time.time()), uid)
+    courtship_changed()
+    return cost
 
 
 def tag_task(uid: int) -> dict:
@@ -327,64 +341,112 @@ def age_from_birth(birth: str) -> int:
     return t.year - b.year - ((t.month, t.day) < (b.month, b.day))
 
 
+# ---------------------------------------------------------------- ratings (the original's five)
+RATINGS = ("kisses", "dj", "dear", "influence", "emotion")
+USER_COL = {"kisses": "kisses", "dj": "dj", "emotion": "emo"}          # ratings kept in a column of `users` (and per day)
+PERIOD_DAYS = {"day": 1, "week": 7, "month": 30}                       # only the column ratings have periods
+TOP_TTL = 20  # seconds the shared top-20 lists are cached
+RANK_TTL = 300
+_TOP: dict[str, tuple[float, list]] = {}
+_TOPP: dict[tuple, tuple[float, object]] = {}
 _TOP10: tuple[float, frozenset] = (0.0, frozenset())
+_RANK: dict[tuple, tuple[float, int]] = {}
+_INFL: tuple[float, list] = (0.0, [])
+
+
+def courtship_changed() -> None:
+    """Courting is rare and costs hearts: the two courtship lists show it at once instead of waiting for the cache."""
+    global _INFL
+    _TOP.pop("dear", None); _TOP.pop("influence", None); _INFL = (0.0, [])
+    for k in [k for k in _RANK if k[0] in ("dear", "influence")]:
+        del _RANK[k]
+
+
+def _people(rows) -> list[dict]:
+    return [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows]
+
+
+def _influence() -> list[int]:
+    """Every suitor's sum of running courtships, largest first (shared, refreshed once a minute; negated for bisect)."""
+    global _INFL
+    if time.time() - _INFL[0] > RANK_TTL:
+        _INFL = (time.time(), sorted(-r["v"] for r in db.q("SELECT SUM(price) AS v FROM courtship WHERE suitor>0 GROUP BY suitor")))
+    return _INFL[1]
+
+
+def rating_values(uid: int, u=None) -> dict:
+    u = u or db.get_user(uid)
+    dear = db.q1("SELECT price FROM courtship WHERE target=?", uid)
+    infl = db.q1("SELECT COALESCE(SUM(price),0) AS v FROM courtship WHERE suitor=?", uid)
+    return {"kisses": u["kisses"], "dj": u["dj"], "dear": dear["price"] if dear else 0, "influence": infl["v"], "emotion": u["emo"]}
+
+
+def rating_rank(kind: str, value: int) -> int:
+    """All-time place for a number of points (0 = no points, no place). Cached per (rating, points) for RANK_TTL seconds."""
+    if value <= 0:
+        return 0
+    hit = _RANK.get((kind, value))
+    if hit and time.time() - hit[0] < RANK_TTL:
+        return hit[1]
+    if kind == "dear":
+        rank = db.q1("SELECT COUNT(*)+1 AS r FROM courtship WHERE price>?", value)["r"]
+    elif kind == "influence":
+        rank = bisect.bisect_left(_influence(), -value) + 1
+    else:
+        col = USER_COL[kind]
+        rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM users WHERE {col}>?", value)["r"]
+    if len(_RANK) > 20000:
+        _RANK.clear()
+    _RANK[(kind, value)] = (time.time(), rank)
+    return rank
+
+
+def _top_all(kind: str, limit: int = 20) -> list[dict]:
+    hit = _TOP.get(kind)
+    if hit and time.time() - hit[0] < TOP_TTL:   # the list is shared by everybody: computed at most once per TTL
+        return hit[1]
+    if kind == "dear":
+        rows = db.q("""SELECT u.id,u.name,u.photo,u.vip_until,c.price AS v FROM courtship c JOIN users u ON u.id=c.target
+                       ORDER BY c.price DESC, c.target LIMIT ?""", limit)
+    elif kind == "influence":
+        rows = db.q("""SELECT u.id,u.name,u.photo,u.vip_until,t.v FROM (SELECT suitor, SUM(price) AS v FROM courtship WHERE suitor>0
+                       GROUP BY suitor ORDER BY v DESC, suitor LIMIT ?) t JOIN users u ON u.id=t.suitor ORDER BY t.v DESC, u.id""", limit)
+    else:
+        col = USER_COL[kind]
+        rows = db.q(f"SELECT id,name,photo,vip_until,{col} AS v FROM users WHERE {col}>0 ORDER BY {col} DESC, id LIMIT ?", limit)
+    out = _people(rows)
+    _TOP[kind] = (time.time(), out)
+    return out
 
 
 def top10_ids() -> frozenset:
-    """Players in the top 10 by kisses (at least one kiss); they get the TOP badge instead of VIP. Cached for TOP_TTL seconds."""
+    """Players in the all-time top 10 of ANY rating: they wear the TOP ribbon instead of VIP (as on the original). Cached."""
     global _TOP10
     if time.time() - _TOP10[0] > TOP_TTL * 3:
-        _TOP10 = (time.time(), frozenset(r["id"] for r in db.q("SELECT id FROM users WHERE kisses>0 ORDER BY kisses DESC, id LIMIT 10")))
+        _TOP10 = (time.time(), frozenset(r["id"] for kind in RATINGS for r in _top_all(kind)[:10]))
     return _TOP10[1]
 
 
-_TOP: dict[str, tuple[float, list]] = {}
-TOP_TTL = 20  # seconds the shared top-20 lists are cached
-
-
-PERIOD_DAYS = {"day": 1, "week": 7, "month": 30}
-_TOPP: dict[tuple, tuple[float, object]] = {}
-
-
-def _top_period(field: str, uid: int, period: str, limit: int) -> dict:
-    """Day / week / month list from the per-day counters (stats_daily); shared lists are cached for TOP_TTL seconds."""
-    col = {"kisses": "kisses", "gifts": "gifts", "tracks": "tracks"}[field]
+def _top_period(kind: str, uid: int, period: str, limit: int) -> dict:
+    """Day / week / month list from the per-day counters (stats_daily)."""
+    col = USER_COL[kind]
     since = (date.today() - timedelta(days=PERIOD_DAYS[period] - 1)).isoformat()
-    hit = _TOPP.get((field, period))
+    hit = _TOPP.get((kind, period))
     if hit and time.time() - hit[0] < TOP_TTL and hit[1][0] == since:
         rows = hit[1][1]
     else:
-        rows = [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip_until": r["vip_until"], "v": r["v"]} for r in db.q(
-            f"""SELECT u.id,u.name,u.photo,u.vip_until,SUM(s.{col}) AS v FROM stats_daily s JOIN users u ON u.id=s.uid
-                WHERE s.day>=? GROUP BY s.uid HAVING v>0 ORDER BY v DESC, s.uid LIMIT ?""", since, limit)]
-        _TOPP[(field, period)] = (time.time(), (since, rows))
+        rows = _people(db.q(f"""SELECT u.id,u.name,u.photo,u.vip_until,SUM(s.{col}) AS v FROM stats_daily s JOIN users u ON u.id=s.uid
+                                WHERE s.day>=? GROUP BY s.uid HAVING v>0 ORDER BY v DESC, s.uid LIMIT ?""", since, limit))
+        _TOPP[(kind, period)] = (time.time(), (since, rows))
     me = db.q1(f"SELECT COALESCE(SUM({col}),0) AS v FROM stats_daily WHERE uid=? AND day>=?", uid, since)["v"]
     rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM (SELECT uid FROM stats_daily WHERE day>=? GROUP BY uid HAVING SUM({col})>?)", since, me)["r"] if me else 0
-    return {"rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
-            "rank": rank, "mine": me, "period": period}
+    return {"rows": rows, "rank": rank, "mine": me, "period": period}
 
 
-def top(field: str, uid: int, limit: int = 20, period: str = "all") -> dict:
-    if field == "court":  # biggest courtship price received
-        rows = db.q("""SELECT u.id,u.name,u.photo,u.vip_until,c.price AS v FROM courtship c JOIN users u ON u.id=c.target
-                       ORDER BY c.price DESC, u.id LIMIT ?""", limit)
-        mine = db.q1("SELECT price FROM courtship WHERE target=?", uid)
-        rank = db.q1("SELECT COUNT(*)+1 AS r FROM courtship WHERE price > ?", mine["price"] if mine else 0)["r"]
-        return {"rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
-                "rank": rank, "mine": mine["price"] if mine else 0}
-    if period in PERIOD_DAYS and field in ("kisses", "gifts", "tracks"):
-        return _top_period(field, uid, period, limit)
-    col = {"kisses": "kisses", "gifts": "gifts_received", "tracks": "tracks"}[field]
-    hit = _TOP.get(field)
-    if hit and time.time() - hit[0] < TOP_TTL:   # the top list is shared by everybody: compute it at most once per TTL
-        rows = hit[1]
-    else:
-        rows = [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip_until": r["vip_until"], "v": r["v"]} for r in
-                db.q(f"SELECT id,name,photo,vip_until,{col} AS v FROM users ORDER BY {col} DESC, id LIMIT ?", limit)]
-        _TOP[field] = (time.time(), rows)
-    mine = db.get_user(uid)[col]
-    rank = db.q1(f"SELECT COUNT(*)+1 AS r FROM users WHERE {col} > ?", mine)["r"]
-    return {
-        "rows": [{"id": r["id"], "name": r["name"], "photo": r["photo"], "vip": r["vip_until"] > time.time(), "v": r["v"]} for r in rows],
-        "rank": rank, "mine": mine,
-    }
+def top(kind: str, uid: int, limit: int = 20, period: str = "all") -> dict:
+    if period in PERIOD_DAYS and kind in USER_COL:
+        return _top_period(kind, uid, period, limit)
+    mine = rating_values(uid)[kind]
+    return {"rows": _top_all(kind, limit), "rank": rating_rank(kind, mine), "mine": mine}
+
+

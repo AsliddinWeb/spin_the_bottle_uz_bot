@@ -74,10 +74,22 @@ _db.execute("CREATE TABLE IF NOT EXISTS pair_kisses(day TEXT, lo INTEGER, hi INT
 _db.execute("CREATE TABLE IF NOT EXISTS weekly_awards(week TEXT, place INTEGER, uid INTEGER, hearts INTEGER, kisses INTEGER, ts INTEGER, PRIMARY KEY(week, place))")
 _db.execute("CREATE INDEX IF NOT EXISTS weekly_awards_uid ON weekly_awards(uid, week)")
 # indexes for the rating lists, the admin stats and the player list: without them every call scans all users (80-500 ms at 1M users)
-for _ix in ("users_kisses ON users(kisses DESC, id)", "users_gifts ON users(gifts_received DESC, id)",
-            "users_tracks ON users(tracks DESC, id)", "users_seen ON users(last_seen)", "users_created ON users(created)"):
+for _col in ("dj INTEGER DEFAULT 0", "emo INTEGER DEFAULT 0"):   # DJ points and tokens spent on gestures (rating counters)
+    try:
+        _db.execute(f"ALTER TABLE users ADD COLUMN {_col}")
+    except sqlite3.OperationalError:
+        pass
+for _col in ("dj INTEGER DEFAULT 0", "emo INTEGER DEFAULT 0"):
+    try:
+        _db.execute(f"ALTER TABLE stats_daily ADD COLUMN {_col}")
+    except sqlite3.OperationalError:
+        pass
+for _ix in ("users_kisses ON users(kisses DESC, id)", "users_dj ON users(dj DESC, id)", "users_emo ON users(emo DESC, id)",
+            "users_seen ON users(last_seen)", "users_created ON users(created)", "courtship_price ON courtship(price DESC, target)",
+            "courtship_suitor ON courtship(suitor, price)"):
     _db.execute(f"CREATE INDEX IF NOT EXISTS {_ix}")
-_db.execute("DROP INDEX IF EXISTS users_hearts")   # the "richest in hearts" rating was removed
+for _old in ("users_hearts", "users_gifts", "users_tracks"):   # indexes of rating lists that no longer exist
+    _db.execute(f"DROP INDEX IF EXISTS {_old}")
 for _col in ("birth TEXT DEFAULT ''", "smiles INTEGER DEFAULT 3", "role TEXT DEFAULT ''", "username TEXT DEFAULT ''", "warns INTEGER DEFAULT 0", "kick_free_ts INTEGER DEFAULT 0"):
     try:
         _db.execute(f"ALTER TABLE users ADD COLUMN {_col}")
@@ -159,7 +171,7 @@ def spend_hearts(uid: int, n: int) -> bool:
     return cur.rowcount == 1
 
 
-DAILY_COL = {"kisses": "kisses", "tracks": "tracks", "gifts_received": "gifts", "spins": "spins", "msgs": "msgs", "gifts_sent": "gifts_sent"}   # counters that also feed the day/week/month rating lists
+DAILY_COL = {"kisses": "kisses", "tracks": "tracks", "gifts_received": "gifts", "spins": "spins", "msgs": "msgs", "gifts_sent": "gifts_sent", "dj": "dj", "emo": "emo"}   # counters that also feed the day/week/month rating lists
 
 
 def pair_kiss(a: int, b: int) -> int:
@@ -170,7 +182,7 @@ def pair_kiss(a: int, b: int) -> int:
 
 
 def inc(uid: int, field: str, n: int = 1, daily: bool = True) -> None:
-    assert field in {"kisses", "gifts_sent", "gifts_received", "spins", "msgs", "chances", "streak", "tracks"}
+    assert field in {"kisses", "gifts_sent", "gifts_received", "spins", "msgs", "chances", "streak", "tracks", "dj", "emo"}
     x(f"UPDATE users SET {field}={field}+? WHERE id=?", n, uid)
     if daily and field in DAILY_COL:
         c = DAILY_COL[field]

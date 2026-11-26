@@ -65,8 +65,10 @@ c,_=call("/api/court",1,{"to":1}); ok("court self rejected",c==400)
 card=call("/api/user/2",1)[1]; ok("card shows suitor",card["suitor"] and card["suitor"]["id"]==3 and card["suitor"]["price"]==2,card.get("suitor"))
 c,r=call("/api/court",1,{"to":2}); ok("taken back with one heart more (3)",c==200 and r["price"]==3,r)
 c,_=call("/api/court/decline",3,{}); ok("decline without suitor rejected",c==400)
-c,_=call("/api/court/decline",2,{}); ok("target declines the suitor",c==200 and call("/api/user/2",1)[1]["suitor"] is None)
-c,r=call("/api/court",1,{"to":2}); ok("after decline the price starts again at 1",c==200 and r["price"]==1,r)
+h2=me(2)["hearts"]; c,r=call("/api/court/decline",2,{}); ok("refusing costs one heart more than the suitor paid (4)",c==200 and r["price"]==4 and me(2)["hearts"]==h2-4,(c,r.get("price")))
+card=call("/api/user/2",1)[1]; ok("after refusal: no suitor, worth 4, next costs 5",card["suitor"] is None and card["stats"]["dear"]==4 and card["court_next"]==5,card.get("stats"))
+c,r=call("/api/court",1,{"to":2}); ok("next courtship costs 5",c==200 and r["price"]==5,r)
+ok("influence counts the running courtship",call("/api/user/1",2)[1]["stats"]["influence"]==5)
 # compliments
 c,r=call("/api/compliment",1,{"to":2,"text":"hi"}); ok("compliment ok",c==200)
 c,_=call("/api/compliment",1,{"to":2,"text":"hi2"}); ok("compliment cooldown",c==400)
@@ -89,8 +91,9 @@ ok("tag task pays once",paid and me(1)["hearts"]==hh+10,(paid,me(1)["hearts"]-hh
 c,_=call("/api/tagtask/vote",1,{"to":10,"tag":"fun"}); ok("tag re-vote rejected",c==400)
 c,_=call("/api/tagtask/vote",1,{"to":11,"tag":"bad"}); ok("bad tag rejected",c==400)
 # ratings
-for k in ("kisses","gifts","tracks","court"): c,r=call(f"/api/ratings/{k}",1); ok(f"rating {k}",c==200 and "rows" in r and "rank" in r)
+for k in ("kisses","dj","dear","influence","emotion"): c,r=call(f"/api/ratings/{k}",1); ok(f"rating {k}",c==200 and "rows" in r and "rank" in r)
 c,_=call("/api/ratings/hearts",1); ok("hearts rating removed",c==404)
+c,_=call("/api/ratings/court",1); ok("old rating names removed",c==404)
 c,_=call("/api/ratings/xyz",1); ok("rating bad kind 404",c==404)
 # notify
 ok("notify off",call("/api/notify",1,{"on":False})[1]["notify"]==False)

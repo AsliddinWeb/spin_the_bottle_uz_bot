@@ -952,17 +952,14 @@ async function openProfile(uid) {
       <div class="pb">
         ${rankLine(c.kisses, c.rank || 0)}
         ${trophyChips(c.trophies)}
-        <div class="stat k"><i>💋</i>${c.kisses.toLocaleString("ru")}</div>
-        <div class="stat m"><i>🎵</i>${c.tracks.toLocaleString("ru")}${c.dj ? ` <small class="djb">DJ ${c.dj}</small>` : ""}</div>
-        <div class="stat s"><i>😊</i>${c.gifts_received.toLocaleString("ru")}</div>
-        ${c.gifts.length ? `<div class="gbox">${c.gifts.slice(0, more ? 40 : 8).map(g => `<span class="gchip">${giftIcon(g.emoji)}<b>${g.n}</b></span>`).join("")}</div>` : ""}
-        ${more ? `<div class="stat g"><i>🏅</i>${c.ach.length}</div><div class="stat s"><i>🎁</i>${c.gifts_sent.toLocaleString("ru")}</div>
-          ${c.recent.length ? `<div class="rcv">${c.recent.map(r => `<span title="${esc(r.name)}">${giftIcon(r.emoji)}<small>${esc(r.name.slice(0, 9))}</small></span>`).join("")}</div>` : ""}` : ""}
+        ${(more ? RATINGS : ["kisses", "dj", "emotion"]).map(k => `<div class="pst ${k}">${RT_ICON[k]}<b>${num(c.stats[k])}</b>${c.ranks[k] ? `<small>${esc(t("rt_place", { n: num(c.ranks[k]) }))}</small>` : ""}</div>`).join("")}
         <div class="chev"><button id="pf-more">${more ? "︿" : "﹀"}</button></div>
+        ${more && c.gifts.length ? `<div class="gbox">${c.gifts.slice(0, 40).map(g => `<span class="gchip">${giftIcon(g.emoji)}<b>${g.n}</b></span>`).join("")}</div>` : ""}
         <div class="suit">
           <div class="sa">${sp ? (sp.photo ? `<img src="${esc(sp.photo)}" referrerpolicy="no-referrer">` : esc(initials(sp.name))) : "♡"}</div>
-          <div class="si">${sp ? `<div class="l">${esc(t("courting"))} <b>${esc(sp.name)}</b></div><div class="h">❤ ${sp.price}</div>` : `<div class="l">${t("court_none")}</div>`}
-            ${me ? (sp ? `<button class="btn out" id="pf-decl">${t("court_decline")}</button>` : "") : sp && sp.id === ME.id ? `<button class="btn" disabled>${t("court_mine")}</button>` : `<button class="btn" id="pf-court">${t("court_btn")} · ❤${sp ? sp.price + 1 : 1}</button>`}</div>
+          <div class="si">${sp ? `<div class="l">${esc(t("courting"))} <b>${esc(sp.name)}</b></div>` : `<div class="l">${t("court_none")}</div>`}
+            <div class="h">${RT_ICON.dear}<b>${num(c.court_next)}</b>${c.ranks.dear ? `<small>${esc(t("rt_place", { n: num(c.ranks.dear) }))}</small>` : ""}</div>
+            ${me ? (sp ? `<button class="btn out" id="pf-decl">${t("court_decline")}</button>` : "") : sp && sp.id === ME.id ? `<button class="btn" disabled>${t("court_mine")}</button>` : `<button class="btn" id="pf-court">${t("court_btn")}</button>`}</div>
         </div>
         <div class="acts">
           ${me ? `<button class="a4" id="pf-edit" style="width:100%;border-radius:36px">${t("profile_settings")}</button>` :
@@ -977,7 +974,8 @@ async function openProfile(uid) {
     on("#pf-mail", () => { m.close(); openPm(c); });
     on("#pf-edit", () => { m.close(); profileModal(false); });
     on("#pf-decl", async () => {
-      try { await api("/api/court/decline", "POST"); c = await api("/api/user/" + uid); render(); } catch { toast(t("err")); }
+      try { const r = await api("/api/court/decline", "POST"); ME = r.me; renderMe(); c = await api("/api/user/" + uid); render(); }
+      catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(t("err")); }
     });
     on("#pf-court", async () => {
       try { const r = await api("/api/court", "POST", { to: uid }); ME = r.me; renderMe(); c = await api("/api/user/" + uid); sfx.gift(); render(); }
@@ -1412,22 +1410,39 @@ function openAchievements() {
   render();
 }
 
+// rating icons: our own drawings in the places of the original's five
+const RT_ICON = {
+  kisses: `<svg viewBox="0 0 64 44"><path d="M4 22C13 5 25 6 32 13C39 6 51 5 60 22C51 37 42 41 32 41C22 41 13 37 4 22Z" fill="#e8382d"/><path d="M6 22C20 28 44 28 58 22" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.6" stroke-linecap="round"/></svg>`,
+  dj: `<svg viewBox="0 0 48 48" fill="#c8479f"><path d="M18 8l24-5v28.500a7.500 6.500 0 1 1-4-5.700V13l-16 3.500v21a7.500 6.500 0 1 1-4-5.700z"/></svg>`,
+  dear: `<svg viewBox="0 0 48 44"><path d="M24 42C8 31 2 23 2 14C2 7 7 2 13.500 2C18 2 22 5 24 9C26 5 30 2 34.500 2C41 2 46 7 46 14C46 23 40 31 24 42Z" fill="#ea5a2c"/></svg>`,
+  influence: `<svg viewBox="0 0 64 46"><path d="M42 41C30 32 25 26 25 19C25 13 29 9 34 9C38 9 41 11 42 14C43 11 46 9 50 9C56 9 61 13 61 19C61 26 54 32 42 41Z" fill="#c9431f"/><path d="M22 38C10 29 3 22 3 14C3 8 7 4 13 4C17 4 20 6 22 10C24 6 27 4 31 4C37 4 41 8 41 14C41 22 34 29 22 38Z" fill="#ea6a2c" stroke="#fff" stroke-width="2.4"/></svg>`,
+  emotion: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#ffc12e"/><path d="M12 18q4-6 8 0M28 18q4-6 8 0" fill="none" stroke="#7a3d06" stroke-width="3.400" stroke-linecap="round"/><path d="M10 27h28c-2 10-8 15-14 15S12 37 10 27z" fill="#7a3d06"/><path d="M14 29h20c-1 3-3 4-10 4s-9-1-10-4z" fill="#fff"/></svg>`,
+};
+const RATINGS = ["kisses", "dj", "dear", "influence", "emotion"], RT_PERIODS = ["kisses", "dj", "emotion"];
+const num = v => (v || 0).toLocaleString("ru");
 async function openRatings() {
   const m = openModal("", { cls: "rate" }); let kind = "kisses", period = "all";
-  const tabs = [["kisses", "💋", "most_kissed"], ["tracks", "🎵", "most_music"], ["court", "💞", "most_court"], ["gifts", "😊", "most_gifts"]];
+  const photo = p => `<div class="rt2-ph">${p ? `<img src="${esc(p)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div>`;
   const load = async () => {
-    let r; const pOK = ["kisses", "tracks", "gifts"].includes(kind); if (!pOK) period = "all";
-    try { r = await api(`/api/ratings/${kind}?period=${period}`); } catch { return; }
-    const cur = tabs.find(x => x[0] === kind);
-    m.set(`<div class="rt-top"><button class="rt-q" id="rt-q">?</button><div class="rt-ic">${tabs.map(([k, i]) => `<button data-k="${k}" class="${k === kind ? "on" : ""}">${i}</button>`).join("")}</div></div>
-      <div class="rt-sub"><b>${t(cur[2])}</b>${pOK ? `<select class="rt-per" id="rt-per">${[["day", "period_day"], ["week", "period_week"], ["month", "period_month"], ["all", "all_time"]].map(([k, key]) => `<option value="${k}" ${k === period ? "selected" : ""}>${esc(t(key))}</option>`).join("")}</select>` : `<span class="rt-per">${t("all_time")}</span>`}</div>
-      <div class="rt-list">${r.rows.map((x, i) => `<div class="rt2-row"><div class="rt2-ph">${x.photo ? `<img src="${esc(x.photo)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div><b><em>${i + 1}.</em> ${esc(x.name)}${x.vip ? " 👑" : ""}</b><span>${cur[1]} ${x.v.toLocaleString("ru")}</span></div>`).join("")}</div>
-      <div class="rt2-row me"><div class="rt2-ph">${ME.photo ? `<img src="${esc(ME.photo)}" referrerpolicy="no-referrer">` : ""}</div><b><em>${r.rank}.</em> ${esc(ME.name)}</b><span>${cur[1]} ${(r.mine || 0).toLocaleString("ru")}</span></div>`);
+    const pOK = RT_PERIODS.includes(kind); if (!pOK) period = "all";
+    let r; try { r = await api(`/api/ratings/${kind}?period=${period}`); } catch { return; }
+    const val = v => `<span class="rt-v ${kind}">${RT_ICON[kind]}<i>${num(v)}</i></span>`;
+    m.set(`<div class="rt-top"><button class="rt-q" id="rt-q">?</button><div class="rt-ic">${RATINGS.map(k => `<button data-k="${k}" class="${k === kind ? "on" : ""}">${RT_ICON[k]}</button>`).join("")}</div></div>
+      <div class="rt-sub"><b>${t("rt_" + kind)}</b>${pOK ? `<select class="rt-per" id="rt-per">${[["day", "period_day"], ["week", "period_week"], ["month", "period_month"], ["all", "all_time"]].map(([k, key]) => `<option value="${k}" ${k === period ? "selected" : ""}>${esc(t(key))}</option>`).join("")}</select>` : ""}</div>
+      <div class="rt-list">${r.rows.map((x, i) => `<div class="rt2-row" data-u="${x.id}">${photo(x.photo)}<b><em>${i + 1}.</em> ${esc(x.name)}</b>${val(x.v)}</div>`).join("") || `<p class="rt-empty">${t("rt_empty")}</p>`}</div>
+      <div class="rt2-row me">${photo(ME.photo)}<b>${r.rank ? `<em>${r.rank}.</em> ` : ""}${esc(ME.name)}</b>${val(r.mine)}</div>`);
     $$("[data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; load(); });
+    $$("[data-u]", m.el).forEach(row => row.onclick = () => openProfile(+row.dataset.u));
     const ps = $("#rt-per", m.el); if (ps) ps.onchange = () => { period = ps.value; load(); };
-    $("#rt-q", m.el).onclick = () => toast(t(cur[2]) + (kind === "kisses" && CFG.weekly ? " · " + t("weekly_hint", { a: CFG.weekly.rewards[0], b: CFG.weekly.rewards[1], c: CFG.weekly.rewards[2], n: CFG.weekly.min }) : ""), 6000);
+    $("#rt-q", m.el).onclick = () => openRatingRule(kind);
   };
   load();
+}
+function openRatingRule(kind) {   // the "?" window: how points are earned
+  const extra = kind === "kisses" && CFG.weekly ? " " + t("weekly_hint", { a: CFG.weekly.rewards[0], b: CFG.weekly.rewards[1], c: CFG.weekly.rewards[2], n: CFG.weekly.min }) : "";
+  const m = openModal(`<h2>${t("rt_" + kind)}</h2><p class="rt-rule">${esc(t("rtr_" + kind) + extra)}</p><p class="rt-rule">${esc(t("rt_top_rule"))}</p>
+    <div class="center"><button class="btn" id="rt-ok">${t("got_it")}</button></div>`, { cls: "rule" });
+  $("#rt-ok", m.el).onclick = m.close;
 }
 
 function openSettings() {

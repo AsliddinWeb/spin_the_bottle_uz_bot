@@ -351,7 +351,7 @@ async def vip_collect(u=Depends(auth.current_user)):
 
 @app.get("/api/ratings/{kind}")
 async def ratings(kind: str, period: str = "all", u=Depends(auth.current_user)):
-    if kind not in ("kisses", "gifts", "tracks", "court") or period not in ("all", "day", "week", "month"):
+    if kind not in economy.RATINGS or period not in ("all", "day", "week", "month"):
         raise HTTPException(404)
     return economy.top(kind, u["id"], period=period)
 
@@ -394,9 +394,11 @@ async def court(b: Target, u=Depends(auth.current_user)):
 
 @app.post("/api/court/decline")
 async def court_decline(u=Depends(auth.current_user)):
-    if not economy.decline_court(u["id"]):
-        raise HTTPException(400, "no_suitor")
-    return {"ok": True}
+    r = economy.decline_court(u["id"])
+    if isinstance(r, str):
+        raise HTTPException(400, r)
+    await hub.push_me(u["id"])
+    return {"price": r, "me": economy.me_payload(u["id"])}
 
 
 @app.post("/api/compliment")

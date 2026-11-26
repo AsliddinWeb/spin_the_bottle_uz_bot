@@ -33,3 +33,6 @@ Bitta so'rov (1M bazada): reyting 85 → 14 ms, tag task 90 → 29 ms, admin sta
 - Sovg'a, musiqa (YouTube qidiruv), rasm yuklash, g'ildirak, do'kon yuklamasi.
 - Bir vaqtda ko'p yozuv (SQLite bitta yozuvchi): kiss/hediya/xarid oqimi baland bo'lganda.
 - Bitta jarayon = bitta nosozlik nuqtasi va bitta yadro; 1 vCPU serverda natija Mac'dagidan ~2-3x yomon bo'ladi.
+
+## Reyting o'rinlari (2026-11-26)
+Profil ochilganda 5 reytingdagi o'rin hisoblanadi; natija (reyting, ochko) bo'yicha 5 daqiqa keshlanadi. 1M foydalanuvchida yangi 5 reyting bilan yuk testi hali o'tkazilmagan.

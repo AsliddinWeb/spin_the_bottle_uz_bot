@@ -1172,3 +1172,49 @@ select.rt-per,.rt-per{font-size:min(15px,3.8vw);margin-left:auto}
 .modal.rate .rt-list{flex:1 1 auto;min-height:0;max-height:calc(var(--vh)*58)}
 .modal.rate .mb>*:not(.rt-list){flex:0 0 auto}
 
+/* ================ ratings and profile counters, sized from the original (683 px = 100u) */
+.rt-ic{gap:calc(var(--u)*5.4);align-items:center}
+.rt-ic button{width:calc(var(--u)*7);height:calc(var(--u)*7);padding:0;display:grid;place-items:center;filter:grayscale(1) brightness(1.15);opacity:.42}
+.rt-ic button svg{width:100%;height:100%}
+.rt-ic .on{filter:none;opacity:1;transform:scale(1.1)}
+.rt-sub>b{font-size:max(13px,calc(var(--u)*3.6));font-weight:600}
+.rt2-row{gap:calc(var(--u)*2.4);padding:calc(var(--u)*.7) calc(var(--u)*3.4);cursor:pointer}
+.rt2-ph{width:calc(var(--u)*10.4);height:calc(var(--u)*10.4);flex:0 0 calc(var(--u)*10.4);border-radius:calc(var(--u)*1.2)}
+.rt2-row b{font-size:max(12.5px,calc(var(--u)*3.5))}
+.rt2-row .rt-v{display:flex;align-items:center;gap:calc(var(--u)*1.6);font-size:max(12px,calc(var(--u)*3.4))}
+.rt2-row .rt-v svg{width:calc(var(--u)*6.6);height:calc(var(--u)*5.4)}
+.rt-v i{font-style:normal;font-weight:800;color:#d6462a}
+.rt-v.dj i{color:#a84b8c}.rt-v.emotion i{color:#f08a1d}.rt-v.influence i{color:#b73a1c}
+.rt2-row.me{margin:calc(var(--u)*1.4) calc(var(--u)*2.6) calc(var(--u)*2.4);cursor:default}
+.rt-empty{text-align:center;color:#777;padding:calc(var(--u)*8) 0}
+.modal.rule .rt-rule{text-align:center;margin:0 0 calc(var(--u)*3);font-size:max(13px,calc(var(--u)*3.5));line-height:1.35}
+.pst{display:flex;align-items:center;gap:calc(var(--u)*2.2);min-height:calc(var(--u)*6.7)}
+.pst svg{width:calc(var(--u)*5.4);height:calc(var(--u)*4.4);flex:0 0 auto}
+.pst b{font-size:max(12.5px,calc(var(--u)*3.4));color:#d6462a}
+.pst.dj b{color:#a84b8c}.pst.emotion b{color:#f08a1d}.pst.influence b{color:#b73a1c}.pst.dear b{color:#ea5a2c}
+.pst small,.suit .si .h small{color:#a9a9a9;font-weight:400;font-size:max(10.5px,calc(var(--u)*2.9))}
+.suit .si .h{display:flex;align-items:center;gap:calc(var(--u)*1.6)}
+.suit .si .h svg{width:calc(var(--u)*5);height:calc(var(--u)*4.4)}
+
+/* ---------------- profile card sized from the original (80u wide, square photo), shrinking on short screens so the buttons stay visible */
+.modal.prof{width:calc(var(--u)*80);max-width:none;max-height:calc(var(--vh)*97)}
+.modal.prof .ph{height:max(calc(var(--vh)*24),min(calc(var(--u)*80),calc(var(--vh)*100 - var(--u)*94)))!important}
+.modal.prof .pb{padding:calc(var(--u)*1.4) calc(var(--u)*4) calc(var(--u)*2.4)}
+.modal.prof .rk{margin:0 0 calc(var(--u)*.6);gap:calc(var(--u)*2.2)}
+.modal.prof .rk-e{font-size:calc(var(--u)*5.6)}
+.modal.prof .rk-in b{font-size:max(12.5px,calc(var(--u)*3.4))}
+.modal.prof .rk-in small{font-size:max(10px,calc(var(--u)*2.6))}
+.modal.prof .pst{min-height:calc(var(--u)*5.8)}
+.modal.prof .chev{margin:calc(var(--u)*.4) 0 calc(var(--u)*.8)}
+.modal.prof .chev button{width:calc(var(--u)*8.6);height:calc(var(--u)*3.8);font-size:calc(var(--u)*3);line-height:1}
+.modal.prof .suit{gap:calc(var(--u)*2.8);padding:0 0 calc(var(--u)*1.8)}
+.modal.prof .suit .sa{width:calc(var(--u)*16);height:calc(var(--u)*16);flex:0 0 calc(var(--u)*16)}
+.modal.prof .suit .si{gap:calc(var(--u)*.8)}
+.modal.prof .suit .si .l{font-size:max(12.5px,calc(var(--u)*3.4))}
+.modal.prof .suit .si .h{font-size:max(12.5px,calc(var(--u)*3.4))}
+.modal.prof .suit .btn{font-size:max(12.5px,calc(var(--u)*3.4));padding:calc(var(--u)*1) calc(var(--u)*3.4);min-height:0}
+.modal.prof .acts{padding-top:calc(var(--u)*2);gap:calc(var(--u)*2)}
+.modal.prof .acts button{width:calc(var(--u)*12.4);height:calc(var(--u)*12.4)}
+.modal.prof .acts #pf-edit{width:100%;font-size:max(13px,calc(var(--u)*3.8))}
+.modal.prof .acts svg{width:calc(var(--u)*7.4);height:calc(var(--u)*7.4)}
+
