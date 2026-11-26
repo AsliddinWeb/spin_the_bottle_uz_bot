@@ -163,19 +163,34 @@ function openReport(uid) {
 }
 
 // ------------------------------------------------------------ boot
+// The entry title is one SVG: two big lines with a small word between them, proportions measured on the original (550 units wide).
+const BOOT_FONT = { family: "'Nunito Title'", weight: 1000, style: "italic", upright: 11 };   // upright: skew (deg) that straightens the italic face
 (function bootTitle() {
   const T = { ru: ["Целуй", "и", "Знакомься"], uz: ["O'p", "va", "Tanishing"], en: ["Kiss", "&", "Meet"] };
   const l = (window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code || "").slice(0, 2);
-  const x = T[l] || T.ru, b = document.querySelector("#boot");
-  b.querySelector(".b1").textContent = x[0]; b.querySelector(".b2").textContent = x[1]; b.querySelector(".b3").textContent = x[2];
+  const x = T[l] || T.ru, el = document.querySelector("#boot .btitle"), tan = Math.tan(BOOT_FONT.upright * Math.PI / 180);
+  const [y2, y3] = x === T.ru ? [122, 198] : [122, 218];   // Latin second lines have tall letters (T, h), so they sit lower
+  const line = (i, y, size, max) => `<text x="${(275 - (y - size * .35) * tan).toFixed(1)}" y="${y}" font-size="${size}" data-max="${max}">${x[i]}</text>`;
+  el.setAttribute("aria-label", x.join(" "));
+  el.innerHTML = `<svg viewBox="0 -10 550 ${y3 + 42}" aria-hidden="true"><defs><radialGradient id="btg" gradientUnits="userSpaceOnUse" cx="250" cy="110" r="300"><stop offset="0" stop-color="#fbd257"/><stop offset=".5" stop-color="#f6ba4a"/><stop offset="1" stop-color="#ee9441"/></radialGradient></defs>
+    <g transform="skewX(${BOOT_FONT.upright})" fill="url(#btg)" stroke="url(#btg)" stroke-width="6" stroke-linejoin="round" text-anchor="middle" style="font-family:${BOOT_FONT.family},'Arial Black',system-ui,sans-serif;font-weight:${BOOT_FONT.weight};font-style:${BOOT_FONT.style}">${line(0, 90, 128, 345)}${line(2, y3, 128, 535)}<g stroke="rgba(120,92,18,.5)" stroke-width="15" fill="none">${line(1, y2, 58, 120)}</g>${line(1, y2, 58, 120)}</g></svg>`;
+  fitBootTitle();
+  document.fonts?.load(`${BOOT_FONT.style} ${BOOT_FONT.weight} 100px ${BOOT_FONT.family}`, x.join("")).then(fitBootTitle, () => {});
 })();
+function fitBootTitle() {   // squeeze a line only when it is wider than its place
+  document.querySelectorAll("#boot .btitle text").forEach(t => {
+    t.removeAttribute("textLength");
+    const max = +t.dataset.max;
+    if (t.getComputedTextLength() > max) { t.setAttribute("textLength", max); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); }
+  });
+}
 // Entry sequence (as in the original): green screen with a progress bar -> title -> table.
 const bootT0 = performance.now();
 function bootProgress(p) { $("#boot").style.setProperty("--p", p + "%"); }
 function bootDone() {
   const el = $("#boot"); bootProgress(100);
   setTimeout(() => {
-    el.className = "tt";                                        // bar off, title on
+    fitBootTitle(); el.className = "tt";                        // bar off, title on
     setTimeout(() => { el.classList.add("felt"); setTimeout(() => el.classList.add("off"), 280); }, 850);
   }, Math.max(0, 650 - (performance.now() - bootT0)) + 120);
 }
