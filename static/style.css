@@ -1218,3 +1218,15 @@ select.rt-per,.rt-per{font-size:min(15px,3.8vw);margin-left:auto}
 .modal.prof .acts #pf-edit{width:100%;font-size:max(13px,calc(var(--u)*3.8))}
 .modal.prof .acts svg{width:calc(var(--u)*7.4);height:calc(var(--u)*7.4)}
 
+/* ---------------- found on the phone, 2026-11-26 */
+/* side menu, the original's size */
+.pop{min-width:calc(var(--u)*41);padding:calc(var(--u)*.5) 0;border-radius:calc(var(--u)*2.6)}
+.pop button{gap:calc(var(--u)*2.3);height:max(38px,calc(var(--u)*9.8));padding:0 calc(var(--u)*3.4) 0 calc(var(--u)*2.4);font-size:max(13.5px,calc(var(--u)*3.65));font-weight:500;white-space:nowrap}
+.pop .ic{width:calc(var(--u)*5.6);font-size:calc(var(--u)*4.6);line-height:1}
+/* the rating window keeps one height, so the tabs and "?" never move */
+.modal.rate{height:min(calc(var(--u)*146),calc(var(--vh)*86))}
+.modal.rate .rt-list{max-height:none}
+/* iPhone: the input row sits above the home indicator */
+html.ios #chat-form{min-height:calc(var(--u)*14.4);padding-bottom:max(calc(var(--u)*4.4),env(safe-area-inset-bottom))}
+html.ios #newmsg{bottom:calc(var(--u)*17)}
+

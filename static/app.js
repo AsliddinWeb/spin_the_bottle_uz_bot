@@ -16,6 +16,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const forced = new URLSearchParams(location.search).get("layout");
 const MOBILE = forced ? forced === "top" : !!((tg && ["ios", "android", "android_x"].includes(tg.platform)) || (!tg && matchMedia("(pointer:coarse)").matches));
 if (MOBILE) document.documentElement.classList.add("top");
+if (tg && tg.platform === "ios") document.documentElement.classList.add("ios");
 const CENTER = MOBILE ? [50.1, 56.4] : [56, 49.5];
 const SEATS_RAW = MOBILE
   ? [[17.6, 26.3], [39.4, 21.8], [60.9, 21.8], [83.1, 26.7], [86.5, 46.2], [86.5, 65.4], [83.1, 85.3], [61.2, 89.5], [38.8, 89.5], [17.5, 85.3], [13.3, 65.4], [13.3, 46.2]]
@@ -1268,8 +1269,10 @@ function openMenu() {
   ov.innerHTML = `<div class="pop">${rows.map(([k, i, n]) => `<button data-m="${k}"><span class="ic">${i}</span>${t(n)}</button>`).join("")}</div>`;
   $("#modal-root").appendChild(ov);
   const pop = $(".pop", ov);
-  pop.style.left = Math.min(r.right + 10, innerWidth - pop.offsetWidth - 8) + "px";
-  pop.style.top = Math.max(8, Math.min(r.top - 70, innerHeight - pop.offsetHeight - 8)) + "px";
+  const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) * 2.9;
+  const left = MOBILE ? r.left + r.width / 2 - pop.offsetWidth / 2 : r.right + 10, top = MOBILE ? r.bottom + gap : r.top + r.height / 2 - pop.offsetHeight / 2;
+  pop.style.left = Math.max(8, Math.min(left, innerWidth - pop.offsetWidth - 8)) + "px";
+  pop.style.top = Math.max(8, Math.min(top, innerHeight - pop.offsetHeight - 8)) + "px";
   const map = { ach: openAchievements, rate: openRatings, bot: () => openStore("bottle"), dec: () => openStore("frame"), boo: () => openStore("booster") };
   ov.addEventListener("click", e => { const b = e.target.closest("[data-m]"); ov.remove(); if (b) map[b.dataset.m](); });
 }
@@ -1418,11 +1421,15 @@ const RT_ICON = {
   influence: `<svg viewBox="0 0 64 46"><path d="M42 41C30 32 25 26 25 19C25 13 29 9 34 9C38 9 41 11 42 14C43 11 46 9 50 9C56 9 61 13 61 19C61 26 54 32 42 41Z" fill="#c9431f"/><path d="M22 38C10 29 3 22 3 14C3 8 7 4 13 4C17 4 20 6 22 10C24 6 27 4 31 4C37 4 41 8 41 14C41 22 34 29 22 38Z" fill="#ea6a2c" stroke="#fff" stroke-width="2.4"/></svg>`,
   emotion: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#ffc12e"/><path d="M12 18q4-6 8 0M28 18q4-6 8 0" fill="none" stroke="#7a3d06" stroke-width="3.400" stroke-linecap="round"/><path d="M10 27h28c-2 10-8 15-14 15S12 37 10 27z" fill="#7a3d06"/><path d="M14 29h20c-1 3-3 4-10 4s-9-1-10-4z" fill="#fff"/></svg>`,
 };
+function retryImg(img) {   // one more try, then leave the plain placeholder
+  if (img.dataset.again) return img.remove();
+  img.dataset.again = "1"; setTimeout(() => { img.src = img.getAttribute("src"); }, 1500);
+}
 const RATINGS = ["kisses", "dj", "dear", "influence", "emotion"], RT_PERIODS = ["kisses", "dj", "emotion"];
 const num = v => (v || 0).toLocaleString("ru");
 async function openRatings() {
   const m = openModal("", { cls: "rate" }); let kind = "kisses", period = "all";
-  const photo = p => `<div class="rt2-ph">${p ? `<img src="${esc(p)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div>`;
+  const photo = p => `<div class="rt2-ph">${p ? `<img src="${esc(p)}" referrerpolicy="no-referrer" onerror="retryImg(this)">` : ""}</div>`;
   const load = async () => {
     const pOK = RT_PERIODS.includes(kind); if (!pOK) period = "all";
     let r; try { r = await api(`/api/ratings/${kind}?period=${period}`); } catch { return; }
