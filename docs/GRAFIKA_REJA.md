@@ -27,7 +27,7 @@ Qo'shimcha: 🔄 tugmasidagi raqam sanab kamayadi (7→6→5→2) — sanoq ekan
 - [x] Naqsh: o'zimiz chizgan `static/boot-pattern.svg`
 - [x] Progress bar: ekran o'rtasida, soyasiz
 - [x] Sarlavha: bitta SVG (uz / ru / en), tik, gradient, yumshoq soya; originaldagi o'lcham va joy
-- [ ] Sarlavha shrifti: hozir Nunito (tiklangan). Originalga yaqinrog'i Lobster (SIL OFL) — yuklab olishga ruxsat kerak
+- [x] Sarlavha shrifti: Lobster (SIL OFL), `static/fonts/lobster-*.woff2`
 - [ ] Bosqichlar davomiyligi: ekran yozuvi bilan solishtirilmagan
 - [x] Telegram kutish belgisi: `static/tg-loading.svg` — egasi yuklaydi: @BotFather /mybots → bot → Bot Settings → Configure Mini App → Enable Mini App (yuklanish ekrani belgisi va ranglari). BotFather faylni qabul qilishi tekshirilmagan
 - [x] /start rasmi: o'z chizmamiz `static/banner.svg` → `static/banner.png` (Chrome headless, 1000×560)
