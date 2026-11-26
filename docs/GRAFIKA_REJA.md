@@ -26,7 +26,7 @@ Qo'shimcha: 🔄 tugmasidagi raqam sanab kamayadi (7→6→5→2) — sanoq ekan
 - [x] Fon: toza yashil, sarlavha ekranida markazi yoriqroq (jigarrang shovqin olib tashlandi; loader uslublari bitta blokka yig'ildi)
 - [x] Naqsh: o'zimiz chizgan `static/boot-pattern.svg`
 - [x] Progress bar: ekran o'rtasida, soyasiz
-- [x] Sarlavha: bitta SVG (uz / ru / en), tik, gradient, yumshoq soya; originaldagi o'lcham va joy
+- [x] Sarlavha: tayyor rasm `static/title-{uz,ru,en}.webp` (`python3 tools/make_titles.py` chizadi). Jonli SVG matn Telegram (WebKit) da ikki chetidan kesilgan edi, 2026-11-26 da egasining Telegram'ida ko'rildi
 - [x] Sarlavha shrifti: Lobster (SIL OFL), `static/fonts/lobster-*.woff2`
 - [ ] Bosqichlar davomiyligi: ekran yozuvi bilan solishtirilmagan
 - [x] Telegram kutish belgisi: `static/tg-loading.svg` — egasi yuklaydi: @BotFather /mybots → bot → Bot Settings → Configure Mini App → Enable Mini App (yuklanish ekrani belgisi va ranglari). BotFather faylni qabul qilishi tekshirilmagan
