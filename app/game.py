@@ -169,6 +169,8 @@ class Table:
             p = self.players.get(kw.get(key))
             if p and not kw.get(out):
                 kw[out] = p.photo
+            if p and key == "uid":
+                kw.setdefault("g", p.gender)   # the name is pink for women and blue for men
         self.chat_id += 1
         m = {"t": "chat", "id": self.chat_id, "k": kind, "ts": int(time.time()), **kw}
         self.chat.append(m)

@@ -342,7 +342,7 @@ function bindUi() {
     if (Date.now() - lastWaitToast > 2200) { lastWaitToast = Date.now(); toast(t("not_your_turn", { n: nameOf(T.turn) })); }   // "X is spinning right now, wait for your turn"
   };
   $("#dj-fab").onclick = e => { const b = e.target.closest("[data-k]"); if (b) b.dataset.k === "video" ? openMusicPicker("music_now", "video") : openMusicPicker(b.dataset.k); };
-  const range = $("#pl-range"); range.value = ls.get("musicVol", "0");
+  const range = $("#pl-range"); range.value = ls.get("musicVol", "0"); applyVolume();
   range.oninput = () => { ls.set("musicVol", range.value); applyVolume(); };
   $("#pl-icon").onclick = () => { range.value = parseInt(range.value) ? 0 : 60; ls.set("musicVol", range.value); applyVolume(); };
   setInterval(tick, 250);
@@ -700,15 +700,25 @@ function flyGift(m) {
     el.remove(); delete gwaitUntil[m.to_uid]; eb.classList.remove("gwait"); eb.classList.add("gland"); landFx(eb, m.gift); setTimeout(() => eb.classList.remove("gland"), 560);
   };
 }
+// pictures used in chat lines
+const CHEV_SVG = `<svg viewBox="0 0 20 18"><path d="M3 3l6 6-6 6M11 3l6 6-6 6" fill="none" stroke="#8cc47a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const NOTE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#f0a24a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v12.500"/><ellipse cx="6" cy="18" rx="3" ry="2.600"/><ellipse cx="17" cy="15.500" rx="3" ry="2.600"/></svg>`;
+const nameColor = m => m.g === "f" ? "#f2789f" : m.g === "m" ? "#58a6e4" : `hsl(${chatHue(m.name)} 62% 42%)`;
+// "Show translation" appears only under messages written in another alphabet than the reader's language
+const foreign = text => { const cyr = /[\u0400-\u04ff]/.test(text), lat = /[a-z]/i.test(text); return lang === "ru" ? lat && !cyr : cyr; };
+const onlyEmoji = text => { try { const s = text.replace(/\s/g, ""); return s.length > 0 && s.length <= 20 && /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\u200d|\ufe0f)+$/u.test(s); } catch { return false; } };
 function addChat(m) {
   const box = $("#chat"), near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
   const d = document.createElement("div");
   if (m.k === "msg") {
     if (m.uid !== ME.id) sfx.chat();
-    d.className = "msg";
-    d.innerHTML = `${miniAv(m.photo, m.name)}<div class="bubble"><span class="who" style="color:hsl(${chatHue(m.name)} 62% 42%)">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${m.text.length > 3 ? `<span class="tr">${t("translate")}</span>` : ""}</div>`;
+    const big = onlyEmoji(m.text);   // a message of smileys alone is shown large, without a bubble
+    d.className = big ? "msg big" : "msg";
+    d.innerHTML = `${miniAv(m.photo, m.name)}` + (big ? `<span class="bigemo">${esc(m.text)}</span>`
+      : `<div class="bubble"><span class="who" style="color:${nameColor(m)}">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${foreign(m.text) ? `<span class="tr">${t("translate")}</span>` : ""}</div>`);
     const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
-    $(".who", d).onclick = reply; $(".av-mini", d).onclick = reply;
+    if (!big) $(".who", d).onclick = reply;
+    $(".av-mini", d).onclick = reply;
     const tr = $(".tr", d);
     if (tr) tr.onclick = () => openLink(`https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(m.text)}&op=translate`);
   } else if (m.k === "gift") {
@@ -727,10 +737,10 @@ function addChat(m) {
       giftSound(m); if (near) box.scrollTop = box.scrollHeight; return;
     }
     d.className = "msg"; d.dataset.gk = key; d.dataset.to = String(m.to_uid);
-    d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">››</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
+    d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<div class="bubble giftline"><span class="g">${giftIcon(m.gift)}</span><span class="ar">${CHEV_SVG}</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}${m.blocked ? `<small>🛡️ ${t("ev_gift_blocked")}</small>` : ""}</div>`;
     giftSound(m);
   } else if (m.k === "kiss") {
-    d.className = "msg ev"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="kmark"><i>💋</i> <b>x${m.n || 1}</b> »</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}`;
+    d.className = "msg ev"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="kmark"><i>💋</i> <b>x${m.n || 1}</b></span><span class="ar">${CHEV_SVG}</span>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}`;
   } else if (m.k === "court") {
     d.className = "msg ev";
     d.innerHTML = `${miniAv(m.photo, m.name)}<span class="ico">💝</span><div>${esc(t("court_ev", { n: m.price }))}</div>${miniAv(m.to_photo || seatPhoto(m.to_uid), m.to_name)}`;
@@ -752,7 +762,7 @@ function addChat(m) {
     boostFx(m.boost);
     d.className = "msg ev"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="ico">${BOOST_E[m.boost] || "✨"}</span><div>${esc(t("ev_" + m.boost, { n: m.name }))}</div>`;
   } else if (m.k === "music") {
-    d.className = "msg ev"; d.innerHTML = `<span class="ico">♪</span><div>${esc(m.title)}<small style="display:block;color:#888">${esc(m.name)}</small></div>`;
+    d.className = "msg ev mus"; d.innerHTML = `${miniAv(m.photo || seatPhoto(m.uid), m.name)}<span class="note">${NOTE_SVG}</span><div title="${esc(m.name)}">${esc(m.title)}</div>`;
   } else return;
   box.appendChild(d);
   while (box.children.length > 80) box.firstChild.remove();
@@ -777,7 +787,9 @@ const tga = new Audio(); tga.preload = "auto";
 tga.onended = () => send({ t: "music_ended", tid: curTid });
 function applyVolume() {
   const v = parseInt($("#pl-range").value);
-  $("#pl-icon").textContent = v ? "🔊" : "🔇";
+  $("#pl-icon").innerHTML = `<svg viewBox="0 0 28 22" fill="#7d8894"><path d="M2 7.500h4.500L13 2v18l-6.500-5.500H2z"/>${v
+    ? '<path d="M16.500 7c2 2.200 2 5.800 0 8M20 4c4 4 4 10 0 14" fill="none" stroke="#7d8894" stroke-width="2.200" stroke-linecap="round"/>'
+    : '<path d="M17 8l7 6M24 8l-7 6" fill="none" stroke="#7d8894" stroke-width="2.400" stroke-linecap="round"/>'}</svg>`;
   tga.volume = v / 100; tga.muted = !v;
   if (tga.src && v && tga.paused && T && T.music && T.music.fid) tga.play().catch(() => { });
   if (!yt || !ytReady) return;
@@ -790,11 +802,12 @@ function loadYT(cb) {
 }
 function handleMusic() {
   const m = T.music, box = $("#player");
+  $("#dj-fab").classList.toggle("covered", !!m);   // as in the original: the player card takes the place of the two buttons
   if (!m) { box.classList.add("hidden"); if (yt && ytReady && curTid) { try { yt.stopVideo(); } catch {} } tga.pause(); curTid = ""; placeVideo(); return; }
   box.classList.remove("hidden"); placeVideo();
   $("#pl-title").textContent = m.title; $("#pl-by").textContent = m.by + (T.queue ? ` · +${T.queue}` : "");
   const who = T.seats.find(p => p.name === m.by);
-  $("#pl-cover").innerHTML = who && who.photo ? `<img src="${esc(who.photo)}">` : esc(initials(m.by));
+  $("#pl-cover").innerHTML = who && who.photo ? `<img src="${esc(who.photo)}">` : `<span>${esc(initials(m.by))}</span>`;
   if (m.tid === curTid) return;
   curTid = m.tid; placeVideo(); requestAnimationFrame(placeVideo); setTimeout(placeVideo, 400);
   if (m.fid) {   // Telegram profile track: plain audio element, no YouTube

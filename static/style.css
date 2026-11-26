@@ -1098,3 +1098,77 @@ html.top #actions .cta{width:calc(var(--u)*20.4);height:calc(var(--u)*9.7);paddi
 #newmsg{position:absolute;left:50%;bottom:calc(var(--u)*17);transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:6px;white-space:nowrap;background:rgba(20,20,22,.82);color:#fff;border-radius:99px;padding:calc(var(--u)*1.8) calc(var(--u)*3.6);font-size:max(12px,calc(var(--u)*3.2));box-shadow:0 4px 12px rgba(0,0,0,.3)}
 #newmsg.hidden{display:none}
 
+/* ================ chat, final: every size measured on the original's phone screenshots (683 px = 100u) ================ */
+#chat{background:#f5f5f5;padding:calc(var(--u)*1.7) calc(var(--u)*1.6) calc(var(--u)*1.7) calc(var(--u)*1.6);gap:calc(var(--u)*1.7);overflow-x:hidden}
+#chat .msg{display:flex;align-items:flex-start;gap:calc(var(--u)*2.2);min-width:0;flex:0 0 auto}
+#chat .av-mini,#chat .giftline .av-mini{width:calc(var(--u)*7.6);height:calc(var(--u)*7.6);flex:0 0 calc(var(--u)*7.6);border-radius:calc(var(--u)*1.2);font-size:calc(var(--u)*3)}
+#chat .bubble{position:relative;min-width:0;max-width:calc(100% - var(--u)*9.8);background:#fff;border-radius:calc(var(--u)*1.5);padding:calc(var(--u)*1.75) calc(var(--u)*2);font-size:max(10px,calc(var(--u)*3));line-height:1.27;color:#111;box-shadow:none;overflow-wrap:anywhere}
+#chat .bubble::before{content:"";position:absolute;left:calc(var(--u)*-1.1);top:calc(var(--u)*2.4);border:calc(var(--u)*1.2) solid transparent;border-left:0;border-right:calc(var(--u)*1.2) solid #fff}
+#chat .bubble .who{font-weight:700;margin-right:calc(var(--u)*.4)}
+#chat .bubble .tr{display:block;margin:0;color:#9a9a9a;font-size:max(9.5px,calc(var(--u)*2.82));line-height:1.35}
+#chat .bubble.pm{background:#fff1d6}
+#chat .bubble.pm::before{border-right-color:#fff1d6}
+#chat .msg.big{align-items:center}
+#chat .bigemo{font-size:calc(var(--u)*6.4);line-height:1.1;min-width:0;overflow-wrap:anywhere}
+/* gift and kiss rows */
+#chat .bubble.giftline{display:flex;flex-wrap:wrap;align-items:center;gap:0;background:none;padding:0;max-width:calc(100% - var(--u)*10.1);margin-left:calc(var(--u)*.3)}
+#chat .bubble.giftline::before{display:none}
+#chat .giftline .g{display:block;width:1em;height:1em;font-size:calc(var(--u)*7);line-height:1}
+#chat .ar{display:flex;align-items:center;margin:0 calc(var(--u)*1.6) 0 calc(var(--u)*1.2)}
+#chat .ar svg{width:calc(var(--u)*2.9);height:calc(var(--u)*2.7)}
+#chat .giftline .av-mini+.av-mini{margin-left:calc(var(--u)*.8)}
+#chat .giftline .xn{color:#8cc47a;font-weight:800;font-size:calc(var(--u)*3.6);margin-left:calc(var(--u)*.8)}
+#chat .giftline small{font-size:calc(var(--u)*2.8);color:#9a9a9a;margin-left:calc(var(--u)*1)}
+/* other table events: one compact line beside the photo */
+#chat .msg.ev{align-items:center;background:none;padding:0;font-size:max(10px,calc(var(--u)*3));color:#555;min-height:calc(var(--u)*7.6);max-width:100%;align-self:stretch}
+#chat .msg.ev div:not(.av-mini){min-width:0;font-size:inherit;line-height:1.19;font-weight:600;overflow-wrap:anywhere}
+#chat .msg.ev .ico{flex:0 0 calc(var(--u)*7);width:calc(var(--u)*7);height:auto;font-size:calc(var(--u)*5);text-align:center}
+#chat .msg .ico.mck{height:calc(var(--u)*7)}
+#chat .kmark{display:flex;align-items:center;gap:calc(var(--u)*1);font-size:calc(var(--u)*4);margin-left:calc(var(--u)*.3)}
+#chat .kmark i{font-size:calc(var(--u)*5)}
+#chat .kmark+.ar{margin-left:calc(var(--u)*-1);margin-right:0}
+#chat .msg.mus{gap:calc(var(--u)*2.2)}
+#chat .msg.mus .note{flex:0 0 auto;display:flex;margin-left:calc(var(--u)*.2)}
+#chat .msg.mus .note svg{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6)}
+#chat .msg.mus div:not(.av-mini){flex:1;color:#999;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* input row */
+#chat-form{flex:0 0 auto;gap:calc(var(--u)*2);align-items:center;min-height:calc(var(--u)*10);padding:0 calc(var(--u)*2.2) env(safe-area-inset-bottom) calc(var(--u)*3.4);background:#fff;border:0;border-radius:0;box-shadow:none}
+#chat-input{min-width:0;flex:1;font-size:16px;padding:calc(var(--u)*1.6) 0;background:none;border-radius:0;color:#222}
+#chat-input::placeholder{color:#c6c8cc;font-size:max(12px,calc(var(--u)*3.2))}
+#chat-form .send{position:relative;flex:0 0 auto;width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);min-width:24px;min-height:24px;padding:0;font-size:max(11px,calc(var(--u)*3));background:#f0a04b;box-shadow:none;display:grid;place-items:center}
+#chat-form .send::after{content:"";position:absolute;left:-9px;top:-9px;right:-9px;bottom:-9px}   /* small circle, comfortable touch area */
+#chat-form .emo{width:calc(var(--u)*7);height:calc(var(--u)*7);flex:0 0 calc(var(--u)*7);font-size:calc(var(--u)*5.4);padding:0}
+html.top #chat-form .emo{display:none}
+#dj-fab,html.top #dj-fab{top:calc(var(--u)*1.8);gap:calc(var(--u)*1.2)}
+#newmsg{bottom:calc(var(--u)*12.5)}
+/* player card: sender's round photo and the speaker on a white tab, the clip at the right edge */
+#player,#player.isvideo{display:grid;grid-template-columns:calc(var(--u)*15.8) calc(var(--u)*27.8);grid-template-rows:calc(var(--u)*15.5) calc(var(--u)*5);gap:0;position:absolute;right:0;top:calc(var(--u)*3.2);width:auto;padding:0;background:none;border-radius:0;box-shadow:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.22));pointer-events:none}
+#player.hidden{display:none}
+#player .pl-top{display:contents}
+#player .pl-info{display:none}
+#player #pl-cover{grid-column:1;grid-row:1;width:100%;height:100%;flex-basis:auto;border:0;border-radius:calc(var(--u)*3) 0 0 0;background:#fff;box-shadow:none;overflow:visible;display:grid;place-items:center;pointer-events:auto}
+#player #pl-cover img,#player #pl-cover span{width:calc(var(--u)*10);height:calc(var(--u)*10);border-radius:50%;object-fit:cover;display:grid;place-items:center;background:linear-gradient(#f4b46a,#e8873a);color:#fff;font-size:calc(var(--u)*3.4);box-shadow:0 0 0 calc(var(--u)*.7) #d9dbe0}
+#player .boombox{grid-column:2;grid-row:1;width:100%;height:100%;background:#2a2f3a;pointer-events:auto}
+#player .pl-vslot{grid-column:2;grid-row:1;width:100%;height:100%;aspect-ratio:auto;border-radius:0;pointer-events:auto}
+#player .pl-vol{grid-column:1;grid-row:2;justify-self:start;width:calc(var(--u)*9);height:100%;margin:0;background:#fff;border-radius:0 0 calc(var(--u)*2.4) calc(var(--u)*2.4);display:grid;place-items:center;pointer-events:auto}
+#player .pl-vol input{display:none}
+#player #pl-icon{display:flex;position:relative;cursor:pointer}
+#player #pl-icon::after{content:"";position:absolute;left:-8px;top:-8px;right:-8px;bottom:-8px}
+#player #pl-icon svg{width:calc(var(--u)*4.6);height:calc(var(--u)*3.6)}
+#yt-holder.video{border-radius:0}
+#dj-fab.covered,html.top #dj-fab.covered{display:none}
+
+/* ---------------- everything fits small phones (checked at 320x520 and up) */
+.modal{overflow-x:hidden}
+.modal .x{right:0;top:0}
+.modal.dark{overflow:visible;max-height:calc(var(--vh)*100)}
+.wheel-box{width:min(86vw,calc(var(--vh)*100 - 318px),330px)!important;height:min(86vw,calc(var(--vh)*100 - 318px),330px)!important}
+.rt-sub{flex-wrap:wrap;padding-left:min(16px,4vw);padding-right:min(16px,4vw)}
+.rt-sub>b{min-width:0;font-size:min(20px,5vw)}
+select.rt-per,.rt-per{font-size:min(15px,3.8vw);margin-left:auto}
+/* the rating list takes whatever height is left, so the player's own row is never cut off */
+.modal.rate{display:flex;flex-direction:column}
+.modal.rate>.mb{flex:1;min-height:0;display:flex;flex-direction:column}
+.modal.rate .rt-list{flex:1 1 auto;min-height:0;max-height:calc(var(--vh)*58)}
+.modal.rate .mb>*:not(.rt-list){flex:0 0 auto}
+

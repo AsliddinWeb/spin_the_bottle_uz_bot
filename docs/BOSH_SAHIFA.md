@@ -67,3 +67,11 @@ TOP lentasi: **istalgan** reytingning butun davrdagi 10 taligi (bizda faqat o'pi
 | Shisha | pastki panel, 4 ustun, ❤5 | rasmlar farqli |
 | Boosterlar | tanlov (2) va liga (3) boosterlari | mos |
 | Stol almashtirish | tasodifiy stol, oxirgi stollar (shisha, 👦/👧 soni); to'la stolda navbat oynasi | navbat oynasi yo'q |
+
+## 3. Chat — to'liq o'lchovlar (moslandi, 2026-11-26)
+Fon #f5f5f5; chekka 1.6u; qator oralig'i 1.7u. Avatar 7.6u (radius 1.2u). Pufakcha: avatardan 2.2u, radius 1.5u, ichki 1.75u × 2u, matn 3u (qator 3.8u),
+chapda dumcha; ism qalin — ayol pushti, erkak ko'k; "Показать перевод" faqat boshqa alifbodagi xabarda (2.82u, kulrang). Faqat smaylik — pufakchasiz, 6.4u.
+Sovg'a qatori: avatar, sovg'a 7u, ingichka qo'sh o'q 2.9u, avatar. Musiqa qatori: avatar, to'q sariq nota, bir qatorli kulrang nom.
+Yozish qatori balandligi 10u, yuborish tugmasi 6.4u. Video/musiqa tugmalari yuqoridan 1.8u, oraliq 1.2u.
+Pleyer: chapda oq yorliq 15.8u (yuboruvchi doirasi 10u), ostida ovoz tugmasi 9u × 5u, o'ngda klip 27.8u × 15.5u; pleyer chiqqanda ikki tugma yashirinadi.
+Kichik ekranlar: barcha oynalar 320×520, 360×640, 390×844 va 362×585 (kompyuter) da sig'adi (tests/ui_fit.js).
