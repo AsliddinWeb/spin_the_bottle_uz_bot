@@ -22,7 +22,7 @@ const SEATS_RAW = MOBILE
   : [[27, 18], [46.5, 12.6], [65.5, 12.6], [85, 18], [89, 39.7], [88, 61], [85, 83], [65.5, 88], [46.5, 88], [27, 83], [23.5, 61], [23.5, 39.7]];
 // seat element = avatar + name, centred as one box: shift down so the AVATAR centre sits on the measured point
 const SEATS = SEATS_RAW.map(([x, y]) => [x, y + 1.4]);
-const PAIR = [[CENTER[0] - 13, CENTER[1] + 3], [CENTER[0] + 13, CENTER[1] + 3]];
+const PAIR = [-1, 1].map(s => [CENTER[0] + s * (MOBILE ? 12.4 : 13), CENTER[1] + (MOBILE ? -1 : 3)]);   // the two players of a spin, side by side
 
 let CFG, ME, ws, T = null, lang = "uz", initData = "", skew = 0, target = 0;
 let lastSpinId = 0, lastKiss = 0, rot = 0, seatSig = [], joinedOnce = false, reconnectDelay = 800;
@@ -238,6 +238,7 @@ function applyStatic() {
   document.documentElement.lang = lang;
   $("#chat-input").placeholder = t("type_msg");
   $("#gp-label").textContent = t("send_gift");
+  $("#newmsg span").textContent = t("new_msgs");
   if (T) tableLabel();
 }
 
@@ -298,6 +299,9 @@ function fillFab() {   // the two floating buttons use the same art as the first
 }
 function bindUi() {
   fillFab();
+  const chat = $("#chat"), pill = $("#newmsg");
+  chat.addEventListener("scroll", () => { if (chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80) pill.classList.add("hidden"); }, { passive: true });
+  pill.onclick = () => { chat.scrollTop = chat.scrollHeight; pill.classList.add("hidden"); };
   $("#btn-hearts").onclick = openShop;
   $("#btn-wheel").onclick = openWheel;
   $("#btn-rating").onclick = openLeague;
@@ -387,9 +391,9 @@ function handle(m) {
       break;
     case "me": ME = m.me; renderMe(); if (!$("#gest-panel").classList.contains("hidden")) renderGestures(); break;
     case "joined":
-      sessionStorage.setItem("tbl", m.table); $("#chat").innerHTML = ""; lastSpinId = 0; seatSig = [];
+      sessionStorage.setItem("tbl", m.table); $("#chat").innerHTML = ""; $("#newmsg").classList.add("hidden"); lastSpinId = 0; seatSig = [];
       T = { id: m.table, seats: [], phase: "waiting" }; tableLabel();
-      m.history.forEach(addChat); { const c = $("#chat"); c.style.scrollBehavior = "auto"; c.scrollTop = c.scrollHeight; setTimeout(() => { c.style.scrollBehavior = ""; }, 50); } joinedOnce = true; break;
+      m.history.forEach(addChat); { const c = $("#chat"); c.scrollTop = c.scrollHeight; $("#newmsg").classList.add("hidden"); } joinedOnce = true; break;
     case "state": onState(m); break;
     case "chat": addChat(m); break;
     case "toast": toast(t(m.key)); if (m.key === "no_hearts") openShop(); break;
@@ -476,7 +480,7 @@ function renderHint() {
   const felt = $("#felt").getBoundingClientRect();
   const deg = Math.atan2((sy - hy) * felt.height, (sx - hx) * felt.width) * 180 / Math.PI;
   h.style.left = hx + "%"; h.style.top = hy + "%";
-  h.innerHTML = `<span>${esc(t("turn_short"))}</span><span class="ha" style="transform:rotate(${deg}deg)">➜</span>`;
+  h.innerHTML = `<span>${esc(t("turn_short"))}</span><span class="ha"><svg viewBox="0 0 32 20" style="transform:rotate(${deg}deg)"><path d="M3 10H28M20 3L28.500 10L20 17" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
   h.classList.remove("hidden");
   keepHintClear(h, sx, sy, felt);
 }
@@ -506,7 +510,7 @@ function renderCenter() {
   }
   box.textContent = msg;
   const middle = T.phase === "waiting" || T.phase === "between" || (T.phase === "result" && T.result !== "kiss");
-  box.style.top = (middle ? CENTER[1] : CENTER[1] - (MOBILE ? 25 : 22.5)) + "%";
+  box.style.top = (middle ? CENTER[1] : CENTER[1] - (MOBILE ? 19.5 : 22.5)) + "%";
   if (T.phase === "result" && T.result === "kiss" && lastKiss !== T.spin.id) {
     lastKiss = T.spin.id; kissFx();
   } else if (T.phase === "result" && T.result !== "kiss" && lastKiss !== -T.spin.id) {
@@ -753,6 +757,7 @@ function addChat(m) {
   box.appendChild(d);
   while (box.children.length > 80) box.firstChild.remove();
   if (near || m.uid === ME.id) box.scrollTop = box.scrollHeight;
+  else $("#newmsg").classList.remove("hidden");
 }
 
 // ------------------------------------------------------------ music (YouTube)

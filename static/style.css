@@ -78,7 +78,7 @@ button{font:inherit;border:0;cursor:pointer;color:inherit}
 /* ---------- bottom ---------- */
 #bottom{flex:1 1 0;min-height:0;position:relative;background:var(--bg);display:flex;flex-direction:column}
 #chat-panel{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
-#chat{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+#chat{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px}
 .msg{display:flex;gap:8px;align-items:flex-end}
 .av-mini{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:0 0 34px;background:linear-gradient(#f4b46a,#e8873a);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center}
 .av-mini img{width:100%;height:100%;object-fit:cover}
@@ -1077,4 +1077,24 @@ html.top #dj-fab button svg{width:calc(var(--u)*8.8);height:calc(var(--u)*8.8)}
 
 /* the original draws nothing where a seat is free (seen at a table with three players) */
 .seat.empty{visibility:hidden}
+
+/* ---------------- home page, second pass: measured on the original's phone screenshots (docs/BOSH_SAHIFA.md) */
+html.top #ornament{width:calc(var(--u)*46)}
+html.top #center-msg{font-size:max(13px,calc(var(--u)*3.4));line-height:1.08;max-width:calc(var(--u)*26)}
+html.top #timer{font-size:calc(var(--u)*6.4)}
+html.top #actions{top:calc(var(--cy) + var(--u)*13);gap:calc(var(--u)*3)}
+html.top #actions .cta{width:calc(var(--u)*20.4);height:calc(var(--u)*9.7);padding:0;font-size:max(12px,calc(var(--u)*3.1))}
+#hint:not(.mine){font-size:max(10px,calc(var(--u)*2.6));line-height:1.1;gap:0}
+#hint .ha{font-size:0;line-height:0}
+#hint .ha svg{width:calc(var(--u)*5.2);height:calc(var(--u)*3.3);filter:drop-shadow(0 1px 2px rgba(60,25,0,.8))}
+/* chat: small square photos and compact rows */
+#chat .msg{gap:calc(var(--u)*2.4)}
+#chat .av-mini,#chat .giftline .av-mini{width:calc(var(--u)*7.6);height:calc(var(--u)*7.6);flex:0 0 calc(var(--u)*7.6);border-radius:calc(var(--u)*1.6);font-size:calc(var(--u)*3)}
+#chat .bubble{font-size:max(12.5px,calc(var(--u)*3.4))}
+#chat .giftline .g{font-size:calc(var(--u)*7)}
+#chat .kmark{font-size:calc(var(--u)*4.4)}
+#chat .kmark i{font-size:calc(var(--u)*5.4)}
+#chat .msg.ev{font-size:max(12.5px,calc(var(--u)*3.4))}
+#newmsg{position:absolute;left:50%;bottom:calc(var(--u)*17);transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:6px;white-space:nowrap;background:rgba(20,20,22,.82);color:#fff;border-radius:99px;padding:calc(var(--u)*1.8) calc(var(--u)*3.6);font-size:max(12px,calc(var(--u)*3.2));box-shadow:0 4px 12px rgba(0,0,0,.3)}
+#newmsg.hidden{display:none}
 
