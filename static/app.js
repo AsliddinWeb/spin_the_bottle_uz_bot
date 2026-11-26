@@ -100,7 +100,7 @@ document.addEventListener("click", e => { if (e.target.closest("button")) sfx.cl
 
 // ------------------------------------------------------------ bottle art
 const BOTTLES = {
-  bottle_green: { c0: "#23461a", c1: "#4d8a2b", c2: "#93d150", c3: "#eaffb8", label: "#f6e9c8", ink: "#b0482e" },
+  bottle_green: { c0: "#12420c", c1: "#2c861c", c2: "#6cc238", c3: "#dcffb4", label: "#f6e9c8", ink: "#b0482e" },
   bottle_red: { c0: "#3f0808", c1: "#a31d1d", c2: "#f0604d", c3: "#ffe0d8", label: "#fff2e0", ink: "#7a1a1a" },
   bottle_blue: { c0: "#08204b", c1: "#1b56b4", c2: "#5fa9ff", c3: "#e0f0ff", label: "#f3f7ff", ink: "#1b56b4" },
   bottle_gold: { c0: "#573a04", c1: "#b5811b", c2: "#ffd75e", c3: "#fff8d2", label: "#fffaf0", ink: "#9a6a10" },

@@ -1017,3 +1017,30 @@ select.rt-per option{color:#222}
 .stask.ready{box-shadow:0 0 0 2px #8cc63f,0 2px 8px rgba(80,160,20,.5)}
 #hearts-dot{position:absolute;right:calc(var(--u)*-.4);top:0;width:calc(var(--u)*3);height:calc(var(--u)*3);border-radius:50%;background:#58c322;border:2px solid #fff}
 #hearts-dot.hidden{display:none}
+
+/* ---------------- table, side layout (desktop Telegram): measured on the original at 362x585 (1u = 3.62px) */
+html:not(.top) #table{height:calc(var(--u)*87.8)}
+html:not(.top) #felt{background:radial-gradient(ellipse 78% 72% at var(--cx) 47%,#e2a253 0%,#d59043 40%,#c48042 74%,#b47036 100%)}
+html:not(.top) #ornament{width:calc(var(--u)*41)}
+html:not(.top) #bottle{--bl:calc(var(--u)*24)}
+html:not(.top) .round{--d:max(26px,calc(var(--u)*7));left:max(4px,calc(var(--u)*5.5 - var(--d)/2))}
+html:not(.top) .round::before{content:"";position:absolute;left:-7px;top:-5px;right:-7px;bottom:-5px;border-radius:50%}   /* the circle is small, the touch area is not */
+html:not(.top) .round svg{width:62%;height:62%}
+html:not(.top) .round.tbl small{bottom:auto;top:calc(var(--d) + var(--u)*1.2);font-size:max(8.5px,calc(var(--u)*2.4));line-height:1.1}
+html:not(.top) #tbl-n{font-size:max(11px,calc(var(--u)*2.9))}
+html:not(.top) .hearts-btn{left:calc(var(--u)*2.8);top:calc(var(--u)*1.5);width:calc(var(--u)*8.4);gap:calc(var(--u)*.8)}
+html:not(.top) .hearts-btn .hs{width:calc(var(--u)*8.4);min-width:0;height:auto}
+html:not(.top) .hearts-btn b{font-size:max(10.5px,calc(var(--u)*3));line-height:1}
+html:not(.top) .nm{font-size:max(8px,calc(var(--u)*2.2));margin-top:calc(var(--u)*.3);line-height:1.25}
+html:not(.top) .kb{width:calc(var(--u)*4.2);right:calc(var(--u)*-1.7);top:calc(var(--u)*.2)}
+html:not(.top) .kb i{font-size:calc(var(--u)*3.6)}
+html:not(.top) .kb b{font-size:max(7.5px,calc(var(--u)*1.9))}
+html:not(.top) #center-msg{font-size:max(12px,calc(var(--u)*3.5));line-height:1.04}
+html:not(.top) #hint,html:not(.top) #hint.mine{font-size:max(12px,calc(var(--u)*3.4))}
+html:not(.top) #dj-fab{top:calc(var(--u)*2.2);gap:calc(var(--u)*1.4)}
+html:not(.top) #dj-fab button{width:calc(var(--u)*10.6);height:calc(var(--u)*9.4);border-radius:calc(var(--u)*4.7) 0 0 calc(var(--u)*4.7);padding:0 0 0 calc(var(--u)*1.2)}
+html:not(.top) .round svg{width:68%;height:68%;stroke-width:2.5}
+html:not(.top) #ornament{opacity:.82}
+/* wood grain: our own drawing (tools/make_wood.py) */
+#felt::before{background:url(/static/wood.svg?v=1) 0 0/100% 100% no-repeat;opacity:1;mix-blend-mode:normal}
+

@@ -35,7 +35,7 @@ Qo'shimcha: 🔄 tugmasidagi raqam sanab kamayadi (7→6→5→2) — sanoq ekan
 Tayyor mezoni: bir xil o'lchamdagi yonma-yon skrinshotlar va buyurtmachi roziligi.
 
 ## Keyingi bosqichlar (har biri oldingisi tasdiqlangach)
-2. Stol ekrani: taxta, naqsh, shisha, avatarlar, tugmalar
+2. Stol ekrani: taxta, naqsh, shisha, avatarlar, tugmalar — **kompyuter Telegram'i (yon ustun) 2026-11-26 da moslandi** (taxta balandligi 87.8u, tugmalar 7u, yurakcha, ism, lab belgisi, shisha, naqsh, video/musiqa tugmalari; taxta tolasi `tools/make_wood.py`). Telefon ko'rinishi (tugmalar tepada) uchun originalning telefondagi skrinshoti kerak. Bo'sh o'rin originalda qanday ko'rinishi tekshirilmagan
 3. Avtomatik oynalar: kunlik bonus va boshqa popup'lar
 4. Chat va pleyer
 5. Sovg'alar va ikonlar (eng katta qism)
