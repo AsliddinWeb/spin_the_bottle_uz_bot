@@ -55,11 +55,11 @@ TOP lentasi: **istalgan** reytingning butun davrdagi 10 taligi (bizda faqat o'pi
 |---|---|---|
 | Yurakcha do'koni | VIP daraja, do'st ❤20, kompliment ❤10; paketlar 7000/3125/1200/500/250/50 | paketlar mos; paket yonida VIP ochkosi belgisi yo'q |
 | VIP | darajali (ochko yig'iladi), imtiyozlar jadvali | bizda 30 kunlik bitta VIP |
-| Bepul yurakchalar | do'st taklif qilish, kanalga obuna, ish stoliga yorliq → ❤5 | tekshirish kerak |
+| Bepul yurakchalar ✅ | do'st taklif qilish, kanalga obuna, ish stoliga yorliq → ❤5 | tekshirish kerak |
 | Omad g'ildiragi | sektorlar, "Шансы", oxirgi g'olib lentasi | ko'rinish farqi |
 | Imkoniyat do'koni | 300/50/15/5/1 = ❤900/150/45/20/5 | mos |
-| Sozlamalar | Звуки va Музыка yoqib-o'chirgich, taklif, profil, aloqa, ID | bizda surgich, bildirishnoma va til qo'shimcha |
-| Video tanlash | 4 tab (🔥 ★ 🕒 🔍), 2 ustunli rasmli to'r, davomiylik va yulduzcha | bizda ro'yxat |
+| Sozlamalar ✅ | Звуки va Музыка yoqib-o'chirgich, taklif, profil, aloqa, ID | bizda surgich, bildirishnoma va til qo'shimcha |
+| Video tanlash ✅ (davomiyliksiz) | 4 tab (🔥 ★ 🕒 🔍), 2 ustunli rasmli to'r, davomiylik va yulduzcha | bizda ro'yxat |
 | Imo-ishora | 5 ustun, 3 tasi ochiq (1 jeton), qolgani qulflangan kulrang | tekshirish kerak |
 | Sovg'a paneli | 5 ustun, birinchi ikkitasi video va musiqa | mos; rasmlar farqli |
 | Yutuqlar | 333 yulduz, rasmli medallar, tafsilotda shart | bizda kamroq, oddiy rasm |

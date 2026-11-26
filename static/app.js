@@ -890,6 +890,15 @@ function openMusicPicker(kind, mode = "audio") {
   const gOf = () => CFG.gifts.find(x => x.id === kind); let g = gOf(); if (!g) return;
   if (ME.hearts < Math.min(...["music_now", "music_queue"].map(k => CFG.gifts.find(x => x.id === k).price))) { toast(t("no_hearts")); return openShop(); }
   const video = mode === "video", m = openModal("", { cls: "mpick" });
+  const ytId = v => (v.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) || [])[1];
+  const TI = {   // tab pictures (our own)
+    pop: `<svg viewBox="0 0 32 32"><path d="M17 2c1 6 9 9 9 18a10 10 0 0 1-20 0c0-5 3-8 5-10 0 3 1 5 3 6 0-6 1-10 3-14z" fill="currentColor"/><path d="M16 18c2 3 5 4 5 7a5 5 0 0 1-10 0c0-3 3-4 5-7z" fill="#fff" opacity=".45"/></svg>`,
+    fav: `<svg viewBox="0 0 32 32"><path d="M16 3l4 8.500 9 1.200-6.500 6.300 1.700 9L16 23.700 7.800 28l1.700-9L3 12.700l9-1.200z" fill="currentColor"/></svg>`,
+    hist: `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="currentColor"/><path d="M16 8.500V16l5.500 3.500" fill="none" stroke="#fff" stroke-width="2.800" stroke-linecap="round"/></svg>`,
+    find: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.600" stroke-linecap="round"><circle cx="13.500" cy="13.500" r="9"/><path d="M20.500 20.500L28 28"/></svg>`,
+    tg: `<svg viewBox="0 0 32 32" fill="currentColor"><circle cx="16" cy="10.500" r="6.500"/><path d="M4 28c1-7.500 6-10.500 12-10.500S27 20.500 28 28z"/></svg>`,
+  };
+  const STAR = `<svg viewBox="0 0 32 32"><path d="M16 4l3.700 7.600 8.300 1.200-6 5.800 1.400 8.300L16 23l-7.400 3.900L10 18.600l-6-5.800 8.300-1.200z"/></svg>`;
   let tab = "pop", list = [], findQ = "";
   const thumb = v => `https://i.ytimg.com/vi/${v}/mqdefault.jpg`;
   const pick = (vid, tgFid) => {
@@ -897,25 +906,25 @@ function openMusicPicker(kind, mode = "audio") {
     send({ t: "gift", to: 0, gift: kind, url: tgFid ? "tg:" + tgFid : "https://youtu.be/" + vid, mode }); m.close();
   };
   const load = async () => {
-    list = tab === "fav" ? favTracks(mode) : tab === "link" || tab === "find" ? []
+    list = tab === "fav" ? favTracks(mode) : tab === "find" ? []
       : tab === "tg" ? await api("/api/music/tg").catch(() => [])
       : await api((tab === "hist" ? "/api/music/history" : "/api/music/popular") + "?mode=" + mode).catch(() => []);
     render();
   };
   const render = () => {
     g = gOf(); const playing = !!(T && T.music), favs = new Set(favTracks(mode).map(x => x.vid));
-    const tabs = video ? [["pop", "🔥"], ["fav", "⭐"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]] : [["pop", "🔥"], ["fav", "⭐"], ["tg", "👤"], ["hist", "🕒"], ["find", "🔍"], ["link", "🔗"]];
-    const titles = { pop: t(video ? "video_popular" : "music_popular"), fav: t("music_saved"), hist: t("music_history"), find: t("music_find"), link: t("music_link"), tg: t("music_tg") };
+    const tabs = video ? ["pop", "fav", "hist", "find"] : ["pop", "fav", "tg", "hist", "find"];
+    const titles = { pop: t(video ? "video_popular" : "music_popular"), fav: t("music_saved"), hist: t("music_history"), find: t("music_find"), tg: t("music_tg") };
+    const price = k => CFG.gifts.find(x => x.id === k).price;
     const grid = list.length ? (tab === "tg"
       ? `<div class="mp-rows">${list.map(x => `<div class="mp-row" data-f="${esc(x.fid)}"><div><b>${esc(x.title)}</b><small>${esc(x.artist)}</small></div><span>${fmtDur(x.dur)}</span></div>`).join("")}</div>`
-      : `<div class="mp-grid">${list.map(x => `<div class="mp-card" data-v="${x.vid}"><div class="mp-th"><img loading="lazy" src="${thumb(x.vid)}"><button class="mp-star ${favs.has(x.vid) ? "on" : ""}" data-star="${x.vid}">★</button></div><div class="mp-tt">${esc(x.title)}</div></div>`).join("")}</div>`)
-      : `<p class="sub center">${esc(tab === "tg" ? t("music_tg_empty") : t("no_tracks"))}</p>`;
-    m.set(`<h2 class="mp-h">${video ? "🎬 " + esc(t("mode_video")) : "🎵 " + esc(t("mode_music"))}</h2>
-      <div class="mp-seg sm" id="mp-kind"><button data-k="music_now" class="${kind === "music_now" ? "on" : ""}">${esc(t(playing ? "mp_replace" : "mp_now"))} · ❤${CFG.gifts.find(x => x.id === "music_now").price}</button><button data-k="music_queue" class="${kind === "music_queue" ? "on" : ""}">${esc(t("mp_queue"))} · ❤${CFG.gifts.find(x => x.id === "music_queue").price}</button></div>
-      <div class="mp-tabs">${tabs.map(([k, i]) => `<button data-tab="${k}" class="${k === tab ? "on" : ""}">${i}</button>`).join("")}</div>
-      <p class="mp-title">${titles[tab]}</p>
-      ${tab === "find" ? `<form class="mp-find" id="mp-form"><input id="mp-q" placeholder="${esc(t("music_find"))}" value="${esc(findQ)}" autocomplete="off"><button class="btn">🔍</button></form>` : ""}
-      ${tab === "link" ? `<label class="field"><input id="mp-url" placeholder="https://youtu.be/…" inputmode="url"></label><button class="btn wide" id="mp-go">OK</button>` : grid}`);
+      : `<div class="mp-grid">${list.map(x => `<div class="mp-card" data-v="${x.vid}"><div class="mp-th"><img loading="lazy" src="${thumb(x.vid)}"><button class="mp-star ${favs.has(x.vid) ? "on" : ""}" data-star="${x.vid}" aria-label="★">${STAR}</button></div><div class="mp-tt">${esc(x.title)}</div></div>`).join("")}</div>`)
+      : `<p class="mp-empty">${esc(tab === "tg" ? t("music_tg_empty") : tab === "find" ? t("mp_find_hint") : t("no_tracks"))}</p>`;
+    m.set(`<div class="mp-tabs">${tabs.map(k => `<button data-tab="${k}" class="tab-${k} ${k === tab ? "on" : ""}">${TI[k]}</button>`).join("")}</div>
+      ${playing ? `<div class="mp-seg sm" id="mp-kind"><button data-k="music_now" class="${kind === "music_now" ? "on" : ""}">${esc(t("mp_replace"))} · ❤${price("music_now")}</button><button data-k="music_queue" class="${kind === "music_queue" ? "on" : ""}">${esc(t("mp_queue"))} · ❤${price("music_queue")}</button></div>` : ""}
+      <p class="mp-title">${esc(titles[tab])}<span>❤${price(kind)}</span></p>
+      ${tab === "find" ? `<form class="mp-find" id="mp-form"><input id="mp-q" placeholder="${esc(t("mp_find_link"))}" value="${esc(findQ)}" autocomplete="off"><button class="btn">${TI.find}</button></form>` : ""}
+      <div class="mp-scroll">${grid}</div>`);
     $$("#mp-kind [data-k]", m.el).forEach(b => b.onclick = () => { kind = b.dataset.k; render(); });
     $$("[data-tab]", m.el).forEach(b => b.onclick = () => { tab = b.dataset.tab; load(); });
     $$("[data-star]", m.el).forEach(b => b.onclick = e => {
@@ -927,11 +936,11 @@ function openMusicPicker(kind, mode = "audio") {
     $$("[data-f]", m.el).forEach(c => c.onclick = () => pick("", c.dataset.f));
     const fm = $("#mp-form", m.el);
     if (fm) fm.onsubmit = async e => {
-      e.preventDefault(); findQ = $("#mp-q", m.el).value.trim(); if (findQ.length < 2) return;
+      e.preventDefault(); findQ = $("#mp-q", m.el).value.trim();
+      const link = ytId(findQ); if (link) return pick(link);   // a pasted YouTube link plays straight away
+      if (findQ.length < 2) return;
       list = await api("/api/music/search?q=" + encodeURIComponent(findQ + (video ? " video" : ""))).catch(() => []); render(); $("#mp-q", m.el).focus();
     };
-    const go = $("#mp-go", m.el);
-    if (go) go.onclick = () => { const mt = ($("#mp-url", m.el).value.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) || [])[1]; mt ? pick(mt) : toast(t("bad_url")); };
   };
   load();
 }
@@ -1128,20 +1137,30 @@ function shopTasks() {   // starter and daily tasks: free hearts, so they live i
   const html = row("starter", "🎯", "st_title", ME.starter || [], x => x.claimed, x => x.done && !x.claimed) + row("dtask", "📅", "dt_title", ME.dtasks || [], x => x.claimed, x => x.n >= x.goal && !x.claimed);
   return html && `<div class="shop-tasks">${html}</div>`;
 }
+const SHOP_ART = {
+  p5000: `<svg viewBox="0 0 64 64"><path transform="translate(22 24) scale(0.9)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path transform="translate(42 22) scale(1.0)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/><path transform="translate(32 17) scale(0.95)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#d9362a" stroke="#fff" stroke-width="1.200"/><rect x="8" y="26" width="48" height="26" rx="4" fill="#8e44ad"/><rect x="8" y="26" width="48" height="8" fill="#f4b52c"/><rect x="14" y="26" width="6" height="26" fill="#f4b52c"/><rect x="44" y="26" width="6" height="26" fill="#f4b52c"/><rect x="27" y="31" width="10" height="11" rx="2" fill="#ffd86b" stroke="#8a5a00" stroke-width="1.500"/><path transform="translate(52 48) scale(0.8)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/></svg>`,
+  p2500: `<svg viewBox="0 0 64 64"><path transform="translate(22 24) scale(0.9)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path transform="translate(42 22) scale(1.0)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/><path transform="translate(32 17) scale(0.95)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#d9362a" stroke="#fff" stroke-width="1.200"/><path d="M14 26h36c5 8 5 20 0 28H14c-5-8-5-20 0-28z" fill="#a8652d"/><path d="M12.500 32h39M12.500 48h39" stroke="#f4b52c" stroke-width="4"/><path d="M24 27v26M40 27v26" stroke="#7d4718" stroke-width="2"/><path transform="translate(32 40) scale(0.75)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#f4b52c" stroke="#fff" stroke-width="1.200"/><path transform="translate(52 49) scale(0.8)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/></svg>`,
+  p1000: `<svg viewBox="0 0 64 64"><path transform="translate(22 24) scale(0.9)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path transform="translate(42 22) scale(1.0)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/><path transform="translate(32 17) scale(0.95)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#d9362a" stroke="#fff" stroke-width="1.200"/><path d="M16 28h32c8 5 9 22-4 26H20C7 50 8 33 16 28z" fill="#5b4fc4"/><rect x="13" y="25" width="38" height="7" rx="3.500" fill="#7a6ee0"/><circle cx="12" cy="38" r="4" fill="none" stroke="#7a6ee0" stroke-width="3"/><circle cx="52" cy="38" r="4" fill="none" stroke="#7a6ee0" stroke-width="3"/><path transform="translate(32 42) scale(0.7)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#f4c52c" stroke="#fff" stroke-width="1.200"/><path transform="translate(52 50) scale(0.8)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/></svg>`,
+  p500: `<svg viewBox="0 0 64 64"><path transform="translate(32 18) scale(1.0)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path d="M24 26h16c10 6 16 14 14 22-2 8-42 8-44 0-2-8 4-16 14-22z" fill="#d3304a"/><path d="M22 26q10 5 20 0" stroke="#f4b52c" stroke-width="4" fill="none" stroke-linecap="round"/><path transform="translate(46 47) scale(0.8)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/></svg>`,
+  p250: `<svg viewBox="0 0 64 64"><path transform="translate(22 24) scale(0.9)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path transform="translate(42 22) scale(1.0)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/><path transform="translate(32 17) scale(0.95)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#d9362a" stroke="#fff" stroke-width="1.200"/><path d="M12 30h40v22H12z" fill="#f4b52c"/><path d="M12 30l-6 7 13 4 7-11zM52 30l6 7-13 4-7-11z" fill="#ffd25c"/><path d="M12 42h40" stroke="#d98f10" stroke-width="2"/><path transform="translate(50 48) scale(0.8)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/></svg>`,
+  p50: `<svg viewBox="0 0 64 64"><path transform="translate(20 40) scale(1.15)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ff6a4d" stroke="#fff" stroke-width="1.200"/><path transform="translate(44 40) scale(1.15)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path transform="translate(32 30) scale(1.35)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#e0392c" stroke="#fff" stroke-width="1.200"/></svg>`,
+  vip: `<svg viewBox="0 0 64 64"><path d="M32 4l22 12v20c0 12-10 20-22 24-12-4-22-12-22-24V16z" fill="#b9bdf0"/><path d="M32 10l16 9v16c0 9-7 15-16 18-9-3-16-9-16-18V19z" fill="#d9dcfb"/><text x="32" y="39" text-anchor="middle" font-size="15" font-weight="900" fill="#6a6fb8" font-family="Arial,sans-serif">VIP</text><circle cx="32" cy="12" r="7" fill="#8fc63f" stroke="#fff" stroke-width="2"/><path d="M32 9v6M29 12h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
+  friend: `<svg viewBox="0 0 64 64"><rect x="6" y="16" width="26" height="34" rx="4" fill="#cfd8ee" transform="rotate(-9 19 33)"/><rect x="32" y="16" width="26" height="34" rx="4" fill="#cfd8ee" transform="rotate(9 45 33)"/><rect x="18" y="14" width="28" height="38" rx="4" fill="#fff" stroke="#9fb0d8" stroke-width="2"/><circle cx="32" cy="28" r="7" fill="#e9b184"/><path d="M21 49c1-9 5-12 11-12s10 3 11 12z" fill="#5f7fd0"/><circle cx="14" cy="18" r="8" fill="#8fc63f" stroke="#fff" stroke-width="2"/><path d="M14 14.500v7M10.500 18h7" stroke="#fff" stroke-width="2.200" stroke-linecap="round"/></svg>`,
+  mail: `<svg viewBox="0 0 64 64"><path d="M14 12h36v26H14z" fill="#fff" stroke="#e3c9a0" stroke-width="1.500"/><path transform="translate(25 24) scale(0.65)" d="M0 9C-12 0-9-9-4.500-9C-2-9 0-7 0-5C0-7 2-9 4.500-9C9-9 12 0 0 9Z" fill="#ee4b3a" stroke="#fff" stroke-width="1.200"/><path d="M35 21h10M35 27h10" stroke="#c9c9c9" stroke-width="2.500"/><path d="M6 24l26 19 26-19v30H6z" fill="#f6dcae"/><path d="M6 54l21-17M58 54L37 37" stroke="#d9b678" stroke-width="2" fill="none"/><path d="M6 54h52" stroke="#e5534a" stroke-width="3" stroke-dasharray="6 5"/></svg>`,
+};   // our own drawings for the heart shop
 function openShop() {
   const packs = [...CFG.packs].sort((a, b) => b.stars - a.stars);
-  const em = { p5000: "🧰", p2500: "🛢️", p1000: "🏺", p500: "👜", p250: "📦", p50: "💕" };
   const m = openModal(`<h2>${t("buy_hearts")}</h2>
     <div class="grid3" style="margin-bottom:10px">
-      <div class="pack"><div class="txt" style="color:#e8873a;font-weight:800">${t("vip_status")}</div><div class="em">👑</div><button class="btn blue" data-go="vip">${t("learn")}</button>${ME.vip ? "" : `<span class="vbadge">!</span>`}</div>
-      <div class="pack"><div class="txt">${t("get_friend", { n: 20 })}</div><div class="em">🧑‍🤝‍🧑</div><button class="btn blue" data-go="promo">${t("learn")}</button></div>
-      <div class="pack"><div class="txt">${t("get_comp", { n: 10 })}</div><div class="em">💌</div><button class="btn blue" data-go="compl">${t("learn")}</button></div>
+      <div class="pack"><div class="txt" style="color:#e8873a;font-weight:800">${t("vip_status")}</div><div class="em">${SHOP_ART.vip}</div><button class="btn blue" data-go="vip">${t("learn")}</button>${ME.vip ? "" : `<span class="vbadge">!</span>`}</div>
+      <div class="pack"><div class="txt">${t("get_friend", { n: 20 })}</div><div class="em">${SHOP_ART.friend}</div><button class="btn blue" data-go="promo">${t("learn")}</button></div>
+      <div class="pack"><div class="txt">${t("get_comp", { n: 10 })}</div><div class="em">${SHOP_ART.mail}</div><button class="btn blue" data-go="compl">${t("learn")}</button></div>
     </div>
     ${shopTasks()}
     <div class="grid3">${packs.map(p => `<div class="pack">
       ${p.stars === 5000 ? `<span class="tag">${t("best")}</span>` : p.stars === 1000 ? `<span class="tag hit">${t("hit")}</span>` : ""}
       <div class="big">❤️${p.hearts}</div><div class="bn">${p.bonus ? t("bonus_pct", { n: p.bonus }) : ""}</div>
-      <div class="em">${em[p.id]}</div><button class="btn" data-pack="${p.id}">${buyLabel(p.price, "★" + p.stars)}</button></div>`).join("")}</div>
+      <div class="em">${SHOP_ART[p.id]}</div><button class="btn" data-pack="${p.id}">${buyLabel(p.price, "★" + p.stars)}</button></div>`).join("")}</div>
     ${CFG.payments === "manual" ? `<div class="center" style="margin-top:12px"><button class="btn blue" id="my-orders">🧾 ${t("my_orders")}</button></div>` : ""}`, { cls: "pink" });
   const mo = $("#my-orders", m.el); if (mo) mo.onclick = () => { m.close(); openMyOrders(); };
   $$("[data-go]", m.el).forEach(b => b.onclick = () => { m.close(); ({ vip: openVip, free: openFree, promo: openPromo, compl: openComplTask, starter: openStarter, dtask: openDailyTasks })[b.dataset.go](); });
@@ -1204,15 +1223,17 @@ function openVip() {
 
 async function openFree() {
   let tk; try { tk = await api("/api/tasks"); } catch { return toast(t("err")); }
-  const m = openModal("");
+  const m = openModal("", { cls: "freeh" });
   const st = { invite: tk.invited > 0, sub: tk.subscribe_done };
   const render = () => {
     const ready = st.invite && st.sub && !tk.subscribe_done;
     m.set(`<h2>${t("free_title")}</h2>
       <div class="card2"><b>${t("invite_friends")}</b>${st.invite ? "✅" : `<button class="btn" data-a="invite">${t("go")}</button>`}</div>
       <div class="card2"><b>${t("subscribe")}</b>${st.sub ? "✅" : `<button class="btn" data-a="sub">${t("go")}</button>`}</div>
+      ${tg && tg.addToHomeScreen && tg.isVersionAtLeast && tg.isVersionAtLeast("8.0") ? `<div class="card2"><b>${t("add_home")}</b><button class="btn" data-a="home">${t("add_btn")}</button></div>` : ""}
       <div class="center" style="margin-top:14px"><button class="btn" id="fr-claim" style="min-width:60%;font-size:18px" ${ready ? "" : "disabled"}>${tk.subscribe_done ? "✅" : t("free_get")}</button></div>`);
     $$("[data-a]", m.el).forEach(b => b.onclick = () => {
+      if (b.dataset.a === "home") { try { tg.addToHomeScreen(); } catch { toast(t("err")); } return; }
       if (b.dataset.a === "invite") openTg(`https://t.me/share/url?url=${encodeURIComponent(tk.link || location.origin)}&text=${encodeURIComponent("🍾 Spin the Bottle")}`), st.invite = true;
       else { if (CFG.channel) openTg("https://t.me/" + CFG.channel.replace("@", "")); st.sub = true; }
       render();
@@ -1452,24 +1473,33 @@ function openRatingRule(kind) {   // the "?" window: how points are earned
   $("#rt-ok", m.el).onclick = m.close;
 }
 
+const SET_ICON = {   // our own drawings
+  snd: `<svg viewBox="0 0 32 32"><path d="M3 11.500h5.500L17 5v22l-8.500-6.500H3z" fill="#8fc63f"/><path d="M21 11c2.500 2.800 2.500 7.200 0 10M25 7.500c5 5 5 12 0 17" fill="none" stroke="#b9bcc2" stroke-width="2.600" stroke-linecap="round"/></svg>`,
+  mus: `<svg viewBox="0 0 32 32" fill="#c8479f"><path d="M12 6l16-3.500v19a5 4.300 0 1 1-2.700-3.800V9.500L14.700 11.800V25a5 4.300 0 1 1-2.700-3.800z"/></svg>`,
+  ntf: `<svg viewBox="0 0 32 32"><path d="M16 3c-6 0-8.500 5-8.500 10v6l-3 5h23l-3-5v-6C24.500 8 22 3 16 3z" fill="#ffc12e"/><path d="M12.500 26a3.500 3.500 0 0 0 7 0z" fill="#d98a10"/></svg>`,
+  lng: `<svg viewBox="0 0 32 32" fill="none" stroke="#4fa3e0" stroke-width="2.400"><circle cx="16" cy="16" r="12.500"/><path d="M3.500 16h25M16 3.500c-8 7-8 18 0 25 8-7 8-18 0-25z"/></svg>`,
+  inv: `<svg viewBox="0 0 32 32"><circle cx="18" cy="11" r="6.500" fill="#e9b184"/><path d="M7 29c1-8 5.500-10.500 11-10.500S28 21 29 29z" fill="#7a86c8"/><circle cx="7.500" cy="8" r="6" fill="#8fc63f"/><path d="M7.500 5v6M4.500 8h6" stroke="#fff" stroke-width="1.900" stroke-linecap="round"/></svg>`,
+  prof: `<svg viewBox="0 0 32 32"><rect x="2" y="5" width="28" height="22" rx="3" fill="#4fa3e0"/><rect x="2" y="5" width="28" height="6" rx="3" fill="#2f7fc4"/><circle cx="10" cy="18" r="4" fill="#fff"/><path d="M17 16h9M17 21h7" stroke="#fff" stroke-width="2.200" stroke-linecap="round"/></svg>`,
+  help: `<svg viewBox="0 0 32 32"><path d="M3 5h19v13H11l-5 4v-4H3z" fill="#9cc7ee"/><path d="M12 12h17v13h-3v4l-5-4h-9z" fill="#4fa3e0"/></svg>`,
+};
 function openSettings() {
+  const sw = (id, on) => `<span class="tgl"><input id="${id}" type="checkbox" ${on ? "checked" : ""}><i></i></span>`;
   const m = openModal(`<h2>${t("settings")}</h2>
-    <div class="row" style="background:none;padding:6px 0"><span id="st-snd" style="font-size:26px;cursor:pointer">🔊</span><b>${t("sounds")}</b><input id="st-sfx" type="range" min="0" max="1" step=".05" value="${ls.get("sfx", "0.7")}" style="flex:1"></div>
-    <div class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🎵</span><b>${t("music")}</b><input id="st-mus" type="range" min="0" max="100" value="${ls.get("musicVol", "0")}" style="flex:1"></div>
-    <label class="row" style="background:none;padding:6px 0;cursor:pointer"><span style="font-size:26px">🔔</span><b>${t("notify_label")}</b><input id="st-notify" type="checkbox" ${ME.notify ? "checked" : ""} style="width:22px;height:22px;accent-color:#8cbb2d"></label>
-    <label class="row" style="background:none;padding:6px 0"><span style="font-size:26px">🌐</span><b>${t("language")}</b><select id="st-lang" style="padding:6px 8px;border-radius:10px;border:1.5px solid #ddd;font-size:15px"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select></label>
-    <button class="menu-i" data-s="inv"><span class="ic">🧑‍🤝‍🧑</span>${t("invite")}</button>
-    <button class="menu-i" data-s="prof"><span class="ic">🪪</span>${t("profile_settings")}</button>
-    <button class="menu-i" data-s="help"><span class="ic">💬</span>${t("contact")}</button>
-    <p class="sub">ID ${ME.id}</p>`);
+    <label class="st-row"><i>${SET_ICON.snd}</i><b>${t("sounds")}</b>${sw("st-snd", parseFloat(ls.get("sfx", "0.7")) > 0)}</label>
+    <label class="st-row"><i>${SET_ICON.mus}</i><b>${t("music")}</b>${sw("st-mus", parseInt(ls.get("musicVol", "0")) > 0)}</label>
+    <label class="st-row"><i>${SET_ICON.ntf}</i><b>${t("notify_label")}</b>${sw("st-notify", ME.notify)}</label>
+    <label class="st-row"><i>${SET_ICON.lng}</i><b>${t("language")}</b><select id="st-lang"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select></label>
+    <button class="st-row" data-s="inv"><i>${SET_ICON.inv}</i><b>${t("invite")}</b></button>
+    <button class="st-row" data-s="prof"><i>${SET_ICON.prof}</i><b>${t("profile_settings")}</b></button>
+    <button class="st-row" data-s="help"><i>${SET_ICON.help}</i><b>${t("contact")}</b></button>
+    <p class="st-id">ID ${ME.id}</p>`, { cls: "settings" });
   $("#st-notify", m.el).onchange = async e => { try { ME = await api("/api/notify", "POST", { on: e.target.checked }); } catch {} };
   $("#st-lang", m.el).value = lang;
   $("#st-lang", m.el).onchange = async e => {
     try { ME = await api("/api/profile", "POST", { name: ME.name, birth: ME.birth || "", age: ME.age, gender: ME.gender, lang: e.target.value }); lang = ME.lang; applyStatic(); m.close(); toast("✓"); } catch { toast(t("err")); }
   };
-  $("#st-snd", m.el).onclick = () => { const r = $("#st-sfx", m.el); r.value = parseFloat(r.value) ? 0 : 0.7; r.oninput({ target: r }); if (+r.value) sfx.bell(); };
-  $("#st-sfx", m.el).oninput = e => { ls.set("sfx", e.target.value); sfx.click(); };
-  $("#st-mus", m.el).oninput = e => { ls.set("musicVol", e.target.value); $("#pl-range").value = e.target.value; applyVolume(); };
+  $("#st-snd", m.el).onchange = e => { ls.set("sfx", e.target.checked ? "0.7" : "0"); if (e.target.checked) sfx.bell(); };
+  $("#st-mus", m.el).onchange = e => { const v = e.target.checked ? "60" : "0"; ls.set("musicVol", v); $("#pl-range").value = v; applyVolume(); };
   $$("[data-s]", m.el).forEach(b => b.onclick = () => {
     m.close();
     if (b.dataset.s === "inv") openFree();
