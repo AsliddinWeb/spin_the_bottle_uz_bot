@@ -279,6 +279,7 @@ async def store_buy(b: Item, u=Depends(auth.current_user)):
 async def store_equip(b: Item, u=Depends(auth.current_user)):
     if not economy.equip(u["id"], b.item):
         raise HTTPException(400, "not_owned")
+    await hub.refresh_look(u["id"])
     return economy.me_payload(u["id"])
 
 

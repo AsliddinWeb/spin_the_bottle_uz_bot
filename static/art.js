@@ -38,64 +38,168 @@ function giftIcon(x) {
   return id ? GIFT_ART.svg(id) : esc(x);
 }
 
-// ---- frame ornaments: an SVG overlay (viewBox -16 -16 132 132, avatar = 0..100) that decorates the CSS border of each frame
+// ---- avatar frames (our own drawings): an SVG overlay over the avatar (avatar = 0..100, viewBox -16 -16 132 132).
+// A frame = border + repeating side pattern + four corner pieces. Each frame also has a crest, used beside the
+// player's name, before the name in chat and in the middle of the shop tile (never on the photo itself). No SVG filters here: iOS draws them blurry on
+// moved elements, so the relief is painted with gradients and strokes.
 const FRAME_ART = (() => {
-  const star = (x, y, s, f = "#fff") => `<path d="M${x} ${y - s}L${x + s * .28} ${y - s * .28}L${x + s} ${y}L${x + s * .28} ${y + s * .28}L${x} ${y + s}L${x - s * .28} ${y + s * .28}L${x - s} ${y}L${x - s * .28} ${y - s * .28}Z" fill="${f}"/>`;
-  const heart = (x, y, s, f) => `<path transform="translate(${x} ${y}) scale(${s / 10})" d="M0 9C-12 0-9-9-4.5-9C-2-9 0-7 0-5C0-7 2-9 4.5-9C9-9 12 0 0 9Z" fill="${f}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>`;
-  const gem = (x, y, r, f, rim = "url(#gGold)") => `<circle cx="${x}" cy="${y}" r="${r}" fill="${rim}" stroke="#4a2208" stroke-opacity=".45" stroke-width="1"/><circle cx="${x}" cy="${y}" r="${r * .6}" fill="${f}"/><circle cx="${x - r * .2}" cy="${y - r * .22}" r="${r * .2}" fill="#fff" opacity=".8"/>`;
-  const leaf = (x, y, rot, f = "#3fb34f") => `<path transform="translate(${x} ${y}) rotate(${rot})" d="M0 0C6-8 16-8 22 0C16 8 6 8 0 0Z" fill="${f}" stroke="#1d6a2c" stroke-width="1" stroke-linejoin="round"/>`;
-  const flame = (x, y, s) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 0C-8-6-6-16-1-22C0-16 4-14 5-8C8-12 9-16 8-20C14-14 12-4 0 0Z" fill="url(#gOrange)" stroke="#c4170c" stroke-width=".8"/><path transform="translate(${x} ${y}) scale(${s * .55})" d="M0 0C-8-6-6-16-1-22C0-16 4-14 5-8C8-12 9-16 8-20C14-14 12-4 0 0Z" fill="#ffe14d"/>`;
-  const corners = fn => [[-2, -2, 0], [102, -2, 1], [102, 102, 2], [-2, 102, 3]].map(([x, y, i]) => fn(x, y, i)).join("");
-  const A = {
-    gold: () => corners((x, y) => gem(x, y, 8, "#e5374a")) + star(50, -4, 7, "#fff3a8"),
-    neon: () => corners((x, y) => star(x, y, 9, "#fff")) + star(50, -6, 5, "#9ff"),
-    hearts: () => corners((x, y, i) => heart(x, y, 15, i % 2 ? "#ff5d8f" : "#ff2e63")) + heart(50, -6, 12, "#ff5d8f") + heart(50, 106, 12, "#ff5d8f"),
-    ice: () => [8, 24, 40, 56, 72, 88].map((x, i) => `<path d="M${x - 6} -2L${x + 6} -2L${x} ${i % 2 ? 14 : 22}Z" fill="#e6faff" stroke="#6ec6ff" stroke-width="1.2" stroke-linejoin="round"/>`).join("") + corners((x, y) => star(x, y, 9, "#fff") + star(x, y, 5, "#6ec6ff")),
-    fire: () => [10, 30, 50, 70, 90].map((x, i) => flame(x, 104, i % 2 ? .75 : 1)).join("") + flame(-2, 20, .6) + flame(102, 20, .6),
-    rose: () => `<g>${[[-2, -2, 1], [102, 102, 1]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="10" fill="url(#gRed)" stroke="#fff" stroke-width="1.2"/><path d="M${x - 4} ${y}C${x - 2} ${y - 5} ${x + 4} ${y - 4} ${x + 3} ${y + 1}C${x + 2} ${y + 5} ${x - 3} ${y + 4} ${x - 1} ${y}" fill="none" stroke="#a8101f" stroke-width="1.6" stroke-linecap="round"/>`).join("")}</g>` + leaf(6, -4, -20) + leaf(90, 102, 160) + leaf(-4, 8, 70) + leaf(98, 90, -110),
-    candy: () => corners((x, y, i) => `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="#ff6f91" stroke-width="1.6"/><path d="M${x} ${y - 9}A9 9 0 0 1 ${x + 9} ${y}L${x} ${y}Z M${x} ${y + 9}A9 9 0 0 1 ${x - 9} ${y}L${x} ${y}Z" fill="${i % 2 ? "#7ad7f0" : "#ff6f91"}"/>`),
-    emerald: () => corners((x, y) => gem(x, y, 8, "#1fbf7a", "#cfeede")) + [[50, -3], [50, 103], [-3, 50], [103, 50]].map(([x, y]) => gem(x, y, 5, "#1fbf7a", "#cfeede")).join(""),
-    royal: () => `<path d="M32 2L28 -12L40 -4L50 -16L60 -4L72 -12L68 2Z" fill="url(#gGold)" stroke="#4a2208" stroke-opacity=".5" stroke-width="1.2" stroke-linejoin="round"/><circle cx="50" cy="-6" r="3" fill="#e5374a"/>` + corners((x, y) => gem(x, y, 7, "#8e4fe0")),
-    casino: () => corners((x, y, i) => `<circle cx="${x}" cy="${y}" r="9" fill="${i % 2 ? "#141414" : "#c0172e"}" stroke="#fff" stroke-width="2"/><circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="2 2"/>`),
-    night: () => `<path d="M104 -2a12 12 0 1 0 8 18a9 9 0 1 1-8-18z" fill="#ffe9a8" stroke="#fff" stroke-opacity=".7" stroke-width="1"/>` + star(-2, 8, 6, "#fff") + star(30, -6, 4, "#cfe0ff") + star(70, 106, 5, "#fff") + star(-2, 92, 4, "#cfe0ff") + star(98, 60, 3, "#fff"),
-    jungle: () => leaf(-8, -4, 30) + leaf(96, -6, 150) + leaf(96, 104, 210) + leaf(-8, 102, 330) + leaf(38, -11, 12, "#5fcf57") + leaf(46, 111, 192, "#5fcf57") + [[0, 0, "#ff7ab0"], [100, 100, "#ffd34d"]].map(([x, y, f]) => `<circle cx="${x}" cy="${y}" r="7" fill="${f}" stroke="#fff" stroke-width="1.3"/><circle cx="${x}" cy="${y}" r="2.6" fill="#fff6"/>`).join(""),
-    castle: () => [8, 26, 44, 62, 80].map(x => `<rect x="${x}" y="-13" width="10" height="9" rx="1.5" fill="#cfd2d6" stroke="#4a4f59" stroke-opacity=".6" stroke-width="1"/>`).join("") + corners((x, y) => `<rect x="${x - 7}" y="${y - 7}" width="14" height="14" rx="2" fill="#aeb3bb" stroke="#4a4f59" stroke-opacity=".7" stroke-width="1.2"/><rect x="${x - 2.5}" y="${y - 2.5}" width="5" height="7" rx="2" fill="#4a4f59"/>`),
-    chain: () => [14, 30, 46, 62, 78].map((x, i) => `<ellipse cx="${x}" cy="-2" rx="6" ry="3.4" fill="none" stroke="#e6e9ee" stroke-width="2.4" transform="rotate(${i % 2 ? 0 : 90} ${x} -2)"/><ellipse cx="${x}" cy="102" rx="6" ry="3.4" fill="none" stroke="#e6e9ee" stroke-width="2.4" transform="rotate(${i % 2 ? 0 : 90} ${x} 102)"/>`).join("") + corners((x, y) => gem(x, y, 7, "#ff7a1f", "#c9ced6")),
-    cards: () => corners((x, y, i) => `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="#1b1b1b" stroke-width="1.6"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="${i % 2 ? "#d3182c" : "#1b1b1b"}">${["♠", "♥", "♣", "♦"][i]}</text>`),
-    diamond: () => corners((x, y) => gem(x, y, 8, "#e8fdff", "#7fe0ff")) + [[50, -4], [50, 104], [-4, 50], [104, 50]].map(([x, y]) => gem(x, y, 6, "#c6f4ff", "#9fe8ff")).join("") + star(20, -8, 4, "#fff") + star(80, 108, 4, "#fff"),
-    tech: () => ["M10 -3H40M60 -3H90", "M10 103H40M60 103H90", "M-3 10V40M-3 60V90", "M103 10V40M103 60V90"].map(d => `<path d="${d}" stroke="#7ffff0" stroke-width="2.4" stroke-linecap="round"/>`).join("") + corners((x, y) => `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" rx="3" fill="#0a5a63" stroke="#7ffff0" stroke-width="1.8"/><circle cx="${x}" cy="${y}" r="2.2" fill="#7ffff0"/>`),
-    thorns: () => [10, 28, 46, 64, 82].map(x => `<path d="M${x - 4} -4L${x} -15L${x + 4} -4Z M${x - 4} 104L${x} 115L${x + 4} 104Z" fill="#7a1a2a" stroke="#1b0409" stroke-width="1"/>`).join("") + [10, 40, 70].map(y => `<path d="M-4 ${y - 4}L-15 ${y}L-4 ${y + 4}Z M104 ${y - 4}L115 ${y}L104 ${y + 4}Z" fill="#7a1a2a" stroke="#1b0409" stroke-width="1"/>`).join("") + corners((x, y) => heart(x, y, 12, "#e5374a")),
-    cane: () => `<path d="${rr(-3, -3, 106, 106, 13)}" fill="none" stroke="#fff" stroke-width="3.4" stroke-dasharray="7 7"/>` + corners((x, y, i) => `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="#ff5d7a" stroke-width="1.6"/><path d="M${x} ${y}m-5 0a5 5 0 1 1 5 5a3 3 0 1 1-3-3" fill="none" stroke="${i % 2 ? "#7ad7f0" : "#ff5d7a"}" stroke-width="2.2" stroke-linecap="round"/>`),
-    filigree: () => corners((x, y, i) => `<circle cx="${x}" cy="${y}" r="9" fill="url(#gGold)" stroke="#4a2208" stroke-opacity=".5" stroke-width="1"/><path d="M${x} ${y}m-5 0a5 5 0 1 1 5 5a3 3 0 1 1-3-3" fill="none" stroke="#8a5a05" stroke-width="1.8" stroke-linecap="round"/>`) + [[50, -4], [50, 104], [-4, 50], [104, 50]].map(([x, y]) => gem(x, y, 5, "#e5374a")).join(""),
-    galaxy: () => star(-2, 8, 6, "#fff") + star(30, -7, 4, "#cfe0ff") + star(70, 107, 5, "#fff") + star(-3, 88, 4, "#cfe0ff") + star(100, 48, 4, "#fff") + `<circle cx="104" cy="-2" r="9" fill="#ff9b4a" stroke="#fff" stroke-opacity=".7" stroke-width="1"/><ellipse cx="104" cy="-2" rx="14" ry="3.6" fill="none" stroke="#ffd9a8" stroke-width="1.6" transform="rotate(-20 104 -2)"/>`,
-    sakura: () => corners((x, y) => `<g transform="translate(${x} ${y})">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="0" cy="-6" rx="4.4" ry="6.5" fill="#ffd2e2" stroke="#d6558a" stroke-width="1" transform="rotate(${a})"/>`).join("")}<circle r="2.6" fill="#ffd34d"/></g>`) + [[20, -8, 20], [78, 108, -40], [-8, 70, 70]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="3" ry="4.6" fill="#ffd2e2" stroke="#d6558a" stroke-width=".8" transform="rotate(${r} ${x} ${y})"/>`).join(""),
-    inferno: () => corners((x, y) => flame(x, y + 6, 1.1)) + flame(50, 108, 1.2) + flame(50, -2, .8) + star(-4, 50, 4, "#ffb03a") + star(104, 50, 4, "#ffb03a"),
-    wood: () => leaf(-8, -4, 40) + leaf(96, -6, 140) + leaf(96, 104, 220) + leaf(-8, 102, 320) + corners((x, y) => `<circle cx="${x}" cy="${y}" r="4" fill="#7a4518" stroke="#c58a4e" stroke-width="1.4"/>`),
-  };
-  const PAL = {
-    gold: ["#fff3a8", "#d19a1a", "#8a5a05"], neon: ["#00f0ff", "#7a5cff", "#ff00e6"], hearts: ["#ff9ab8", "#e5374a", "#a8101f"],
-    ice: ["#f6feff", "#8fd6ff", "#3f93cf"], fire: ["#ffe14d", "#ff6a1f", "#b8200c"], rose: ["#ffc2d4", "#d6366f", "#8a1a44"],
-    candy: ["#ffffff", "#ff8fb0", "#7ad7f0"], emerald: ["#b6f7d4", "#17a56d", "#0a5a3a"], royal: ["#dac8ff", "#6a3fd1", "#3a1a8a"],
-    casino: ["#e5374a", "#9a1426", "#1b1b1b"], night: ["#9db2ff", "#2f3f95", "#121a4a"], wood: ["#e0a96f", "#9b6a30", "#5a3612"],
-    jungle: ["#a9e07a", "#2f8f3a", "#17501f"],
-    castle: ["#e4e4dc", "#8a8f99", "#4a4f59"],
-    chain: ["#eef1f5", "#7d8794", "#2f3540"],
-    cards: ["#ffffff", "#cfcfcf", "#1b1b1b"],
-    diamond: ["#f0fdff", "#7fe0ff", "#3a7fd8"],
-    tech: ["#9ffff0", "#1fb5a5", "#0a5a63"],
-    thorns: ["#9a3a4a", "#4a0d18", "#1b0409"],
-    cane: ["#ffffff", "#ff5d7a", "#ffffff"],
-    filigree: ["#fff6c0", "#e0b13a", "#8a6008"],
-    galaxy: ["#b9a4ff", "#4a2fb0", "#150c4a"],
-    sakura: ["#ffe3ee", "#ff9ec0", "#d6558a"],
-    inferno: ["#6a6a6a", "#222", "#000"],
-  };
+  const INK = "#3a1c06";
+  const n = v => Math.round(v * 100) / 100;
   const rr = (x, y, w, h, r) => `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
-  const ring = k => { const p = PAL[k] || PAL.gold; return `<defs><linearGradient id="fg_${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset=".5" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[2]}"/></linearGradient></defs>
-    <path fill-rule="evenodd" d="${rr(-6, -6, 112, 112, 16)} ${rr(1, 1, 98, 98, 10)}" fill="url(#fg_${k})" stroke="#2a1500" stroke-opacity=".45" stroke-width="1.2"/>`; };
-  return { has: k => k in A, svg: k => `<svg class="fart" viewBox="-16 -16 132 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g filter="url(#gloss)">${ring(k)}${A[k]()}</g></svg>` };
+  const P = (d, f, s = INK, w = 1, extra = "") => `<path d="${d}" fill="${f}"${s ? ` stroke="${s}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"` : ""}${extra}/>`;
+  const L = (d, s, w = 1.4, extra = "") => `<path d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${extra}/>`;
+  const C = (x, y, r, f, s = INK, w = 1) => `<circle cx="${n(x)}" cy="${n(y)}" r="${r}" fill="${f}"${s ? ` stroke="${s}" stroke-width="${w}"` : ""}/>`;
+  const at = (x, y, s, body, rot = 0) => `<g transform="translate(${x} ${y})${rot ? ` rotate(${rot})` : ""} scale(${s})">${body}</g>`;
+  const poly = (r1, r2, k, a0 = -90) => "M" + Array.from({ length: k * 2 }, (_, i) => { const a = (a0 + i * 180 / k) * Math.PI / 180, r = i % 2 ? r2 : r1; return `${n(Math.cos(a) * r)} ${n(Math.sin(a) * r)}`; }).join("L") + "Z";
+
+  // ---- small parts
+  const spark = (x, y, s, f = "#fff") => at(x, y, s / 10, P(poly(10, 2.6, 4), f, ""));
+  const gem = (x, y, r, f, rim) => C(x, y, r, rim, INK, .9) + C(x, y, r * .66, f, INK, .5) + C(x - r * .22, y - r * .24, r * .2, "#fff", "");
+  const HEART = "M0 8C-11 1-10-8-5-8C-2-8 0-6 0-4C0-6 2-8 5-8C10-8 11 1 0 8Z";
+  const heart = (x, y, s, f, line = "#fff") => at(x, y, s / 10, P(HEART, f, line, 1.4) + L("M-6.5-3C-6-5-4.5-5.5-3.500-5", "#fff", 1.3, ' opacity=".8"'));
+  const leaf = (x, y, rot, s = 1, f = "#55bd43", line = "#1e5c1c") => at(x, y, s, P("M0 0C3-6 11-7 16 0C11 7 3 6 0 0Z", f, line, 1) + L("M2 0H12", line, .8, ' opacity=".7"'), rot);
+  const blossom = (x, y, s, f = "#ffc9de", line = "#c94d83") => at(x, y, s, [0, 72, 144, 216, 288].map(a => `<path transform="rotate(${a})" d="M0 0C-6-3-6.500-10-1.800-10.500L0-8.500L1.800-10.500C6.500-10 6-3 0 0Z" fill="${f}" stroke="${line}" stroke-width=".9" stroke-linejoin="round"/>`).join("") + C(0, 0, 2.6, "#ffd23e", "#a86a00", .7));
+  const rose = (x, y, s) => at(x, y, s, C(0, 0, 9, "#d8173f", "#5e0618", 1) + L("M-6-1C-5-7 4-8 6-2C7 3 1 7-3 4C-6 1-3-4 1-3C4-2 3 2 0 2", "#ff8aa0", 1.5) + L("M-7 3C-4 8 4 8 7 3", "#8a0c28", 1.3));
+  const flame = (x, y, s, rot = 0, a = "#ff6a14", b = "#ffd83a", line = "#a31c04") => at(x, y, s, P("M0 6C-8 4-9-4-4-9C-4-5-2-4-1-4C-3-9 0-13 4-15C3-10 9-7 8-1C8 4 4 6 0 6Z", a, line, 1) + P("M0 4.500C-4 3-4-1-1-4C0-1 2-1 3-4C6 0 4 4 0 4.500Z", b, ""), rot);
+  const diamond = (x, y, w, h, f, line = INK) => P(`M${x} ${y - h}L${x + w} ${y}L${x} ${y + h}L${x - w} ${y}Z`, f, line, .8) + L(`M${x - w * .45} ${y - h * .2}L${x} ${y - h * .7}`, "#fff", .9, ' opacity=".85"');
+  const SUIT = {
+    heart: c => P(HEART, c, ""),
+    diamond: c => P("M0-9L7 0L0 9L-7 0Z", c, ""),
+    spade: c => P("M0-9C3-4 9-2 9 2C9 7 3 7 1 4L3 9H-3L-1 4C-3 7-9 7-9 2C-9-2-3-4 0-9Z", c, ""),
+    club: c => C(0, -4.5, 4.2, c, "") + C(-4.6, 2, 4.2, c, "") + C(4.6, 2, 4.2, c, "") + P("M-1 1H1L3 9H-3Z", c, ""),
+  };
+
+  // ---- side patterns: drawn along the top band (y ≈ -2.5, x 15..85), then turned to all four sides
+  const xs = (k, a = 18, b = 82) => Array.from({ length: k }, (_, i) => n(a + (b - a) * (k === 1 ? .5 : i / (k - 1))));
+  const SIDE = {
+    beads: c => xs(7).map(x => C(x, -2.6, 2.7, c, INK, .6) + C(x - .8, -3.4, .8, "#fff", "")).join(""),
+    gems: (c, r) => xs(3, 26, 74).map(x => diamond(x, -2.6, 4.6, 3.8, c)).join("") + xs(4, 14, 86).map(x => C(x, -2.6, 1.7, r, INK, .5)).join(""),
+    stripes: (c, d) => xs(8, 12, 80).map((x, i) => P(`M${x} -7L${x + 5} -7L${x + 11} 1.500L${x + 6} 1.500Z`, i % 2 ? d : c, "")).join(""),
+    bricks: (c, d) => xs(5, 11, 75).map(x => P(rr(x, -6.5, 13, 4, 1), c, d, .8) + P(rr(x + 7, -2, 13, 3.6, 1), c, d, .8)).join(""),
+    links: (c, d) => xs(7, 17, 83).map((x, i) => i % 2 ? L(`M${x - 6} -2.600H${x + 6}`, d, 4.4) + L(`M${x - 6} -2.600H${x + 6}`, c, 2.4) : `<ellipse cx="${x}" cy="-2.600" rx="6.200" ry="3.800" fill="none" stroke="${d}" stroke-width="3.600"/><ellipse cx="${x}" cy="-2.600" rx="6.200" ry="3.800" fill="none" stroke="${c}" stroke-width="1.800"/>`).join(""),
+    vine: (c, d) => L("M14 -2.500C22 -9 30 4 40 -2.500S58 -9 66 -2.500S80 2 86 -3", d, 2) + [[24, -4, -40], [37, -2, 40], [52, -5, -35], [65, -2, 45], [77, -3, -30]].map(([x, y, a]) => leaf(x, y, a, .55, c, d)).join(""),
+    scallop: (c, d) => xs(6, 16, 74).map(x => L(`M${x} -5.500Q${x + 5} 3 ${x + 10} -5.500`, d, 3.4) + L(`M${x} -5.500Q${x + 5} 3 ${x + 10} -5.500`, c, 1.6)).join(""),
+    chips: c => xs(4, 22, 78).map(x => P(rr(x - 4, -7, 8, 9, 1.4), c, INK, .6)).join(""),
+    suits: (c, d) => xs(4, 22, 78).map((x, i) => at(x, -2.6, .46, SUIT[["spade", "heart", "club", "diamond"][i]](i % 2 ? d : c))).join(""),
+    circuit: c => L("M14 -4.500H30L35 -.500H46M54 -.500H65L70 -4.500H86", c, 1.6) + [14, 46, 54, 86].map(x => C(x, x === 14 || x === 86 ? -4.5 : -.5, 2, "#06323a", c, 1.2)).join(""),
+    spikes: (c, d) => xs(5, 20, 80).map(x => P(`M${x - 5.5} -6.500L${x} -15L${x + 5.5} -6.500Z`, c, d, 1.1) + L(`M${x - 1.5} -9L${x} -12.500`, "#fff", .7, ' opacity=".55"')).join(""),
+    stars: (c, d) => xs(5, 18, 82).map((x, i) => i % 2 ? C(x, -2.6, 1.3, d, "") : spark(x, -2.6, i === 2 ? 5 : 3.8, c)).join(""),
+    flames: (a, b) => xs(5, 18, 82).map((x, i) => flame(x, -6, i % 2 ? .5 : .68, 0, a, b)).join(""),
+    icicles: (c, d) => xs(7, 17, 83).map((x, i) => P(`M${x - 4.5} -1L${x + 4.5} -1L${x} ${[11, 6, 8.5, 5, 8.5, 6, 11][i]}Z`, c, d, 1)).join(""),
+    petals: (c, d) => xs(3, 24, 76).map(x => blossom(x, -3, .5, c, d)).join("") + [37, 63].map(x => leaf(x - 4, -2.5, -12, .45)).join(""),
+  };
+
+  // ---- corner pieces: drawn for the top-left corner (centre ≈ -2,-2)
+  const CORNER = {
+    plate: (t, j) => P("M-12 -12C-4 -15 4 -9 12 -10C9 -6 8 -3 8 1C4 -1 -1 4 1 8C-3 8 -6 9 -10 12C-9 4 -15 -4 -12 -12Z", t, INK, 1.1) + gem(-3, -3, 5.2, j, t),
+    scroll: (t, j) => P("M-13 -13C-2 -16 8 -8 14 -9C12 -4 7 -3 4 -4C6 -1 5 3 1 4C2 0 0 -2 -2 -1C-1 -3 -3 -5 -5 -4C-3 -1 -4 2 -4 4C-3 7 -4 12 -9 14C-8 8 -16 -2 -13 -13Z", t, INK, 1.1) + gem(-6.5, -6.5, 4.2, j, t),
+    square: (t, j) => P(rr(-13, -13, 20, 20, 5), t, INK, 1.1) + L(rr(-10.500, -10.500, 15, 15, 3.500), "#fff", 1, ' opacity=".6"') + diamond(-3, -3, 5.4, 5.4, j),
+    ball: (t, j) => C(-3, -3, 10, t, INK, 1.1) + C(-3, -3, 6.4, j, INK, .8) + C(-5.2, -5.6, 1.8, "#fff", ""),
+    star: (t, j) => at(-3, -3, 1, P(poly(13, 6, 5, -135), t, INK, 1.1) + C(0, 0, 3.6, j, INK, .8)),
+    crystal: (t, j) => P("M-14 -14L-1 -10L9 -9L1 -3L-3 1L-9 9L-10 -1Z", t, j, 1.1) + L("M-13 -13L-3 -4M-3 -4L7 -9M-3 -4L-9 7", j, .9) + spark(-8, -8, 3.4),
+    heart: (t, j) => heart(-3, -3, 13, j, t),
+    flower: (t, j) => leaf(2, -7, -8, .75) + leaf(-7, 2, 98, .75) + blossom(-4, -4, 1.05, t, j),
+    rose: () => leaf(0, -8, -6, .9) + leaf(-8, 0, 96, .9) + rose(-4, -4, 1.1),
+    chip: (t, j, i) => C(-3, -3, 10, i % 2 ? "#1b1b1b" : j, INK, 1) + `<circle cx="-3" cy="-3" r="7.800" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="3.500 4.660"/>` + C(-3, -3, 4.4, "#fff", INK, .6) + C(-3, -3, 2.2, i % 2 ? "#1b1b1b" : j, ""),
+    suit: (t, j, i) => C(-3, -3, 9.6, "#fff", INK, 1.2) + at(-3, -3, .66, SUIT[["spade", "heart", "club", "diamond"][i]](i % 2 ? "#d3182c" : "#1b1b1b")),
+    turret: (t, j) => P(rr(-12.500, -9, 19, 17, 2), t, INK, 1.1) + [-13.500, -6, 1.500].map(x => P(rr(x, -14.500, 6, 7, 1), t, INK, 1)).join("") + P("M-6 8V1A3 3 0 0 1 0 1V8Z", j, INK, .8),
+    swirl: (t, j, i) => C(-3, -3, 10, "#fff", i % 2 ? t : j, 1.4) + L("M-3-3c3 0 3 4.500 0 4.500c-5 0-6-8-.500-9.500c6-1.500 10.500 4 8.500 9.500", i % 2 ? t : j, 2.6),
+    flame: (t, j) => flame(-6, -3, 1, -40, t, j) + flame(-3, -5, .7, -45, j, "#fff4a8"),
+    leaves: (t, j) => leaf(-5, -5, 8, 1.2, t, j) + leaf(-5, -5, 82, 1.2, t, j) + leaf(-4, -4, 225, .8, t, j) + C(-4, -4, 3.4, "#ffd34d", j, .8),
+    bolt: (t, j) => P(rr(-11, -11, 17, 17, 4), "#06323a", t, 1.8) + C(-2.500, -2.500, 4, j, t, 1.2) + L("M-11-2.500H-14.500M-2.500-11V-14.500", t, 1.6),
+  };
+
+  // ---- crests (centred at 0,0, radius ≈ 11)
+  const gold = "url(#gGold2)";
+  const CREST = {
+    crown: (b = gold, j = "url(#gRed)") => P("M-10 6L-12-6L-5.500-1.500L0-10L5.500-1.500L12-6L10 6Z", b, INK, 1.1) + P(rr(-10.500, 5, 21, 4.6, 1.600), b, INK, 1) + [[-12, -6.5], [0, -10.5], [12, -6.5]].map(([x, y]) => C(x, y, 1.9, b, INK, .7)).join("") + C(0, 2, 2.4, j, INK, .6),
+    bolt: () => P("M2-11L-8 2H-1L-3 11L8-3H1Z", "#fff35a", "#6a1fd0", 1.2),
+    hearts: () => heart(-2.5, -1, 9, "url(#gRed)") + heart(5, 3.5, 6, "#ff7aa8"),
+    snow: () => [0, 60, 120].map(a => `<g transform="rotate(${a})">${L("M0-10V10M-3.500-9L0-6L3.500-9M-3.500 9L0 6L3.500 9", "#2b7fc0", 3.4)}${L("M0-10V10M-3.500-9L0-6L3.500-9M-3.500 9L0 6L3.500 9", "#fff", 1.5)}</g>`).join("") + C(0, 0, 2.6, "#bfeaff", "#2b7fc0", .9),
+    flame: () => flame(0, 4, 1.05),
+    rose: () => leaf(3, 5, 20, .6) + leaf(-3, 5, 160, .6) + rose(0, -1, 1.1),
+    lolly: () => L("M3 4L8 11", "#fff", 2.6) + C(-1.5, -2, 8.8, "#fff", "#d63a68", 1.2) + L("M-1.500-2c2.600 0 2.600 4 0 4c-4.500 0-5.500-7-.500-8.400c5.400-1.400 9.200 3.600 7.600 8.600", "#ff5d87", 2.4),
+    gem: () => P("M-5-9H5L10 0L5 9H-5L-10 0Z", "#1fc97c", "#06502f", 1.2) + P("M-3-4.500H3L5.500 0L3 4.500H-3L-5.500 0Z", "#8af2c1", "#06502f", .7) + L("M-5-9L-3-4.500M5-9L3-4.500M10 0H5.500M5 9L3 4.500M-5 9L-3 4.500M-10 0H-5.500", "#06502f", .7),
+    chip: () => CORNER.chip("", "#c0172e", 0).replace(/-3/g, "0"),
+    moon: () => P("M2-10A10.500 10.500 0 1 0 10 6A8.500 8.500 0 0 1 2-10Z", "#ffe58a", "#8a6410", 1.1) + spark(6, -3, 4.5),
+    acorn: () => leaf(-2, -5, 205, .65) + P("M-6-1C-6 6-2 9 0 10.500C2 9 6 6 6-1Z", "#d9964e", INK, 1) + P("M-8-.500C-8-6-3-7.500 0-7.500S8-6 8-.500Z", "#8a5424", INK, 1) + L("M0-7.500L1.500-11", INK, 1.5),
+    palm: () => [-72, -36, 0, 36, 72].map((a, i) => `<g transform="translate(0 7) rotate(${a - 90})">${leaf(0, 0, 0, i === 2 ? 1.15 : .95, i % 2 ? "#7fd44f" : "#3fae3c")}</g>`).join("") + C(0, 7, 3.2, "#ffd34d", INK, .8),
+    tower: () => P("M-8 10V-4H-10V-10H-6V-7H-2V-10H2V-7H6V-10H10V-4H8V10Z", "#dfe2e8", "#3d424c", 1.1) + P("M-3 10V4A3 3 0 0 1 3 4V10Z", "#6a4a2a", "#3d424c", .9) + P(rr(-1.500, -2.500, 3, 4, 1.200), "#3d424c", ""),
+    lock: () => L("M-5-1V-4A5 5 0 0 1 5-4V-1", "#3d424c", 4.2) + L("M-5-1V-4A5 5 0 0 1 5-4V-1", "#e6e9ee", 2) + P(rr(-8.500, -1.500, 17, 12, 3), gold, INK, 1.1) + C(0, 3, 2, INK, "") + P("M-1 3.500L-1.800 7.500H1.800L1 3.500Z", INK, ""),
+    cards: () => `<g transform="rotate(-16 -3 8)">${P(rr(-9, -9, 11, 16, 2), "#fff", INK, 1)}${at(-3.500, -1, .45, SUIT.heart("#d3182c"))}</g><g transform="rotate(14 3 8)">${P(rr(-2, -9, 11, 16, 2), "#fff", INK, 1)}${at(3.500, -1, .5, SUIT.spade("#1b1b1b"))}</g>`,
+    brilliant: () => P("M-6-8H6L11-2L0 11L-11-2Z", "#c9f5ff", "#1f6fb0", 1.2) + P("M-11-2H11L0 11Z", "#7fdcff", "#1f6fb0", .8) + L("M-6-8L-3.500-2L0-8L3.500-2L6-8M-3.500-2L0 11L3.500-2", "#1f6fb0", .7) + spark(-6, -6, 3.4),
+    chipset: () => P("M0-11L9.500-5.500V5.500L0 11L-9.500 5.500V-5.500Z", "#06323a", "#7ffff0", 1.6) + P(rr(-4.500, -4.500, 9, 9, 2), "#1fd0bd", "#e8fffc", .8) + L("M-7 0H-4.500M4.500 0H7M0-8V-4.500M0 4.500V8", "#7ffff0", 1.3),
+    thorn: () => heart(0, 0, 10.5, "#c0102c", "#2a040a") + L("M-11 4C-5-2 4 8 11-1", "#2a040a", 2.2) + [[-6.5, 1.8, -1], [0, 2.8, 1], [6, 2.5, -1]].map(([x, y, k]) => P(`M${x - 1.5} ${y}L${x + k} ${y - 4.5}L${x + 1.5} ${y}Z`, "#2a040a", "")).join(""),
+    bow: () => P("M0 0C-5-7-12-7-11-1C-12 5-5 5 0 0Z", "#ff4f6d", "#8a0c24", 1.1) + P("M0 0C5-7 12-7 11-1C12 5 5 5 0 0Z", "#ff4f6d", "#8a0c24", 1.1) + P("M-1 1L-6 10L-2 8L0 10.500L1 1ZM1 1L6 10L2 8L0 10.500Z", "#ff7a90", "#8a0c24", .9) + C(0, 0, 3, "#fff", "#8a0c24", 1),
+    fleur: () => P("M0-11C5-6 4-1 1.500 2H-1.500C-4-1-5-6 0-11Z", gold, INK, 1) + P("M-2 2C-3-5-11-5-11 0C-11 4-7 5-6 2C-8 2-8-1-6-1C-3-1-3 1-2 2ZM2 2C3-5 11-5 11 0C11 4 7 5 6 2C8 2 8-1 6-1C3-1 3 1 2 2Z", gold, INK, 1) + P(rr(-5.500, 2, 11, 3.600, 1.500), gold, INK, 1) + P("M-2.500 5.600L0 11L2.500 5.600Z", gold, INK, .9),
+    planet: () => C(0, 0, 7.6, "url(#gOrange)", "#5a2208", 1) + L("M-5-3C-1-1 3-5 6-3M-6 3C-2 5 2 2 6 4", "#ffd9a8", 1.2) + `<ellipse rx="12.500" ry="3.800" fill="none" stroke="#ffe9c2" stroke-width="2" transform="rotate(-20)"/>` + L("M-7.300-1.800A7.600 7.600 0 0 1 7-3.500", "#ff9b4a", 2.2),
+    sakura: () => blossom(0, 0, 1.12),
+    devil: () => P("M-6-4C-12-5-12-10-9-12C-8-8-5-8-2-7Z", "#e5231f", "#3a0402", 1) + P("M6-4C12-5 12-10 9-12C8-8 5-8 2-7Z", "#e5231f", "#3a0402", 1) + C(0, 1, 8.6, "#2a0a08", "#ff6a14", 1.4) + P("M-6-1.500L-1.500 1L-5 2.500ZM6-1.500L1.500 1L5 2.500Z", "#ffd83a", "") + L("M-4 5.500Q0 8.500 4 5.500", "#ff6a14", 1.5),
+  };
+
+  // t = metal trim, j = jewel colour, body = border gradient, side = [pattern, colour, colour2], crest = the small sign of the frame
+  const G = "#f7c33a", S = "#dfe4ec", Bz = "#e0a45a";
+  const F = {
+    gold:     { body: ["#ffe99a", "#e3a91f", "#a86c06"], t: G, j: "#e5374a", side: ["beads", "#fff0b0"], corner: "scroll", crest: "crown" },
+    neon:     { body: ["#19e6ff", "#7449f0", "#ff22d2"], t: "#f4e9ff", j: "#19e6ff", side: ["stars", "#ffffff", "#9ffcff"], corner: "star", crest: "bolt" },
+    hearts:   { body: ["#ff9fbd", "#ee3d62", "#b30f38"], t: "#fff", j: "#ff4d7d", side: ["scallop", "#ffe1ea", "#c0184a"], corner: "heart", crest: "hearts" },
+    ice:      { body: ["#f4fdff", "#8ed6fb", "#3b8fce"], t: "#e6faff", j: "#2b7fc0", side: ["icicles", "#e6faff", "#58aee4"], corner: "crystal", crest: "snow" },
+    fire:     { body: ["#ffcf3a", "#f2540f", "#9c1503"], t: "#ffe27a", j: "#ff3b10", side: ["flames", "#ff7a14", "#ffe14d"], corner: "flame", crest: "flame" },
+    rose:     { body: ["#ffd0dc", "#d9507c", "#8c1c48"], t: "#ffe3ea", j: "#d8173f", side: ["vine", "#6cc455", "#1e5c1c"], corner: "rose", crest: "rose" },
+    candy:    { body: ["#fff", "#ffd6e2", "#ff9dbb"], t: "#ff6f97", j: "#4fc6ea", side: ["stripes", "#ff7ba2", "#6fd3f2"], corner: "swirl", crest: "lolly" },
+    emerald:  { body: ["#b8f5d6", "#1ca86c", "#07523a"], t: "#e9d27a", j: "#1fd084", side: ["gems", "#4be3a2", "#ffe9a0"], corner: "square", crest: "gem" },
+    royal:    { body: ["#c9aaff", "#6535cc", "#2f1476"], t: G, j: "#a55cff", side: ["gems", "#ffd24a", "#e6d4ff"], corner: "plate", crest: "crown" },
+    casino:   { body: ["#ee4458", "#a8132a", "#4a0611"], t: "#fff", j: "#c0172e", side: ["chips", "#fff4dc"], corner: "chip", crest: "chip" },
+    night:    { body: ["#7f9cf5", "#2c3d94", "#101845"], t: "#ffe58a", j: "#8fa8ff", side: ["stars", "#fff1b0", "#cfe0ff"], corner: "star", crest: "moon" },
+    wood:     { body: ["#e3ac73", "#a76c33", "#5e3812"], t: Bz, j: "#7a4518", side: ["bricks", "#c78a4c", "#5e3812"], corner: "leaves", c2: ["#6cc455", "#1e5c1c"], crest: "acorn" },
+    jungle:   { body: ["#b3e46c", "#3a9437", "#124a1c"], t: "#d9f08a", j: "#ffd34d", side: ["vine", "#9fe05c", "#12471a"], corner: "leaves", c2: ["#58c13c", "#10401a"], crest: "palm" },
+    castle:   { body: ["#eef0ea", "#99a0aa", "#4d535e"], t: "#cdd2da", j: "#6a4a2a", side: ["bricks", "#c4c8cf", "#565c67"], corner: "turret", crest: "tower" },
+    chain:    { body: ["#6a7382", "#394150", "#1c212b"], t: S, j: "#ff8a1f", side: ["links", "#e9edf3", "#232833"], corner: "square", crest: "lock" },
+    cards:    { body: ["#fff", "#ece9e2", "#bdb7ac"], t: "#fff", j: "#c9162c", side: ["suits", "#1b1b1b", "#d3182c"], corner: "suit", crest: "cards" },
+    diamond:  { body: ["#f4feff", "#8fdcfb", "#2f72cf"], t: "#e9fbff", j: "#7fe6ff", side: ["gems", "#dcfaff", "#ffffff"], corner: "ball", crest: "brilliant" },
+    tech:     { body: ["#2bd6c4", "#0d6f78", "#052c37"], t: "#7ffff0", j: "#19c9b6", side: ["circuit", "#b8fff6"], corner: "bolt", crest: "chipset" },
+    thorns:   { body: ["#8a2c40", "#4a0b19", "#1c0308"], t: "#e0869a", j: "#d5152f", side: ["spikes", "#6e1526", "#14020a"], corner: "heart", crest: "thorn" },
+    cane:     { body: ["#fff", "#fff", "#e8e6ee"], t: "#ff5d7a", j: "#35c27a", side: ["stripes", "#f0334f", "#f0334f"], corner: "swirl", crest: "bow" },
+    filigree: { body: ["#fff8cc", "#e8bb3e", "#8f6508"], t: G, j: "#2f8be0", side: ["scallop", "#fff3b8", "#8f6508"], corner: "scroll", crest: "fleur" },
+    galaxy:   { body: ["#a98cff", "#3d25a0", "#0d0736"], t: "#c7b6ff", j: "#ff8fd8", side: ["stars", "#ffffff", "#ff9fe0"], corner: "ball", crest: "planet" },
+    sakura:   { body: ["#fff2f6", "#ffb3cd", "#e36a9c"], t: "#fff", j: "#c94d83", side: ["petals", "#fff", "#d6558a"], corner: "flower", c2: ["#ffc9de", "#c94d83"], crest: "sakura" },
+    inferno:  { body: ["#5a5252", "#1f1a1b", "#050304"], t: "#ff7a1f", j: "#ff2e12", side: ["flames", "#e8230f", "#ffb02e"], corner: "flame", crest: "devil" },
+  };
+
+  let defsDone = false;
+  function defs() {   // one shared set of gradients for every frame on the page
+    if (defsDone) return;
+    const host = document.querySelector("#art-defs defs"); if (!host) return;
+    defsDone = true;
+    host.insertAdjacentHTML("beforeend", Object.entries(F).map(([k, f]) => `<linearGradient id="fg_${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${f.body[0]}"/><stop offset=".5" stop-color="${f.body[1]}"/><stop offset="1" stop-color="${f.body[2]}"/></linearGradient>`).join(""));
+  }
+  const crest = k => { const f = F[k]; return f.crest === "crown" ? CREST.crown(gold, k === "royal" ? "#a55cff" : "url(#gRed)") : CREST[f.crest](); };
+  const memo = {};
+  function svg(k) {
+    defs();
+    if (memo[k]) return memo[k];
+    const f = F[k], [pat, a, b] = f.side, turn = [0, 90, 180, 270], [c1, c2] = f.c2 || [f.t, f.j];
+    const ring = `<path fill-rule="evenodd" d="${rr(-8, -8, 116, 116, 17)} ${rr(3, 3, 94, 94, 11)}" fill="url(#fg_${k})" stroke="${INK}" stroke-opacity=".6" stroke-width="1.4"/>`
+      + L(rr(-6.4, -6.4, 112.8, 112.8, 15.6), "#fff", 1.2, ' opacity=".55"');
+    const trim = L(rr(2.2, 2.2, 95.6, 95.6, 11.6), f.t, 2.2) + L(rr(3.6, 3.6, 92.8, 92.8, 10.4), INK, .9, ' opacity=".45"');
+    const sides = turn.map(r => `<g transform="rotate(${r} 50 50)">${SIDE[pat](a, b)}</g>`).join("");
+    const small = body => `<g transform="translate(-3 -3) scale(.85) translate(3 3)">${body}</g>`;   // corner pieces, a little smaller
+    const corners = turn.map((r, i) => {
+      if (!["heart", "suit", "chip", "swirl", "turret"].includes(f.corner)) return `<g transform="rotate(${r} 50 50)">${small(CORNER[f.corner](c1, c2, i))}</g>`;
+      const [x, y] = [[0, 0], [106, 0], [106, 106], [0, 106]][i];   // these keep their top up
+      return `<g transform="translate(${x} ${y})">${small(CORNER[f.corner](c1, c2, i))}</g>`;
+    }).join("");
+    // slim like the original: the border sits on the edge of the photo and only the corners stick out a little
+    return memo[k] = `<svg class="fart" viewBox="-16 -16 132 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g transform="translate(50 50) scale(.93) translate(-50 -50)">${ring}${sides}${trim}${corners}</g></svg>`;
+  }
+  return { has: k => Object.hasOwn(F, k), svg, crest: k => { defs(); return `<svg class="femb" viewBox="-13 -13 26 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${crest(k)}</svg>`; } };
 })();
+const frameKey = id => String(id || "").replace("frame_", "");
 function frameArt(frameId) {
-  const k = String(frameId || "").replace("frame_", "");
+  const k = frameKey(frameId);
   return FRAME_ART.has(k) ? FRAME_ART.svg(k) : "";
+}
+function frameEmblem(frameId) {
+  const k = frameKey(frameId);
+  return FRAME_ART.has(k) ? FRAME_ART.crest(k) : "";
 }

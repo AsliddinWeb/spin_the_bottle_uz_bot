@@ -450,13 +450,13 @@ function renderSeats() {
           (p.gifts && p.gifts.side ? `<span class="gx">${giftIcon(p.gifts.side)}</span>` : "") +
           (p.vip ? `<span class="vipmark">👑</span>` : "") +
           (p.uid !== ME.id ? `<button class="gbtn">${ICON.gift}</button><button class="pbtn">${ICON.user}</button>` : "") +
-          `<div class="nm">${esc(p.name)}${p.age ? ", " + p.age : ""}</div>`;
+          `<div class="nm">${frameEmblem(p.frame)}<span>${esc(p.name)}${p.age ? ", " + p.age : ""}</span>${frameEmblem(p.frame)}</div>`;
       }
     }
     if (!p) { el.className = "seat empty"; el.style.left = x + "%"; el.style.top = y + "%"; return; }
     const isTurn = p.uid === T.turn, isTarget = p.uid === T.target && T.target;
     const inP = pair && (isTurn || isTarget);
-    el.className = "seat" + (p.uid === ME.id ? " me" : "") + (isTurn && T.phase !== "waiting" ? " turn" : "") +
+    el.className = "seat" + (p.frame ? " framed" : "") + (p.uid === ME.id ? " me" : "") + (isTurn && T.phase !== "waiting" ? " turn" : "") +
       (isTarget ? " target" : "") + (inP ? " pair" : "") + (target === p.uid ? " sel" : "") + ((gwaitUntil[p.uid] || 0) > performance.now() ? " gwait" : "");
     const pos = inP ? PAIR[isTurn ? 0 : 1] : [x, y];
     el.style.left = pos[0] + "%"; el.style.top = pos[1] + "%";
@@ -716,7 +716,7 @@ function addChat(m) {
     const big = onlyEmoji(m.text);   // a message of smileys alone is shown large, without a bubble
     d.className = big ? "msg big" : "msg";
     d.innerHTML = `${miniAv(m.photo, m.name)}` + (big ? `<span class="bigemo">${esc(m.text)}</span>`
-      : `<div class="bubble"><span class="who" style="color:${nameColor(m)}">${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${foreign(m.text) ? `<span class="tr">${t("translate")}</span>` : ""}</div>`);
+      : `<div class="bubble"><span class="who" style="color:${nameColor(m)}">${frameEmblem(m.fr)}${esc(m.name)}${m.vip ? " 👑" : ""}:</span> ${esc(m.text)}${foreign(m.text) ? `<span class="tr">${t("translate")}</span>` : ""}</div>`);
     const reply = () => { const i = $("#chat-input"); i.value = m.name + ", "; i.focus(); };
     if (!big) $(".who", d).onclick = reply;
     $(".av-mini", d).onclick = reply;
@@ -1329,16 +1329,21 @@ function openStore(kind) {
   if (kind === "bottle") return openBottlePanel();
   if (kind === "booster") return openBoosters();
   const m = openModal("", { cls: "decor" }); let sel = ME.frame;
-  const render = () => {
-    const frames = CFG.items.filter(i => i.kind === "frame");
-    const cur = frames.find(f => f.id === sel), have = !sel || (ME.inv[sel] && ME.inv[sel].qty > 0), eq = sel === ME.frame;
-    const cls = sel ? "fr-" + sel.replace("frame_", "") : "";
-    m.set(`<h2>${sel ? t(sel) : t("no_decor")}</h2>
-      <div class="dc-top"><div class="dc-pv"><div class="frame ${cls}"><div class="av" style="--av:78px">${avInner(ME.photo, ME.name)}</div>${frameArt(sel)}</div><small>${esc(ME.name)}${ME.age ? ", " + ME.age : ""}</small></div>
-        <div class="dc-info"><p>${sel ? esc(t(sel)) : t("keep_plain")}</p><button class="btn ${eq ? "gray" : ""}" id="dc-apply" ${eq ? "disabled" : ""}>${have ? t("apply") : "❤️ " + cur.price}</button></div></div>
-      <div class="dc-grid"><button class="dc-t ${!sel ? "on" : ""}" data-f=""><span class="dc-none">✕</span>${ME.frame === "" ? "<b>✓</b>" : ""}</button>
-        ${frames.map(f => `<button class="dc-t ${sel === f.id ? "on" : ""}" data-f="${f.id}"><div class="frame fr-${f.id.replace("frame_", "")}"><div class="av" style="--av:42px"><div class="ini" style="font-size:16px">A</div></div>${frameArt(f.id)}</div>${ME.frame === f.id ? "<b>✓</b>" : (ME.inv[f.id] && ME.inv[f.id].qty > 0) ? "" : `<b>❤️${f.price}</b>`}</button>`).join("")}</div>`);
-    $$("[data-f]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.f; render(); });
+  const frames = CFG.items.filter(i => i.kind === "frame");
+  const owned = id => !!(ME.inv[id] && ME.inv[id].qty > 0);
+  m.el.innerHTML = `<h2></h2><div class="dc-top"></div><div class="dc-scroll"><div class="dc-grid">` +
+    `<button class="dc-t" data-f=""><span class="dc-ic"><span class="dc-none">✕</span></span><b></b></button>` +
+    frames.map(f => `<button class="dc-t" data-f="${f.id}" aria-label="${esc(t(f.id))}"><span class="dc-ic">${frameArt(f.id)}${frameEmblem(f.id)}</span><b></b></button>`).join("") + `</div></div>`;
+  const render = () => {   // only the preview and the marks change, so the list keeps its scroll position
+    const cur = frames.find(f => f.id === sel), have = !sel || owned(sel), eq = sel === ME.frame;
+    $("h2", m.el).textContent = sel ? t(sel) : t("no_decor");
+    $(".dc-top", m.el).innerHTML = `<div class="dc-pv"><div class="frame"><div class="av">${avInner(ME.photo, ME.name)}</div>${frameArt(sel)}</div><small>${frameEmblem(sel)}<span>${esc(ME.name)}${ME.age ? ", " + ME.age : ""}</span>${frameEmblem(sel)}</small></div>
+      <div class="dc-info"><p>${sel ? esc(t("decor_desc")) : esc(t("keep_plain"))}</p><button class="btn ${eq ? "gray" : ""}" id="dc-apply" ${eq ? "disabled" : ""}>${have ? t("apply") : heartMini("#f2572f") + cur.price}</button></div>`;
+    $$("[data-f]", m.el).forEach(b => {
+      const id = b.dataset.f;
+      b.classList.toggle("on", id === sel);
+      $("b", b).outerHTML = ME.frame === id ? `<b class="dc-ok">✓</b>` : id && !owned(id) ? `<b class="dc-price">${heartMini("#f2572f")}${frames.find(f => f.id === id).price}</b>` : "<b></b>";
+    });
     $("#dc-apply", m.el).onclick = async () => {
       try {
         if (sel && !have) ME = await api("/api/store/buy", "POST", { item: sel });
@@ -1346,6 +1351,7 @@ function openStore(kind) {
       } catch (e) { if (e.code === "no_hearts") { toast(t("no_hearts")); m.close(); openShop(); } else toast(t("err")); }
     };
   };
+  $$("[data-f]", m.el).forEach(b => b.onclick = () => { sel = b.dataset.f; render(); });
   render();
 }
 

@@ -26,7 +26,7 @@ O'lchov birligi: `u` = ekran kengligining 1%. Rasmlar o'zimizniki bo'ladi, origi
 | 15 | "Новые сообщения" tugmasi | chat tepaga surilganda pastda qora tabletka | qo'shildi |
 | 16 | Video va musiqa tugmalari | o'ng chekkada 10.5u × 10u | mos |
 | 17 | Pleyer | o'ngda: yuboruvchi doirasi (15u) + video (28u × 15.5u), ostida ovoz tugmasi | keyingi bosqich |
-| 18 | Ramkalar, bosh va qo'l sovg'alari | avatar atrofida bezakli ramka, ism yonida belgi | rasmlar keyingi bosqichda |
+| 18 | Ramkalar, bosh va qo'l sovg'alari | avatar atrofida ingichka bezakli ramka, ism yonida va chatda ism oldida belgi | moslandi (o'z chizmalarimiz, 2026-11-27) |
 
 ## 2. Boshqa sahifalar (keyingi bosqichlar uchun farqlar)
 
@@ -63,7 +63,7 @@ TOP lentasi: **istalgan** reytingning butun davrdagi 10 taligi (bizda faqat o'pi
 | Imo-ishora | 5 ustun, 3 tasi ochiq (1 jeton), qolgani qulflangan kulrang | tekshirish kerak |
 | Sovg'a paneli | 5 ustun, birinchi ikkitasi video va musiqa | mos; rasmlar farqli |
 | Yutuqlar | 333 yulduz, rasmli medallar, tafsilotda shart | bizda kamroq, oddiy rasm |
-| Bezaklar | 4 ustun, ramkalar ❤500, ba'zilari qulfda, tepada ko'rinish va "Применить" | rasmlar farqli |
+| Bezaklar ✅ | 4 ustun, ramkalar ❤500, ba'zilari qulfda, tepada ko'rinish va "Применить" | tartib va o'lcham moslandi; narxlar bizniki (❤30–100), qulflangan ramka yo'q |
 | Shisha | pastki panel, 4 ustun, ❤5 | rasmlar farqli |
 | Boosterlar | tanlov (2) va liga (3) boosterlari | mos |
 | Stol almashtirish | tasodifiy stol, oxirgi stollar (shisha, 👦/👧 soni); to'la stolda navbat oynasi | navbat oynasi yo'q |

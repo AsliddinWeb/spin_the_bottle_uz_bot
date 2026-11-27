@@ -71,6 +71,15 @@ async def main():
     hist = [m for m in got[602] if m["t"] == "joined"][-1]["history"]
     rows = [m for m in hist if m["k"] in ("gift", "kiss")]
     ok("tarixdagi qatorlarda rasmlar saqlangan", rows and all(m.get("photo") and m.get("to_photo") for m in rows), len(rows))
+    # ramka stolda darhol ko'rinadi (qayta kirmasdan) va chat qatorida belgisi bor
+    db.x("UPDATE users SET hearts=500 WHERE id=601")
+    got[602].clear()
+    call("/api/store/buy", 601, {"item": "frame_gold"}); call("/api/store/equip", 601, {"item": "frame_gold"}); await asyncio.sleep(.8)
+    seen = [s["frame"] for m in got[602] if m["t"] == "state" for s in m["seats"] if s["uid"] == 601]
+    ok("yangi ramka stoldoshga darhol ko'rinadi", seen and seen[-1] == "frame_gold", seen)
+    await a.send(json.dumps({"t": "chat", "text": "salom"})); await asyncio.sleep(.8)
+    said = [m for m in got[602] if m.get("t") == "chat" and m.get("k") == "msg"]
+    ok("chat xabarida ramka belgisi keladi", said and said[-1].get("fr") == "frame_gold", said[-1:])
     await a.close(); await b.close()
 
 asyncio.run(main())

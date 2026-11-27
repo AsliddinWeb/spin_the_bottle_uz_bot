@@ -171,6 +171,8 @@ class Table:
                 kw[out] = p.photo
             if p and key == "uid":
                 kw.setdefault("g", p.gender)   # the name is pink for women and blue for men
+                if p.frame:
+                    kw.setdefault("fr", p.frame)   # the frame's small sign stands before the name
         self.chat_id += 1
         m = {"t": "chat", "id": self.chat_id, "k": kind, "ts": int(time.time()), **kw}
         self.chat.append(m)
@@ -672,6 +674,14 @@ class Hub:
                 await botmod.bot.send_message(paid["inviter"], txt.get(u["lang"], txt["en"]).format(n=paid["name"], h=paid["hearts"]))
             except Exception:
                 pass
+
+    async def refresh_look(self, uid: int) -> None:
+        """A seated player changed the frame or the bottle: everyone at the table sees it at once."""
+        c, u = self.clients.get(uid), db.get_user(uid)
+        p = c.table.players.get(uid) if c and c.table and u else None
+        if p:
+            p.frame, p.bottle = u["frame"], u["bottle"]
+            await c.table.broadcast()
 
     async def push_me(self, uid: int) -> None:
         from .economy import me_payload
