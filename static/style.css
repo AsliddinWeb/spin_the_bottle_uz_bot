@@ -1315,4 +1315,12 @@ html.ios #newmsg{bottom:calc(var(--u)*17)}
 /* boosters */
 .modal.boost{width:calc(var(--u)*80);max-width:none}
 .modal.boost h2{font-size:max(13px,calc(var(--u)*3.3));color:#c6c6c6}
-
+/* 3D gift pictures fill their box like the drawings do */
+img.gimg{object-fit:contain;-webkit-user-drag:none;-webkit-user-select:none;user-select:none;pointer-events:none}
+.mdl-c img.gart{width:46px;height:46px}
+/* gift panel icons at the original's size (about 13u on a phone) */
+html.top .gi .e{font-size:calc(var(--u)*12.6)}
+html.top .gi .e img.gimg{width:1.08em;height:1.08em}
+/* two pictures tinted toward the original's colours: a golden autumn leaf and red lips */
+img.gimg[src*="/leaf.webp"]{filter:hue-rotate(58deg) saturate(1.7) brightness(1.22)}
+img.gimg[src*="/lips.webp"]{filter:hue-rotate(22deg) saturate(1.45) brightness(.94)}

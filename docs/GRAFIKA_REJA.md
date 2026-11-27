@@ -2,7 +2,7 @@
 
 Sabab (2026-11-26): buyurtmachi grafika originalga o'xshamayotganidan norozi. Shart: ish **kirishdan boshlanadi**, loadergacha hammasi bir xil bo'lishi kerak.
 
-Cheklov: joylashuv, o'lcham, rang, harakat originalga moslanadi; rasmlar o'zimizniki bo'ladi. Originalning rasm fayllari, logo harflari va nomi ko'chirilmaydi.
+Cheklov: joylashuv, o'lcham, rang, harakat originalga moslanadi; rasmlar o'zimizniki yoki ochiq litsenziyali bo'ladi (2026-11-27: egasi sovg'alar uchun Microsoft Fluent Emoji 3D, MIT, to'plamiga rozilik berdi). Originalning rasm fayllari, logo harflari va nomi ko'chirilmaydi.
 
 ## Originalning kirish ketma-ketligi (kuzatilgan, web view 362×585)
 1. Telegramning qorong'i kutish oynasi: botning o'z belgisi, tepada ko'k yuklanish chizig'i (BotFather sozlamasi).
@@ -38,7 +38,7 @@ Tayyor mezoni: bir xil o'lchamdagi yonma-yon skrinshotlar va buyurtmachi rozilig
 2. Stol ekrani: taxta, naqsh, shisha, avatarlar, tugmalar — **kompyuter Telegram'i (yon ustun) 2026-11-26 da moslandi** (taxta balandligi 87.8u, tugmalar 7u, yurakcha, ism, lab belgisi, shisha, naqsh, video/musiqa tugmalari; taxta tolasi `tools/make_wood.py`). Telefon ko'rinishi ham 2026-11-26 da originalning iPhone'dagi stolidan (iPhone Mirroring) o'lchab moslandi: tugmalar 6.9u, yurakcha, ismlar, naqsh 42.5u, shisha 27u, musiqa tugmalari; avatar joylari oldindan mos edi. iPhone'da (WebKit) stoldagi sovg'alar xira kvadrat bo'lib chiqayotgan edi — tuzatildi, iOS simulyatorda tekshirildi. Keyingi bosqich uchun: originalda chat avatarlari kichikroq (~7.9u, bizda ~13u). Bo'sh o'rin originalda qanday ko'rinishi tekshirilmagan
 3. Avtomatik oynalar: kunlik bonus va boshqa popup'lar
 4. Chat va pleyer
-5. Sovg'alar va ikonlar (eng katta qism)
+5. Sovg'alar va ikonlar (eng katta qism) — **2026-11-27: 37 ta sovg'a 3D rasmga o'tdi** (`static/gifts/`, manba va litsenziya o'sha yerdagi README da). O'z chizmamizda qolgan 16 ta: video/musiqa belgilari, 4 toj, gulchambar, propeller, tuxum, qora atirgul, ko'rshapalak toj, masxaraboz, sombrero, viking, qaroqchi, olmosli uzuk. Qolgan: ramkalar, medallar, shishalar, imo-ishoralar
 6. Profil, do'kon, reyting va boshqa oynalar
 7. Animatsiyalar
 
